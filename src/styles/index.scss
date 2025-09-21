@@ -1,0 +1,11 @@
+@use "./reset.scss" as *;
+
+//滚动条外观
+::-webkit-scrollbar{
+  width: 12px;
+}
+
+::-webkit-scrollbar-thumb{
+  background: gray;
+  border-radius: 10px;
+}

@@ -1,0 +1,47 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "composite": true,
+    // 不生成输出文件
+    "noEmit": false,
+
+    // 指定 TypeScript 编译信息的存储文件路径
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    "outDir": "./dist",
+
+    // Linting
+    "strict": true,
+
+    /*检查是否有定义了但是没有使用的变量*/
+    "noUnusedLocals": true,
+
+    /*检查是否有在函数体中没有使用的参数*/
+    "noUnusedParameters": true,
+
+    /*检查switch中是否有case没有使用break跳出switch*/
+    "noFallthroughCasesInSwitch": true,
+
+    /*导入了一个模块但没有使用其导出的内容(避免不必要的导入)*/
+    "noUncheckedSideEffectImports": true,
+
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+
+    "jsx": "preserve",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.json"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

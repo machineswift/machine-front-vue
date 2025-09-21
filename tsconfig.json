@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
+    "verbatimModuleSyntax": true,
+    "types": [
+      "vite/client",
+      "vite-plugin-svg-icons/client"
+    ],
+    "paths": {
+      "@/*": ["src/*"],
+      "@/modules/*": ["src/modules/*"]
+    },
+    "baseUrl": "./",
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "references": [
+    {
+      // 用于配置前端代码（如 Vue 组件）的 TypeScript 编译规则。
+      "path": "./tsconfig.app.json"
+    },
+    {
+      // 用于配置 Node.js 环境（如 vite.config.ts）的 TypeScript 编译规则
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.json"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}
