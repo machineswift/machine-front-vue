@@ -99,7 +99,7 @@
       loading.value = true
       const authInfo: IamAuthLoginResponseVo = await IamAuthApi.loginByUsername(loginFormModel)
       const success = await userStore.login(authInfo)
-      await userStore.setAsyncRoute()
+      // login 方法内部已经调用了 setAsyncRoute，无需重复调用
       if (success) {
         await router.push({
           path: '/layout',

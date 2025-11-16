@@ -1,21 +1,33 @@
 <template>
   <router-view v-slot="{ Component, route }">
     <transition :name="route.meta.transition || 'fade-scale'" mode="out-in" @before-enter="beforeEnter" @after-enter="afterEnter">
-      <component :is="Component" :key="route.fullPath" class="optimized-transition" v-if="flag" />
+      <keep-alive :include="cachedViews">
+        <component :is="Component" :key="refreshKey" class="optimized-transition" v-if="flag" />
+      </keep-alive>
     </transition>
   </router-view>
 </template>
 
 <script setup lang="ts">
-  import { watch, ref, nextTick } from 'vue'
+  import { watch, ref, nextTick, computed } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
+  import { useTabStore } from '@/modules/common/stores/Tab.store'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
 
+  const route = useRoute()
   const settingStore = useSettingStore()
+  const tabStore = useTabStore()
   const dictionaryEnumStore = useDictionaryEnumStore()
 
   // 控制当前组件是否刷新重建
   const flag = ref(true)
+  const refreshKey = ref(0)
+
+  // 计算需要缓存的视图名称列表
+  const cachedViews = computed(() => {
+    return tabStore.tabs.filter(tab => tab.keepAlive && tab.name).map(tab => tab.name as string)
+  })
 
   // 监听数据判断是否点击了刷新按钮
   watch(
@@ -25,7 +37,22 @@
       dictionaryEnumStore.clearAllEnumCache()
       nextTick(() => {
         flag.value = true
+        refreshKey.value++
       })
+    }
+  )
+
+  // 监听路由变化，处理标签页刷新
+  watch(
+    () => route.fullPath,
+    newPath => {
+      const tab = tabStore.tabs.find(t => t.fullPath === newPath)
+      if (tab && !tab.keepAlive) {
+        // 如果标签页被标记为不缓存，刷新后恢复缓存
+        nextTick(() => {
+          tab.keepAlive = true
+        })
+      }
     }
   )
 

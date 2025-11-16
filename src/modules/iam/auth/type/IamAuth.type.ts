@@ -12,6 +12,10 @@ export interface IamAuthUsernameLoginRequestVo {
   userKey: string
 }
 
+export interface IamAuthAccessTokenRequestVo {
+  refreshToken: string
+}
+
 // 登录接口返回数据
 export interface IamAuthLoginResponseVo {
   accessToken: string

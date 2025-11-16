@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { cloneDeep } from 'lodash'
 import router from '@/router'
 import { PermissionUtil } from '@/modules/common/utils/Permission.util'
-import { constantRoute } from '@/router/Router.constant'
+import { constantRoute } from '@/router/constant'
 import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
 import { IamAuthApi } from '@/modules/iam/auth/api/IamAuth.api'
 import { IamCurrentApi } from '@/modules/iam/auth/api/IamCurrent.api'
@@ -36,6 +36,11 @@ export const useIamUserStore = defineStore(
     const isAuthenticated = ref(false)
     const loading = ref(false)
 
+    // 路由加载状态管理
+    const routeLoading = ref(false)
+    const routeError = ref<Error | null>(null)
+    let routeLoadingPromise: Promise<boolean> | null = null
+
     // Actions
     const setAuthInfo = (authInfo: IamAuthLoginResponseVo) => {
       auth.value = {
@@ -43,6 +48,19 @@ export const useIamUserStore = defineStore(
         lastRefreshTime: Date.now()
       }
       isAuthenticated.value = true
+    }
+
+    /**
+     * 删除所有动态路由
+     */
+    const removeDynamicRoutes = () => {
+      const routes = router.getRoutes()
+      routes.forEach((route: RouteRecordNormalized) => {
+        // 只删除标记为动态路由的路由
+        if (route.meta?.isDynamic && route.name) {
+          router.removeRoute(route.name)
+        }
+      })
     }
 
     const clearAuthInfo = () => {
@@ -59,6 +77,16 @@ export const useIamUserStore = defineStore(
         permissionCodeList: []
       }
       isAuthenticated.value = false
+      // 清除动态路由
+      removeDynamicRoutes()
+      // 重置路由为静态路由
+      menuRouters.value = constantRoute
+      routeError.value = null
+      // 清空标签页
+      import('@/modules/common/stores/Tab.store').then(({ useTabStore }) => {
+        const tabStore = useTabStore()
+        tabStore.clearTabs()
+      })
     }
 
     const setUserInfo = (userInfo: IamAuthCurrentUserResponseVo) => {
@@ -106,7 +134,9 @@ export const useIamUserStore = defineStore(
       }
 
       try {
-        const authInfo = await IamAuthApi.getAccessToken(auth.value.refreshToken)
+        const authInfo = await IamAuthApi.getAccessToken({
+          refreshToken: auth.value.refreshToken
+        })
         setAuthInfo({
           ...authInfo,
           refreshToken: auth.value.refreshToken
@@ -161,35 +191,64 @@ export const useIamUserStore = defineStore(
       return false
     }
 
+    /**
+     * 设置动态路由
+     * 添加了防重复调用机制和错误处理
+     */
     const setAsyncRoute = async (): Promise<boolean> => {
-      const constantRouteClone = cloneDeep(constantRoute)
-      const permissionTree: IamPermissionTreeSimpleResponseVo[] = (await IamPermissionApi.treeSimple({ id: 'manage_app' })).children
-
-      if (permissionTree.length === 0) {
-        return false
+      // 防重复调用：如果正在加载，返回同一个 Promise
+      if (routeLoading.value && routeLoadingPromise) {
+        return routeLoadingPromise
       }
 
-      const filterButtonTree = PermissionUtil.removeButtonNodes(permissionTree)
-      const filterPermissionTree = PermissionUtil.filterByPermissionCodes(filterButtonTree, permissions.value.permissionCodeList)
-      const permissionTreeRoutes = PermissionUtil.convertPermissionTreeToRoutes(filterPermissionTree)
+      routeLoading.value = true
+      routeError.value = null
 
-      const layoutRoute = constantRouteClone.find((route: ExtendedRouteRecordRaw) => route.meta?.code === 'LAYOUT')
+      routeLoadingPromise = (async (): Promise<boolean> => {
+        try {
+          // 先删除现有的动态路由
+          removeDynamicRoutes()
 
-      if (layoutRoute) {
-        layoutRoute.children.push(...permissionTreeRoutes)
-      }
+          const constantRouteClone = cloneDeep(constantRoute)
+          const permissionTree: IamPermissionTreeSimpleResponseVo[] = (await IamPermissionApi.treeSimple({ id: 'manage_app' })).children
 
-      const existingRoutes = router.getRoutes()
-      existingRoutes.forEach((route: RouteRecordNormalized) => {
-        if (route.name) router.removeRoute(route.name)
-      })
+          if (permissionTree.length === 0) {
+            routeError.value = new Error('权限树为空')
+            return false
+          }
 
-      constantRouteClone.forEach((route: ExtendedRouteRecordRaw) => {
-        router.addRoute(route)
-      })
+          const filterButtonTree = PermissionUtil.removeButtonNodes(permissionTree)
+          const filterPermissionTree = PermissionUtil.filterByPermissionCodes(filterButtonTree, permissions.value.permissionCodeList)
+          const permissionTreeRoutes = PermissionUtil.convertPermissionTreeToRoutes(filterPermissionTree)
 
-      menuRouters.value = router.getRoutes()
-      return true
+          const layoutRoute = constantRouteClone.find((route: ExtendedRouteRecordRaw) => route.meta?.code === 'LAYOUT')
+
+          if (layoutRoute) {
+            layoutRoute.children.push(...permissionTreeRoutes)
+          }
+
+          // 重新注册所有路由（静态路由 + 动态路由）
+          constantRouteClone.forEach((route: ExtendedRouteRecordRaw) => {
+            router.addRoute(route)
+          })
+
+          menuRouters.value = router.getRoutes()
+          return true
+        } catch (error) {
+          routeError.value = error as Error
+          console.error('路由加载失败:', {
+            error,
+            user: currentUser.value?.username,
+            timestamp: new Date().toISOString()
+          })
+          return false
+        } finally {
+          routeLoading.value = false
+          routeLoadingPromise = null
+        }
+      })()
+
+      return routeLoadingPromise
     }
 
     const getPermissionInfo = (): IamAuthCurrentUserFunctionPermissionResponseVo => {
@@ -204,6 +263,8 @@ export const useIamUserStore = defineStore(
       menuRouters,
       isAuthenticated,
       loading,
+      routeLoading,
+      routeError,
 
       // Actions
       setAuthInfo,
@@ -217,7 +278,8 @@ export const useIamUserStore = defineStore(
       getValidToken,
       initAsyncRoute,
       setAsyncRoute,
-      getPermissionInfo
+      getPermissionInfo,
+      removeDynamicRoutes
     }
   },
   {

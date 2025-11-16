@@ -87,7 +87,7 @@
         throw new Error('登录状态验证失败')
       }
 
-      await userStore.setAsyncRoute()
+      // login 方法内部已经调用了 setAsyncRoute，无需重复调用
       await handleSuccessfulLogin()
     } catch (err) {
       console.error('第三方登录回调处理失败:', err)

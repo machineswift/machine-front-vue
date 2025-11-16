@@ -1,6 +1,11 @@
 import request from '@/modules/common/utils/Request.util'
 import { IAM_API_BASE_URL } from '@/modules/common/constant/Common.constant'
-import type { IamAuthCaptchaResponseVo, IamAuthUsernameLoginRequestVo, IamAuthLoginResponseVo } from '@/modules/iam/auth/type/IamAuth.type'
+import type {
+  IamAuthCaptchaResponseVo,
+  IamAuthUsernameLoginRequestVo,
+  IamAuthLoginResponseVo,
+  IamAuthAccessTokenRequestVo
+} from '@/modules/iam/auth/type/IamAuth.type'
 
 // 获取图形验证码
 const getPictureCaptcha = async (): Promise<IamAuthCaptchaResponseVo> => {
@@ -17,11 +22,8 @@ const loginByUsername = async (params: IamAuthUsernameLoginRequestVo): Promise<I
 }
 
 // 获取 accessToken
-const getAccessToken = async (refreshToken: string): Promise<IamAuthLoginResponseVo> => {
-  return request.get<IamAuthLoginResponseVo>(IAM_API_BASE_URL + 'iam/auth/access_token', null, {
-    headers: {
-      Authorization: `Bearer ${refreshToken}`
-    },
+const getAccessToken = async (params: IamAuthAccessTokenRequestVo): Promise<IamAuthLoginResponseVo> => {
+  return request.post<IamAuthLoginResponseVo>(IAM_API_BASE_URL + 'iam/auth/access_token', params, {
     skipAuth: true
   })
 }
