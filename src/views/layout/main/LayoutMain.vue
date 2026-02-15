@@ -1,8 +1,8 @@
 <template>
   <router-view v-slot="{ Component, route }">
     <transition :name="route.meta.transition || 'fade-scale'" mode="out-in" @before-enter="beforeEnter" @after-enter="afterEnter">
-      <keep-alive :include="cachedViews">
-        <component :is="Component" :key="refreshKey" class="optimized-transition" v-if="flag" />
+      <keep-alive :include="cachedViews" :max="50">
+        <component :is="Component" :key="componentKey" class="optimized-transition" v-if="flag" />
       </keep-alive>
     </transition>
   </router-view>
@@ -12,7 +12,7 @@
   import { watch, ref, nextTick, computed } from 'vue'
   import { useRoute } from 'vue-router'
   import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
-  import { useTabStore } from '@/modules/common/stores/Tab.store'
+  import { useTabStore } from '@/modules/common/stores/LayoutTab.store'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
 
   const route = useRoute()
@@ -25,8 +25,32 @@
   const refreshKey = ref(0)
 
   // 计算需要缓存的视图名称列表
+  // 注意：keep-alive 的 include 需要匹配组件的 name 选项
+  // 由于 Vue 3 的 <script setup> 默认没有 name，我们需要确保路由 name 和组件 name 一致
+  // 或者使用路由 name 作为组件的 name（如果组件没有定义 name）
   const cachedViews = computed(() => {
-    return tabStore.tabs.filter(tab => tab.keepAlive && tab.name).map(tab => tab.name as string)
+    const views = tabStore.tabs
+      .filter(tab => tab.keepAlive !== false && tab.name) // 默认都缓存，除非明确设置为 false
+      .map(tab => tab.name as string)
+    // 如果没有任何需要缓存的视图，返回 undefined，让 keep-alive 缓存所有组件
+    return views.length > 0 ? views : undefined
+  })
+
+  // 使用路由 fullPath 作为 key，确保同一路由的组件实例保持一致
+  // 关键：只有在刷新时才改变 key，切换标签时保持相同的 key，这样组件不会被重新创建
+  const componentKey = computed(() => {
+    const currentTab = tabStore.tabs.find(tab => tab.fullPath === route.fullPath)
+    // 如果点击了刷新按钮，使用 refreshKey 强制刷新
+    if (settingStore.getIsRefresh()) {
+      return `refresh-${refreshKey.value}-${route.fullPath}`
+    }
+    // 否则使用路由 fullPath 作为 key，确保切换标签时组件不会重新创建
+    // 如果标签页存在且需要缓存，使用 fullPath 作为 key
+    if (currentTab && currentTab.keepAlive) {
+      return route.fullPath
+    }
+    // 如果不需要缓存，也使用 fullPath，但组件不会被 keep-alive 缓存
+    return route.fullPath
   })
 
   // 监听数据判断是否点击了刷新按钮

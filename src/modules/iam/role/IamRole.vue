@@ -2,7 +2,7 @@
   <div>
     <!-- 搜索卡片 -->
     <transition name="slide-fade">
-      <el-card class="box-card-form" v-show="state.showSearchCard">
+      <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
         <el-form :model="searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
           <!-- 表单项目组 - Modified for responsive layout -->
           <div class="form-items-group">
@@ -80,7 +80,7 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive">
+            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
               <el-date-picker
                 v-model="searchForm.createTimeRange"
                 type="daterange"
@@ -91,7 +91,7 @@
                 @change="handleCreateTimeRangeChange"
               />
             </el-form-item>
-            <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive">
+            <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
               <el-date-picker
                 v-model="searchForm.updateTimeRange"
                 type="daterange"
@@ -128,27 +128,47 @@
     <!-- 数据卡片 -->
     <el-card class="box-card-data">
       <!-- 操作按钮 -->
-      <div class="operation-buttons">
+      <div ref="operationButtonsRef" class="operation-buttons">
         <el-button type="primary" size="default" @click="openAddDialog" v-hasPermission="['SYSTEM:AUTH:ROLE:CREATE']">添加</el-button>
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
       <!-- 角色表格 -->
-      <el-table :data="state.roleList" border v-loading="state.isLoading" :height="state.dataCardHeight" style="margin: 10px 0" stripe highlight-current-row>
+      <el-table
+        :data="state.roleList"
+        border
+        v-loading="state.isLoading"
+        :height="tableHeight"
+        style="margin: 10px 0"
+        stripe
+        highlight-current-row
+        class="role-table"
+      >
         <el-table-column label="序号" align="center" type="index" width="60" fixed />
         <el-table-column prop="id" label="ID" align="center" v-if="false" fixed />
-        <el-table-column prop="name" label="角色名称" align="center" width="160" fixed />
-        <el-table-column label="角色编码" align="center" width="160">
+        <el-table-column prop="name" label="角色名称" align="center" width="160" fixed show-overflow-tooltip>
           <template #default="{ row }">
-            <el-tooltip :content="row.code" placement="top" :append-to-body="true">
-              <span style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%">
-                {{ row.code }}
-              </span>
+            <el-tooltip v-if="row.name" :content="row.name" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.name }}</span>
             </el-tooltip>
+            <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="type" label="角色类型" align="center" width="120">
-          <template #default="{ row }">{{ getRoleTypeLabel(row.type) }}</template>
+        <el-table-column label="角色编码" align="center" width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.code" :content="row.code" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.code }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="type" label="角色类型" align="center" width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="getRoleTypeLabel(row.type)" :content="getRoleTypeLabel(row.type)" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ getRoleTypeLabel(row.type) }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" align="center" width="120">
           <template #default="{ row }">
@@ -185,30 +205,55 @@
           </template>
         </el-table-column>
         <el-table-column prop="userNumber" label="用户数" align="center" width="100" />
-        <el-table-column prop="createName" label="创建人" align="center" width="160" />
+        <el-table-column prop="createName" label="创建人" align="center" width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.createName" :content="row.createName" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.createName }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" align="center" width="180">
           <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
         </el-table-column>
-        <el-table-column prop="updateName" label="修改人" align="center" width="160" />
+        <el-table-column prop="updateName" label="修改人" align="center" width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.updateName" :content="row.updateName" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.updateName }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
           <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="172" align="center" fixed="right">
+        <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
+            <div class="table-actions">
               <el-button size="small" @click="openDetailDialog(row)" v-hasPermission="['SYSTEM:AUTH:ROLE:DETAIL']">详情</el-button>
               <el-button size="small" type="primary" @click="openEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:ROLE:UPDATE']">编辑</el-button>
-              <el-button size="small" type="warning" @click="showPermissionDialog(row)" v-hasPermission="['SYSTEM:AUTH:ROLE:UPDATE_PERMISSION']">
-                修改权限
-              </el-button>
-              <template v-if="row.defaultRole">
-                <el-tooltip content="默认角色不可操作" placement="top">
-                  <el-button size="small" type="danger" disabled>删除</el-button>
-                </el-tooltip>
-              </template>
-              <template v-else>
-                <el-button size="small" type="danger" @click="handleDeleteRole(row)" v-hasPermission="['SYSTEM:AUTH:ROLE:DELETE']">删除</el-button>
-              </template>
+              <el-dropdown trigger="click" @command="command => handleRoleDropdownCommand(command, row)" placement="bottom-end">
+                <el-button size="small" type="info">
+                  更多
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="updatePermission" :disabled="!hasPermission(['SYSTEM:AUTH:ROLE:UPDATE_PERMISSION'])">
+                      <el-icon><Key /></el-icon>
+                      <span>修改权限</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="!row.defaultRole" command="delete" divided :disabled="!hasPermission(['SYSTEM:AUTH:ROLE:DELETE'])">
+                      <el-icon><Delete /></el-icon>
+                      <span>删除</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="row.defaultRole" disabled divided>
+                      <el-icon><Delete /></el-icon>
+                      <span>删除（默认角色不可操作）</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
         </el-table-column>
@@ -216,6 +261,7 @@
 
       <!-- 分页组件 -->
       <el-pagination
+        ref="paginationRef"
         v-model:current-page="pagination.current"
         v-model:page-size="pagination.size"
         :page-sizes="[20, 50, 100, 200, 500, 1000]"
@@ -249,9 +295,15 @@
 </template>
 
 <script setup lang="ts">
-  import { reactive, onMounted, ref, computed, watch } from 'vue'
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:AUTH:ROLE'
+  })
+  import { reactive, onMounted, ref, computed, watch, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Search, Refresh } from '@element-plus/icons-vue'
+  import { Search, Refresh, ArrowDown, Key, Delete } from '@element-plus/icons-vue'
+  import { hasPermission } from '@/modules/common/utils/Permission.util'
+  import { useWindowSize } from '@vueuse/core'
   import { IamRoleApi } from '@/modules/iam/role/api/IamRole.api'
   import IamRoleAddDialog from '@/modules/iam/role/IamRoleAddDialog.vue'
   import IamRoleDetailDialog from '@/modules/iam/role/IamRoleDetailDialog.vue'
@@ -276,7 +328,6 @@
     isLoading: false,
     showSearchCard: true,
     selectedRoleId: '',
-    dataCardHeight: 'calc(100vh - 400px)',
 
     //枚举状态
     roleStatus: [],
@@ -323,6 +374,31 @@
   })
 
   const searchFormRef = ref()
+  const searchCardRef = ref<HTMLElement | null>(null)
+  const operationButtonsRef = ref<HTMLElement | null>(null)
+  const paginationRef = ref<HTMLElement | null>(null)
+
+  // 表格高度计算
+  const { height: windowHeight } = useWindowSize()
+  const tableHeight = ref<number>(540)
+
+  const calculateTableHeight = async () => {
+    await nextTick()
+    if (!windowHeight.value) return
+
+    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
+    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
+    const paginationHeight = paginationRef.value?.offsetHeight || 60
+    const paginationSpacing = paginationHeight > 0 ? 8 : 0
+    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
+    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
+    const availableHeight = windowHeight.value - reservedHeight
+    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
+    tableHeight.value = Math.max(400, availableHeight)
+  }
+
+  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
 
   // 计算属性
   const selectedCreateUserIds = computed({
@@ -348,16 +424,6 @@
   const formatTimestamp = (timestamp: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
-
-  watch(
-    () => state.showSearchCard,
-    newVal => {
-      setTimeout(() => {
-        state.dataCardHeight = newVal ? 'calc(100vh - 400px)' : 'calc(100vh - 200px)'
-      }, 80)
-    },
-    { immediate: false }
-  )
 
   // 业务逻辑
   const buildQueryParams = (): IamRoleQueryPageRequestVo => {
@@ -444,6 +510,15 @@
   const showPermissionDialog = (row: IamRoleExpandListResponseVo) => {
     state.selectedRoleId = row.id
     state.dialog.editPermissionVisible = true
+  }
+
+  /** 处理角色下拉菜单命令 */
+  const handleRoleDropdownCommand = (command: string, row: IamRoleExpandListResponseVo) => {
+    const commandMap: Record<string, () => void> = {
+      updatePermission: () => showPermissionDialog(row),
+      delete: () => handleDeleteRole(row)
+    }
+    commandMap[command]?.()
   }
 
   const handleAddSuccess = (): void => fetchData()
@@ -581,11 +656,36 @@
 
         .form-item-responsive {
           margin-bottom: 8px;
-          flex: 1 1 320px;
-          min-width: 120px;
-          max-width: 320px;
+          flex: 1 1 280px;
+          min-width: 100px;
+          max-width: 280px;
+
           &.user-selector {
-            min-width: 320px;
+            min-width: 280px;
+
+            // 优化标签间距
+            :deep(.el-select__tags) {
+              .el-tag {
+                margin-right: 4px;
+                margin-left: 0;
+                padding: 0 6px;
+
+                &:first-child {
+                  margin-left: 0;
+                }
+              }
+            }
+          }
+
+          // 创建时间和修改时间字段特殊宽度
+          &.form-item-date-picker {
+            flex: 1 1 320px;
+            max-width: 320px;
+
+            :deep(.el-date-editor) {
+              width: 100%;
+              max-width: 320px;
+            }
           }
         }
       }
@@ -636,6 +736,51 @@
       margin: 4px;
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    :deep(.el-button) {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    :deep(.el-dropdown) {
+      margin-left: 2px;
+    }
+  }
+
+  // 优化表格行高
+  .role-table {
+    :deep(.el-table__body) {
+      td {
+        padding: 8px 0;
+      }
+    }
+
+    :deep(.el-table__header) {
+      th {
+        padding: 8px 0;
+      }
+    }
+
+    // 文本省略样式
+    .text-ellipsis {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
     }
   }
 </style>

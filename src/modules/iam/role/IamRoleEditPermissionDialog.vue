@@ -143,13 +143,16 @@
   })
 
   const getResourceTypeTag = (type?: string | null) => {
+    if (!type) return 'info'
     const enumItem = enumStore.getEnumItemByCodeSync('IamPermissionResourceTypeEnum', type)
-    return RESOURCE_TYPE_TAG_MAP[enumItem.code]
+    if (!enumItem || !enumItem.code) return 'info'
+    return RESOURCE_TYPE_TAG_MAP[enumItem.code] || 'info'
   }
 
   const getResourceTypeText = (type?: string | null) => {
+    if (!type) return '-'
     const enumItem = enumStore.getEnumItemByCodeSync('IamPermissionResourceTypeEnum', type)
-    return enumItem.message
+    return enumItem?.message || type || '-'
   }
 
   const onPermissionQueryChanged = () => {

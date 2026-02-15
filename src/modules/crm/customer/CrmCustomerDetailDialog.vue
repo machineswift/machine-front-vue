@@ -75,7 +75,7 @@
   // 获取客户性别标签
   const getCustomerGenderLabel = (type?: string): string => {
     if (!type) return '无'
-    const enumItem = enumStore.getEnumItemByCodeSync('CrmGenderEnum', type)
+    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
     return enumItem?.message || type
   }
 

@@ -7,6 +7,7 @@ import type {
   IamUserUpdatePhoneRequestVo,
   IamUserUpdatePasswordRequestVo,
   IamUserQueryPageRequestVo,
+  IamUserExportRequestVo,
   IamUserDetailResponseVo,
   IamUserSimplePageResponse,
   IamUserExpandPageResponse,
@@ -58,6 +59,11 @@ const pageExpand = async (params: IamUserQueryPageRequestVo): Promise<IamUserExp
   return request.post<IamUserExpandPageResponse>(IAM_API_BASE_URL + 'iam/user/page_expand', params)
 }
 
+// 导出（按条件或按选中 userIdSet，任务创建后到下载中心查看）
+const exportUser = async (params: IamUserExportRequestVo): Promise<void> => {
+  return request.post<void>(IAM_API_BASE_URL + 'iam/user/export', params)
+}
+
 export const IamUserApi = {
   create,
   update,
@@ -67,5 +73,6 @@ export const IamUserApi = {
   updatePermission,
   detail,
   pageSimple,
-  pageExpand
+  pageExpand,
+  exportUser
 }

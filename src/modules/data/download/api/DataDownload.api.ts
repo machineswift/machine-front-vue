@@ -5,17 +5,17 @@ import type { QueryDownloadDetailResponseVo, DataDownloadPageRequestVo, DataData
 
 // 创建
 const retry = async (params: IdResponse): Promise<void> => {
-  return request.post<void>(MANAGE_API_BASE_URL + 'manage/data/download/retry', params)
+  return request.post<void>(MANAGE_API_BASE_URL + 'manage/data/file/download/retry', params)
 }
 
 // 详情
 const detail = async (params: IdRequest): Promise<QueryDownloadDetailResponseVo> => {
-  return request.post<QueryDownloadDetailResponseVo>(MANAGE_API_BASE_URL + 'manage/data/download/detail', params)
+  return request.post<QueryDownloadDetailResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file/download/detail', params)
 }
 
 // 分页查询(应用于角色管理菜单)
 const pageExpand = async (params: DataDownloadPageRequestVo): Promise<DataDataDownloadPageResponse> => {
-  return request.post<DataDataDownloadPageResponse>(MANAGE_API_BASE_URL + 'manage/data/download/page_expand', params)
+  return request.post<DataDataDownloadPageResponse>(MANAGE_API_BASE_URL + 'manage/data/file/download/page_expand', params)
 }
 
 export const DataDownloadApi = {

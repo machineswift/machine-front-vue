@@ -82,7 +82,7 @@
   // 获取会员性别标签
   const getMemberGenderLabel = (type?: string): string => {
     if (!type) return '无'
-    const enumItem = enumStore.getEnumItemByCodeSync('CrmGenderEnum', type)
+    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
     return enumItem?.message || type
   }
 

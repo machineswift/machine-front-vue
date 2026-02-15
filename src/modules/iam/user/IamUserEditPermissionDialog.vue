@@ -25,8 +25,9 @@
               />
             </div>
             <el-tree-v2
+              :key="`tree-${option.code}-${state.organizationTreeOptionsMap.get(option.code)?.length || 0}`"
               :ref="el => setOrganizationTreeRef(option.code, el)"
-              :data="state.organizationTreeOptionsMap.get(option.code)"
+              :data="state.organizationTreeOptionsMap.get(option.code) || []"
               :props="state.organizationProps"
               :filter-method="organizationFilterMethod"
               @check="(node, data) => handleOrganizationCheckChange(option.code, data.checkedNodes)"
@@ -122,7 +123,7 @@
 
 <script setup lang="ts">
   import { debounce } from 'lodash-es'
-  import { ref, reactive, watch, computed } from 'vue'
+  import { ref, reactive, watch, computed, nextTick } from 'vue'
   import { ElMessage, ElMessageBox, ElTreeV2 } from 'element-plus'
   import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
@@ -222,9 +223,7 @@
   const setOrganizationTreeRef = (code: string, el: InstanceType<typeof ElTreeV2>) => {
     if (!el) return
     organizationTreeRefMap.value.set(code, el)
-    if (state.organizationDefaultExpandedKeysMap.has(code)) {
-      el.setExpandedKeys(state.organizationDefaultExpandedKeysMap.get(code)!)
-    }
+    // 移除这里的 setExpandedKeys，因为已经使用了 default-expanded-keys
   }
 
   const handleOrganizationQueryChange = debounce((orgType: string, query: string) => {
@@ -424,16 +423,21 @@
         }))
         .sort((a, b) => (b.sort || 0) - (a.sort || 0))
 
-      // 设置组织状态数据
+      // 设置组织状态数据 - 使用 nextTick 避免递归更新
+      await nextTick()
       state.organizationTypeOptions?.forEach(option => {
         const orgType = option.code
         const treeData = state.organizationTreeOptionsMap.get(orgType)
+        if (!treeData || treeData.length === 0) return
+
         const organizationIdSet: string[] = state.formData.organizationIdMap.get(orgType) || []
 
         // 设置选中状态
         if (organizationIdSet?.length > 0) {
           const checkedKeys = TreeDataUtil.getAllChildrenIdsIncludingSelf(treeData, organizationIdSet)
           state.organizationDefaultCheckedKeysMap.set(orgType, checkedKeys)
+        } else {
+          state.organizationDefaultCheckedKeysMap.set(orgType, [])
         }
 
         // 设置展开状态
@@ -442,6 +446,10 @@
           const allParentNodes = TreeDataUtil.getAllParentNodes(treeData, organizationIdSet)
           const expandedKeys = allParentNodes.filter(node => rootNodeIds.includes(node.id) || !organizationIdSet.includes(node.id)).map(node => node.id)
           state.organizationDefaultExpandedKeysMap.set(orgType, expandedKeys)
+        } else {
+          // 如果没有选中项，至少展开根节点
+          const rootNodeIds = treeData.map(root => root.id)
+          state.organizationDefaultExpandedKeysMap.set(orgType, rootNodeIds)
         }
       })
     } catch (error) {
@@ -475,15 +483,8 @@
             })
           )
 
-          // 设置默认展开的节点
-          state.organizationTypeOptions.forEach(option => {
-            const treeData = state.organizationTreeOptionsMap.get(option.code)
-            state.organizationDefaultExpandedKeysMap.set(
-              option.code,
-              treeData.map(root => root.id)
-            )
-          })
-
+          // 等待 DOM 更新后再初始化数据，避免递归更新
+          await nextTick()
           await initData()
         } catch (error) {
           console.error('加载权限数据失败:', error)

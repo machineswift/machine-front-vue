@@ -5,7 +5,7 @@ export interface AppSetting {
 }
 
 const appSetting: AppSetting = {
-  logo: '/src/assets/images/logo.png',
+  logo: '/logo.png',
   title: 'machine',
   logoHidden: true
 }

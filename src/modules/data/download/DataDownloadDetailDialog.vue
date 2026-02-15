@@ -14,31 +14,37 @@
       <el-descriptions-item label="任务ID">
         {{ state.detailData.id || '-' }}
       </el-descriptions-item>
+      <el-descriptions-item label="模块">
+        {{ getModuleLabel(state.detailData.module) }}
+      </el-descriptions-item>
+      <el-descriptions-item label="实体">
+        {{ getEntityLabel(state.detailData.entity) }}
+      </el-descriptions-item>
+      <el-descriptions-item label="文件名称">
+        {{ state.detailData.attachmentOriginalName || '-' }}
+      </el-descriptions-item>
+      <el-descriptions-item label="文件类型">
+        {{ state.detailData.fileType ? getFileTypeLabel(state.detailData.fileType) : '-' }}
+      </el-descriptions-item>
       <el-descriptions-item label="状态">
         <el-tag :type="getDownloadStatusTagType(state.detailData.status)">
           {{ getStatusText(state.detailData.status) }}
         </el-tag>
       </el-descriptions-item>
-      <el-descriptions-item label="文件名称">
-        {{ state.detailData.attachment?.name || '-' }}
-      </el-descriptions-item>
       <el-descriptions-item label="文件大小">
-        {{ formatFileSize(state.detailData.attachment?.size || 0) }}
-      </el-descriptions-item>
-      <el-descriptions-item label="文件类型">
-        {{ state.detailData.attachment?.type || '-' }}
+        {{ formatFileSize(state.detailData.attachmentSize || 0) }}
       </el-descriptions-item>
       <el-descriptions-item label="失败原因" span="2" v-if="state.detailData.failCause">
         {{ state.detailData.failCause }}
       </el-descriptions-item>
       <el-descriptions-item label="创建人">
-        {{ state.detailData.createName || state.detailData.createBy || '无' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="更新人">
-        {{ state.detailData.updateName || state.detailData.updateBy || '无' }}
+        {{ state.detailData.createBy || '无' }}
       </el-descriptions-item>
       <el-descriptions-item label="创建时间">
         {{ formatTime(state.detailData.createTime) }}
+      </el-descriptions-item>
+      <el-descriptions-item label="更新人">
+        {{ state.detailData.updateBy || '无' }}
       </el-descriptions-item>
       <el-descriptions-item label="更新时间">
         {{ formatTime(state.detailData.updateTime) }}
@@ -56,6 +62,7 @@
   import { ElMessage } from 'element-plus'
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
   import type { QueryDownloadDetailResponseVo } from '@/modules/data/download/type/DataDownload.type'
+  import { DATA_FILE_TYPE_LABEL_MAP } from '@/modules/data/download/type/DataDownload.type'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
 
   // 组合式函数
@@ -79,17 +86,15 @@
     detailData: {
       id: '',
       status: null as string | null,
-      attachment: {
-        id: '',
-        name: '',
-        size: 0,
-        type: null as string | null
-      },
+      module: undefined as string | undefined,
+      entity: undefined as string | undefined,
+      attachmentId: '',
+      fileType: null as string | null,
+      attachmentOriginalName: '',
+      attachmentSize: 0,
       failCause: '',
-      createName: '',
       createBy: '',
       createTime: 0,
-      updateName: '',
       updateBy: '',
       updateTime: 0
     } as QueryDownloadDetailResponseVo
@@ -128,6 +133,23 @@
     return enumItem?.message || status
   }
 
+  const getFileTypeLabel = (type: string): string => {
+    const enumItem = enumStore.getEnumItemByCodeSync('DataFileTypeEnum', type)
+    return enumItem?.message ?? DATA_FILE_TYPE_LABEL_MAP[type] ?? type
+  }
+
+  const getModuleLabel = (code?: string): string => {
+    if (!code) return '-'
+    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEnum', code)
+    return enumItem?.message ?? code
+  }
+
+  const getEntityLabel = (code?: string): string => {
+    if (!code) return '-'
+    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEntityEnum', code)
+    return enumItem?.message ?? code
+  }
+
   // 获取详情
   const fetchDetail = async () => {
     try {
@@ -148,17 +170,15 @@
     state.detailData = {
       id: '',
       status: null as string | null,
-      attachment: {
-        id: '',
-        name: '',
-        size: 0,
-        type: null as string | null
-      },
+      module: undefined as string | undefined,
+      entity: undefined as string | undefined,
+      attachmentId: '',
+      fileType: null as string | null,
+      attachmentOriginalName: '',
+      attachmentSize: 0,
       failCause: '',
-      createName: '',
       createBy: '',
       createTime: 0,
-      updateName: '',
       updateBy: '',
       updateTime: 0
     }
@@ -173,6 +193,7 @@
     [() => props.modelValue, () => props.downloadId],
     async ([modelValue, downloadId]) => {
       if (modelValue && downloadId) {
+        await Promise.all([enumStore.getEnumDataAsync('ModuleEnum'), enumStore.getEnumDataAsync('ModuleEntityEnum')])
         await fetchDetail()
       }
     },

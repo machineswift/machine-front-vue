@@ -3,6 +3,7 @@ import { scmRoutes } from './scm'
 import { crmRoutes } from './crm'
 import { biRoutes } from './bi'
 import { systemRoutes } from './system'
+import { pceRoutes } from './pce'
 
 export const asyncRoute: ExtendedRouteRecordRaw[] = [
   // 财务管理模块（预留）
@@ -35,6 +36,8 @@ export const asyncRoute: ExtendedRouteRecordRaw[] = [
   ...crmRoutes,
   // 商业智能模块
   ...biRoutes,
+  // 流程中心模块
+  ...pceRoutes,
   // 系统管理模块
   ...systemRoutes
 ]

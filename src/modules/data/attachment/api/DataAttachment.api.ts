@@ -11,13 +11,13 @@ import type {
 } from '../type/DataAttachment.type'
 
 const upload = async (params: DataAttachmentUploadParams): Promise<IdResponse> => {
-  return request.upload<IdResponse>(MANAGE_API_BASE_URL + 'manage/data/attachment/upload', params.file, {
+  return request.upload<IdResponse>(MANAGE_API_BASE_URL + 'manage/data/file/attachment/upload', params.file, {
     AttachmentType: params.AttachmentType
   })
 }
 
 const uploadImage = async (params: DataAttachmentUploadImageParams): Promise<IdResponse> => {
-  return request.upload<IdResponse>(MANAGE_API_BASE_URL + 'manage/data/attachment/upload_image', params.file, {
+  return request.upload<IdResponse>(MANAGE_API_BASE_URL + 'manage/data/file/attachment/upload_image', params.file, {
     thumbnailWeight: params.thumbnailWeight,
     thumbnailHeight: params.thumbnailHeight,
     AttachmentType: params.AttachmentType
@@ -25,25 +25,25 @@ const uploadImage = async (params: DataAttachmentUploadImageParams): Promise<IdR
 }
 
 const getUrl = async (attachmentId: string, expireSecond?: number): Promise<DataAttachmentUrlResponseVo> => {
-  return request.get<DataAttachmentUrlResponseVo>(MANAGE_API_BASE_URL + 'manage/data/attachment/get_url', {
+  return request.get<DataAttachmentUrlResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file/attachment/get_url', {
     attachmentId,
     expireSecond
   })
 }
 
 const getThumbnailUrl = async (AttachmentId: string, expireSecond?: number): Promise<DataAttachmentUrlResponseVo> => {
-  return request.get<DataAttachmentUrlResponseVo>(MANAGE_API_BASE_URL + 'manage/data/attachment/get_thumbnail_url', {
+  return request.get<DataAttachmentUrlResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file/attachment/get_thumbnail_url', {
     AttachmentId,
     expireSecond
   })
 }
 
 const detail = async (params: IdRequest): Promise<DataAttachmentDetailResponseVo> => {
-  return request.post<DataAttachmentDetailResponseVo>(MANAGE_API_BASE_URL + 'manage/data/attachment/detail', params)
+  return request.post<DataAttachmentDetailResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file/attachment/detail', params)
 }
 
 const pageExpand = async (params: DataAttachmentQueryPageRequestVo): Promise<DataAttachmentExpandPageResponse> => {
-  return request.post<DataAttachmentExpandPageResponse>(MANAGE_API_BASE_URL + 'manage/data/attachment/page_expand', params)
+  return request.post<DataAttachmentExpandPageResponse>(MANAGE_API_BASE_URL + 'manage/data/file/attachment/page_expand', params)
 }
 
 export const DataAttachmentApi = {

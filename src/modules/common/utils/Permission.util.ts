@@ -1,5 +1,6 @@
 import { cloneDeep } from 'lodash'
 import { routeLookup } from '@/modules/common/utils/RouteLookup.util'
+import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
 import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
 import type { IamPermissionTreeSimpleResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
 
@@ -96,6 +97,36 @@ export class PermissionUtil {
     }
 
     return resultRoutes
+  }
+}
+
+/**
+ * 检查用户是否拥有指定权限
+ * @param permissions 权限编码（单个字符串或字符串数组）
+ * @returns 如果传入数组，任一权限满足即返回 true；如果传入字符串，该权限满足即返回 true
+ *
+ * @example
+ * ```ts
+ * // 检查单个权限
+ * if (hasPermission('SYSTEM:BASIC_DATA:TAG:CREATE')) {
+ *   // 有权限
+ * }
+ *
+ * // 检查多个权限（任一满足即可）
+ * if (hasPermission(['SYSTEM:BASIC_DATA:TAG:CREATE', 'SYSTEM:BASIC_DATA:TAG:UPDATE'])) {
+ *   // 有任一权限
+ * }
+ * ```
+ */
+export function hasPermission(permissions: string | string[]): boolean {
+  try {
+    const iamUserStore = useIamUserStore()
+    const { permissionCodeList } = iamUserStore.getPermissionInfo()
+    const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions]
+    return requiredPermissions.some((permission: string) => permissionCodeList.includes(permission))
+  } catch (error) {
+    console.error('权限检查失败:', error)
+    return false
   }
 }
 

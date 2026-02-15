@@ -24,11 +24,7 @@
 
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item>Action 1</el-dropdown-item>
-        <el-dropdown-item>Action 2</el-dropdown-item>
-
-        <el-dropdown-item disabled>Action 4</el-dropdown-item>
-
+        <el-dropdown-item>action</el-dropdown-item>
         <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -38,7 +34,7 @@
 <script setup lang="ts">
   import { ref } from 'vue'
   import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
-  import { useIamUserStore } from '@/modules/iam/stores/IamUser.store'
+  import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
   import { ArrowDown } from '@element-plus/icons-vue'
 
   const userStore = useIamUserStore()
@@ -83,10 +79,29 @@
 
 <style scoped lang="scss">
   .dropdown {
-    margin: 0 0 0 10px;
+    margin: 0 0 0 8px;
+
+    .el-dropdown-link {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: var(--el-border-color);
+      }
+    }
 
     .el-icon--right {
-      margin-right: 5px;
+      margin-left: 4px;
+      transition: transform 0.2s;
+    }
+
+    &:hover .el-icon--right {
+      transform: rotate(180deg);
     }
   }
 </style>

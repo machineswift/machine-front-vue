@@ -2,7 +2,7 @@
   <div>
     <!-- 搜索卡片 -->
     <transition name="slide-fade">
-      <el-card class="box-card-form" v-show="state.showSearchCard">
+      <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
         <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
           <div class="form-items-group">
             <el-form-item label="操作人:" prop="operatorIdSet" class="form-item-responsive user-selector">
@@ -31,16 +31,6 @@
                 </template>
               </el-select>
             </el-form-item>
-            <el-form-item label="登录时间:" prop="timeRange" class="form-item-responsive">
-              <el-date-picker
-                v-model="state.searchForm.timeRange"
-                type="datetimerange"
-                range-separator="至"
-                start-placeholder="开始时间"
-                end-placeholder="结束时间"
-                value-format="x"
-              />
-            </el-form-item>
             <el-form-item label="认证动作:" prop="authAction" class="form-item-responsive">
               <el-select v-model="state.searchForm.authAction" placeholder="选择认证动作" clearable>
                 <el-option v-for="option in state.authActionOptions" :key="option.code" :label="option.message" :value="option.code" />
@@ -55,6 +45,16 @@
               <el-select v-model="state.searchForm.authResult" placeholder="选择认证结果" clearable>
                 <el-option v-for="option in state.authResultOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
+            </el-form-item>
+            <el-form-item label="登录时间:" prop="timeRange" class="form-item-responsive form-item-date-picker">
+              <el-date-picker
+                v-model="state.searchForm.timeRange"
+                type="datetimerange"
+                range-separator="至"
+                start-placeholder="开始时间"
+                end-placeholder="结束时间"
+                value-format="x"
+              />
             </el-form-item>
           </div>
 
@@ -81,12 +81,12 @@
 
     <!-- 数据卡片 -->
     <el-card class="box-card-data">
-      <div class="operation-buttons">
+      <div ref="operationButtonsRef" class="operation-buttons">
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
       <!-- 数据表格 -->
-      <el-table :data="state.tableData" border style="margin: 10px 0" v-loading="state.isLoading" :height="state.tableHeight" stripe highlight-current-row>
+      <el-table :data="state.tableData" border style="margin: 10px 0" v-loading="state.isLoading" :height="tableHeight" stripe highlight-current-row>
         <el-table-column label="序号" align="center" type="index" width="60" fixed />
         <el-table-column prop="username" label="用户名" align="center" width="120" fixed />
         <el-table-column prop="name" label="姓名" align="center" width="100" />
@@ -113,23 +113,40 @@
         </el-table-column>
 
         <el-table-column prop="ipAddress" label="IP地址" align="center" width="140" />
-        <el-table-column prop="platform" label="平台" align="center" width="120" />
-        <el-table-column prop="failReason" label="失败原因" align="center" width="240" />
+        <el-table-column prop="platform" label="平台" align="center" width="120">
+          <template #default="{ row }">
+            <el-tooltip v-if="row.platform" :content="row.platform" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.platform }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="failReason" label="失败原因" align="center" width="300" min-width="240">
+          <template #default="{ row }">
+            <el-tooltip v-if="row.failReason" :content="row.failReason" placement="top" :append-to-body="true" :show-after="200">
+              <span class="text-ellipsis">{{ row.failReason }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="updateName" label="操作人" align="center" width="120" />
 
-        <el-table-column prop="createTime" label="登录时间" align="center" width="160">
+        <el-table-column prop="createTime" label="登录时间" align="center" width="180">
           <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
         </el-table-column>
 
-        <el-table-column label="操作" align="center" width="100" fixed="right">
+        <el-table-column label="操作" align="center" width="120" fixed="right">
           <template #default="{ row }">
-            <el-button size="default" @click="showDetail(row)" v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:DETAIL']">详情</el-button>
+            <div class="table-actions">
+              <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:DETAIL']">详情</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
       <el-pagination
+        ref="paginationRef"
         v-model:current-page="state.pagination.current"
         v-model:page-size="state.pagination.size"
         :page-sizes="[20, 50, 100, 200, 500, 1000]"
@@ -156,12 +173,17 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, reactive, ref, watch, computed } from 'vue'
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:AUTH:LOGIN_LOG'
+  })
+  import { onMounted, reactive, ref, computed, watch, nextTick } from 'vue'
   import type { FormInstance } from 'element-plus'
   import { Refresh, Search } from '@element-plus/icons-vue'
   import IamUserLoginLogDetail from '@/modules/iam/loginLog/IamUserLoginLogDetail.vue'
   import { IamUserLoginLogApi } from '@/modules/iam/loginLog/api/IamUserLoginLog.api'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useWindowSize } from '@vueuse/core'
   import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
   import type { IamUserLoginLogExpandListResponseVo, IamUserLoginLogExpandPageResponse, IamUserLoginLogQueryPageRequestVo } from '@/modules/iam/types'
   import IamUserQuickSelectDialog from '@/modules/iam/user/IamUserQuickSelectDialog.vue'
@@ -176,7 +198,6 @@
     showSearchCard: true,
     detailVisible: false,
     operatorDialogVisible: false,
-    tableHeight: 'calc(100vh - 420px)',
 
     // 状态枚举
     authActionOptions: [] as IamDictionaryEnumInfoResponse[],
@@ -204,6 +225,31 @@
   })
 
   const searchFormRef = ref<FormInstance>()
+  const searchCardRef = ref<HTMLElement | null>(null)
+  const operationButtonsRef = ref<HTMLElement | null>(null)
+  const paginationRef = ref<HTMLElement | null>(null)
+
+  // 表格高度计算
+  const { height: windowHeight } = useWindowSize()
+  const tableHeight = ref<number>(560)
+
+  const calculateTableHeight = async () => {
+    await nextTick()
+    if (!windowHeight.value) return
+
+    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
+    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
+    const paginationHeight = paginationRef.value?.offsetHeight || 60
+    const paginationSpacing = paginationHeight > 0 ? 8 : 0
+    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
+    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
+    const availableHeight = windowHeight.value - reservedHeight
+    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
+    tableHeight.value = Math.max(400, availableHeight)
+  }
+
+  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
 
   // 计算属性 - 操作人ID集合
   const selectedOperatorIds = computed({
@@ -212,16 +258,6 @@
       state.selectedOperators = newIds.map(id => state.selectedOperators.find(user => user.id === id) || { id })
     }
   })
-
-  watch(
-    () => state.showSearchCard,
-    newVal => {
-      setTimeout(() => {
-        state.tableHeight = newVal ? 'calc(100vh - 420px)' : 'calc(100vh - 200px)'
-      }, 80)
-    },
-    { immediate: false }
-  )
 
   // 业务逻辑
   const fetchData = async (): Promise<void> => {
@@ -353,12 +389,36 @@
 
         .form-item-responsive {
           margin-bottom: 8px;
-          flex: 1 1 320px;
-          min-width: 120px;
-          max-width: 320px;
+          flex: 1 1 280px;
+          min-width: 100px;
+          max-width: 280px;
 
           &.user-selector {
-            min-width: 320px;
+            min-width: 280px;
+
+            // 优化标签间距
+            :deep(.el-select__tags) {
+              .el-tag {
+                margin-right: 4px;
+                margin-left: 0;
+                padding: 0 6px;
+
+                &:first-child {
+                  margin-left: 0;
+                }
+              }
+            }
+          }
+
+          // 登录时间字段特殊宽度
+          &.form-item-date-picker {
+            flex: 1 1 320px;
+            max-width: 320px;
+
+            :deep(.el-date-editor) {
+              width: 100%;
+              max-width: 320px;
+            }
           }
         }
       }
@@ -405,5 +465,29 @@
         margin-left: 8px;
       }
     }
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    :deep(.el-button) {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  .text-ellipsis {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
   }
 </style>

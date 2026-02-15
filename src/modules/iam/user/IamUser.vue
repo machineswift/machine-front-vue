@@ -16,14 +16,14 @@
             :filter-method="organizationFilterMethod"
             @check="handleOrganizationCheck"
             show-checkbox
-            :height="760"
+            :height="700"
           />
         </el-card>
       </el-splitter-panel>
       <el-splitter-panel :min="200">
         <!-- 搜索卡片 -->
         <transition name="slide-fade">
-          <el-card class="box-card-form" v-show="state.showSearchCard">
+          <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
             <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
               <div class="form-items-group">
                 <el-form-item label="角色:" prop="roleIdSet" class="form-item-responsive role-selector">
@@ -90,7 +90,7 @@
                   </el-select>
                 </el-form-item>
 
-                <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive">
+                <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
                   <el-date-picker
                     v-model="state.searchForm.createTimeRange"
                     type="daterange"
@@ -102,7 +102,7 @@
                   />
                 </el-form-item>
 
-                <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive">
+                <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
                   <el-date-picker
                     v-model="state.searchForm.updateTimeRange"
                     type="daterange"
@@ -134,17 +134,44 @@
 
         <!-- 数据卡片 -->
         <el-card class="box-card-data">
-          <div class="operation-buttons">
-            <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:AUTH:USER:CREATE']">添加</el-button>
+          <div ref="operationButtonsRef" class="operation-buttons">
+            <div class="operation-buttons-left">
+              <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:AUTH:USER:CREATE']">添加</el-button>
+              <el-dropdown trigger="click" @command="handleExportCommand" v-hasPermission="['SYSTEM:AUTH:USER:EXPORT']">
+                <el-button type="primary" size="default">
+                  导出
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="currentList">当前列表</el-dropdown-item>
+                    <el-dropdown-item command="currentSelected" :disabled="selectedRowCount === 0">当前选中</el-dropdown-item>
+                    <el-dropdown-item command="currentCondition" divided>当前条件</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
             <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
           </div>
 
-          <el-table :data="state.tableData" border style="margin: 10px 0" v-loading="state.loading" :height="state.dataCardHeight" stripe highlight-current-row>
+          <el-table
+            ref="tableRef"
+            :data="state.tableData"
+            border
+            style="margin: 10px 0"
+            v-loading="state.loading"
+            :height="tableHeight"
+            stripe
+            highlight-current-row
+            row-key="id"
+            @selection-change="handleSelectionChange"
+          >
+            <el-table-column type="selection" width="55" align="center" :reserve-selection="true" fixed />
             <el-table-column label="序号" align="center" type="index" width="60" fixed></el-table-column>
             <el-table-column prop="id" label="ID" align="center" v-if="false" fixed></el-table-column>
             <el-table-column prop="username" label="用户名" align="center" width="160" fixed></el-table-column>
             <el-table-column prop="name" label="姓名" align="center" width="120"></el-table-column>
-            <el-table-column prop="code" label="编码" align="center" width="120"></el-table-column>
+            <el-table-column prop="code" label="编码" align="center" width="180"></el-table-column>
             <el-table-column prop="status" label="状态" align="center" width="120">
               <template #default="{ row }">
                 <el-switch
@@ -160,7 +187,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="phone" label="手机号" align="center" width="120"></el-table-column>
-            <el-table-column prop="gender" label="性别" align="center" width="80">
+            <el-table-column prop="gender" label="性别" align="center" width="120">
               <template #default="{ row }">
                 {{ getUserGenderLabel(row.gender) }}
               </template>
@@ -176,22 +203,40 @@
                 {{ formatTimestamp(row.updateTime) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" align="center" width="230" fixed="right">
+            <el-table-column label="操作" align="center" width="200" fixed="right">
               <template #default="{ row }">
-                <el-button size="small" @click="showDetailDialog(row)">详情</el-button>
-                <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE']">编辑</el-button>
-                <el-button size="small" type="warning" @click="showPhoneDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_PHONE']">修改手机号</el-button>
-                <el-button size="small" type="warning" @click="showPermissionDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_PERMISSION']">
-                  修改权限
-                </el-button>
-                <el-button size="small" type="danger" @click="showPasswordDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_PASSWORD']">
-                  修改密码
-                </el-button>
+                <div class="table-actions">
+                  <el-button size="small" @click="showDetailDialog(row)">详情</el-button>
+                  <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE']">编辑</el-button>
+                  <el-dropdown trigger="click" @command="command => handleUserDropdownCommand(command, row)" placement="bottom-end">
+                    <el-button size="small" type="info">
+                      更多
+                      <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="updatePhone" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PHONE'])">
+                          <el-icon><Phone /></el-icon>
+                          <span>修改手机号</span>
+                        </el-dropdown-item>
+                        <el-dropdown-item command="updatePermission" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PERMISSION'])">
+                          <el-icon><Key /></el-icon>
+                          <span>修改权限</span>
+                        </el-dropdown-item>
+                        <el-dropdown-item command="updatePassword" divided :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PASSWORD'])">
+                          <el-icon><Lock /></el-icon>
+                          <span>修改密码</span>
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
               </template>
             </el-table-column>
           </el-table>
 
           <el-pagination
+            ref="paginationRef"
             v-model:current-page="state.pagination.current"
             v-model:page-size="state.pagination.size"
             :page-sizes="[20, 50, 100, 200, 500, 1000]"
@@ -224,16 +269,24 @@
 </template>
 
 <script setup lang="ts">
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:AUTH:USER'
+  })
   import { ElTreeV2 } from 'element-plus'
-  import { onMounted, reactive, computed, ref, watch } from 'vue'
+  import { onMounted, reactive, computed, ref, watch, nextTick } from 'vue'
+  import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Refresh, Search } from '@element-plus/icons-vue'
+  import { Refresh, Search, ArrowDown, Phone, Key, Lock } from '@element-plus/icons-vue'
+  import { hasPermission } from '@/modules/common/utils/Permission.util'
+  import { useWindowSize } from '@vueuse/core'
   import { IamUserApi } from '@/modules/iam/user/api/IamUser.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
   import type {
     IamUserDetailResponseVo,
     IamUserExpandPageResponse,
+    IamUserExportRequestVo,
     IamUserQueryPageRequestVo,
     IamUserUpdateStatusRequestVo
   } from '@/modules/iam/user/type/IamUser.type'
@@ -252,6 +305,7 @@
 
   // 组合式函数
   const enumStore = useDictionaryEnumStore()
+  const router = useRouter()
 
   // 统一状态管理
   const state = reactive({
@@ -259,7 +313,6 @@
     showSearchCard: true,
     roleDialogVisible: false,
     shopDialogVisible: false,
-    dataCardHeight: 'calc(100vh - 500px)',
 
     //枚举状态
     userStatus: [],
@@ -318,6 +371,38 @@
   })
 
   const organizationTreeRef = ref<InstanceType<typeof ElTreeV2>>()
+  const searchCardRef = ref<HTMLElement | null>(null)
+  const operationButtonsRef = ref<HTMLElement | null>(null)
+  const paginationRef = ref<HTMLElement | null>(null)
+  const tableRef = ref<InstanceType<typeof import('element-plus').ElTable>>()
+  /** 跨页选中的用户 ID 集合，翻页后仍保留 */
+  const selectedUserIdSet = ref<Set<string>>(new Set())
+  /** 恢复勾选时忽略 selection-change */
+  const isRestoringSelection = ref(false)
+  /** 待恢复的选中 ID（翻页前保存），watch tableData 后再恢复，避免被 selection-change([]) 冲掉 */
+  const pendingRestoreIds = ref<Set<string> | null>(null)
+
+  // 表格高度计算
+  const { height: windowHeight } = useWindowSize()
+  const tableHeight = ref<number>(460)
+
+  const calculateTableHeight = async () => {
+    await nextTick()
+    if (!windowHeight.value) return
+
+    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
+    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
+    const paginationHeight = paginationRef.value?.offsetHeight || 60
+    const paginationSpacing = paginationHeight > 0 ? 8 : 0
+    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
+    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
+    const availableHeight = windowHeight.value - reservedHeight
+    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
+    tableHeight.value = Math.max(400, availableHeight)
+  }
+
+  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
 
   // 计算当前组织的状态
   const currentOrganizationTreeOptions = ref<IamOrganizationSimpleTreeResponseVo[]>([])
@@ -344,6 +429,81 @@
         currentOrganizationTreeOptions.value,
         organizationTreeRef.value.getCheckedKeys()
       ).map(node => node.id)
+    }
+  }
+
+  /** 选择变化时：当前页外的已选 ID 保留，当前页以本次勾选为准，实现跨页多选 */
+  const handleSelectionChange = (rows: IamUserDetailResponseVo[]) => {
+    if (isRestoringSelection.value || pendingRestoreIds.value !== null) return
+    const currentPageIds = new Set(state.tableData.map((r: IamUserDetailResponseVo) => r.id))
+    const selectedIds = new Set(rows.map((r: IamUserDetailResponseVo) => r.id))
+    const otherPageIds = [...selectedUserIdSet.value].filter((id: string) => !currentPageIds.has(id))
+    selectedUserIdSet.value = new Set([...otherPageIds, ...selectedIds])
+  }
+
+  /** 根据 ID 集合恢复当前页勾选（在表格渲染完成后调用） */
+  const doRestoreTableSelection = (idsToSelect: Set<string>) => {
+    const table = tableRef.value
+    if (!table || !state.tableData.length) return
+    isRestoringSelection.value = true
+    state.tableData.forEach((row: IamUserDetailResponseVo) => {
+      table.toggleRowSelection(row, idsToSelect.has(row.id))
+    })
+    selectedUserIdSet.value = new Set(idsToSelect)
+    nextTick(() => {
+      isRestoringSelection.value = false
+      pendingRestoreIds.value = null
+    })
+  }
+
+  /** 构建导出请求参数（与查询条件字段一致，支持可选 userIdSet） */
+  const buildExportRequest = (options: { userIdSet?: string[] }): IamUserExportRequestVo => {
+    const { searchForm } = state
+    const base: IamUserExportRequestVo = {
+      ...(options.userIdSet && options.userIdSet.length > 0 && { userIdSet: options.userIdSet }),
+      ...(searchForm.username && { username: searchForm.username }),
+      ...(searchForm.name && { name: searchForm.name }),
+      ...(searchForm.code && { code: searchForm.code }),
+      ...(searchForm.status && { status: searchForm.status }),
+      ...(searchForm.phone && { phone: searchForm.phone }),
+      ...(searchForm.gender && { gender: searchForm.gender }),
+      ...(state.selectedRoles.length > 0 && { roleIdSet: state.selectedRoles.map(r => r.id) }),
+      ...(state.selectedShops.length > 0 && { shopIdSet: state.selectedShops.map(s => s.id) }),
+      ...(searchForm.organizationType && { organizationType: searchForm.organizationType }),
+      ...(searchForm.organizationIdSet && searchForm.organizationIdSet.length > 0 && { organizationIdSet: searchForm.organizationIdSet }),
+      ...(searchForm.createStartTime && { createStartTime: searchForm.createStartTime }),
+      ...(searchForm.createEndTime && { createEndTime: searchForm.createEndTime }),
+      ...(searchForm.updateStartTime && { updateStartTime: searchForm.updateStartTime }),
+      ...(searchForm.updateEndTime && { updateEndTime: searchForm.updateEndTime })
+    }
+    return base
+  }
+
+  /** 导出下拉选项：currentList 当前列表 | currentSelected 当前选中 | currentCondition 当前条件 */
+  const handleExportCommand = async (command: 'currentList' | 'currentSelected' | 'currentCondition') => {
+    let request: IamUserExportRequestVo
+    if (command === 'currentList') {
+      const ids = state.tableData.map((r: { id: string }) => r.id)
+      request = buildExportRequest(ids.length > 0 ? { userIdSet: ids } : {})
+    } else if (command === 'currentSelected') {
+      const ids = Array.from(selectedUserIdSet.value)
+      request = buildExportRequest(ids.length > 0 ? { userIdSet: ids } : {})
+    } else {
+      request = buildExportRequest({})
+    }
+
+    try {
+      await IamUserApi.exportUser(request)
+      await ElMessageBox.confirm('导出任务已创建，文件生成后可到下载中心查看并下载。', '导出成功', {
+        confirmButtonText: '前往下载中心',
+        cancelButtonText: '知道了',
+        type: 'success'
+      })
+      router.push('/system/workspace/download')
+    } catch (error) {
+      if (error !== 'cancel') {
+        console.error('导出失败', error)
+      }
     }
   }
 
@@ -376,6 +536,7 @@
       state.loading = true
       const params = buildQueryParams()
       const res: IamUserExpandPageResponse = await IamUserApi.pageExpand(params)
+      pendingRestoreIds.value = new Set(selectedUserIdSet.value)
       state.tableData = res.records
       state.pagination.total = res.total
     } catch (error) {
@@ -407,6 +568,8 @@
       state.selectedShops = newIds.map(id => state.selectedShops.find(shop => shop.id === id) || { id, name: '' })
     }
   })
+
+  const selectedRowCount = computed(() => selectedUserIdSet.value.size)
 
   const clearSelectorAllRoles = () => {
     state.selectedRoles = []
@@ -474,6 +637,8 @@
 
     state.organizationQuery = ''
     organizationTreeRef.value?.setCheckedKeys([])
+    selectedUserIdSet.value = new Set()
+    tableRef.value?.clearSelection?.()
 
     handleSearch()
   }
@@ -525,6 +690,16 @@
     state.dialog.password = true
   }
 
+  /** 处理用户下拉菜单命令 */
+  const handleUserDropdownCommand = (command: string, row: IamUserDetailResponseVo) => {
+    const commandMap: Record<string, () => void> = {
+      updatePhone: () => showPhoneDialog(row),
+      updatePermission: () => showPermissionDialog(row),
+      updatePassword: () => showPasswordDialog(row)
+    }
+    commandMap[command]?.()
+  }
+
   // 切换用户状态
   const toggleStatus = async (row: IamUserDetailResponseVo) => {
     try {
@@ -555,7 +730,7 @@
   const handlePermissionUpdateSuccess = () => fetchData()
 
   const getUserGenderLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('CrmGenderEnum', type)
+    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
     return enumItem?.message || type
   }
 
@@ -578,14 +753,22 @@
     { immediate: false }
   )
 
+  /** tableData 变化后（含翻页）再恢复勾选，避免被表格的 selection-change([]) 冲掉；短延迟确保表格已渲染 */
   watch(
-    () => state.showSearchCard,
-    newVal => {
-      setTimeout(() => {
-        state.dataCardHeight = newVal ? 'calc(100vh - 500px)' : 'calc(100vh - 200px)'
-      }, 80)
+    () => state.tableData,
+    newData => {
+      const ids = pendingRestoreIds.value
+      if (!ids || !newData?.length) {
+        if (ids && !newData?.length) pendingRestoreIds.value = null
+        return
+      }
+      nextTick(() => {
+        setTimeout(() => {
+          doRestoreTableSelection(new Set(ids))
+        }, 50)
+      })
     },
-    { immediate: false }
+    { flush: 'post' }
   )
 
   // 初始化
@@ -593,7 +776,7 @@
     // 枚举选项
     const [userStatus, userGenders, organizationTypeOptions] = await Promise.all([
       enumStore.getEnumDataAsync('StatusEnum'),
-      enumStore.getEnumDataAsync('CrmGenderEnum'),
+      enumStore.getEnumDataAsync('GenderEnum'),
       enumStore.getEnumDataAsync('IamOrganizationTypeEnum')
     ])
     state.userStatus = userStatus
@@ -631,7 +814,7 @@
     align-items: flex-start;
 
     .box-card-tree-select {
-      margin: 4px;
+      margin: 4px 4px 4px 0;
       width: 100%;
       height: 100%;
       border-radius: 8px;
@@ -661,16 +844,53 @@
 
         .form-item-responsive {
           margin-bottom: 8px;
-          flex: 1 1 320px;
-          min-width: 120px;
-          max-width: 320px;
+          flex: 1 1 280px;
+          min-width: 100px;
+          max-width: 280px;
 
           &.role-selector {
-            min-width: 320px;
+            min-width: 280px;
+
+            // 优化标签间距
+            :deep(.el-select__tags) {
+              .el-tag {
+                margin-right: 4px;
+                margin-left: 0;
+                padding: 0 6px;
+
+                &:first-child {
+                  margin-left: 0;
+                }
+              }
+            }
           }
 
           &.shop-selector {
-            min-width: 320px;
+            min-width: 280px;
+
+            // 优化标签间距
+            :deep(.el-select__tags) {
+              .el-tag {
+                margin-right: 4px;
+                margin-left: 0;
+                padding: 0 6px;
+
+                &:first-child {
+                  margin-left: 0;
+                }
+              }
+            }
+          }
+
+          // 创建时间和修改时间字段特殊宽度
+          &.form-item-date-picker {
+            flex: 1 1 320px;
+            max-width: 320px;
+
+            :deep(.el-date-editor) {
+              width: 100%;
+              max-width: 320px;
+            }
           }
         }
       }
@@ -711,9 +931,36 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+
+      .operation-buttons-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
       .el-switch {
         margin-left: 8px;
       }
+    }
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    :deep(.el-button) {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    :deep(.el-dropdown) {
+      margin-left: 2px;
     }
   }
 </style>

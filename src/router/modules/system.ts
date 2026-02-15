@@ -20,7 +20,7 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         name: 'SYSTEM:BASIC_DATA',
         meta: {
           code: 'SYSTEM:BASIC_DATA',
-          title: '基础数据管理',
+          title: '基础数据',
           icon: 'el-icon-Collection',
           hidden: false,
           isDynamic: true

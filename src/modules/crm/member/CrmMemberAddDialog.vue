@@ -141,7 +141,7 @@
   // 初始化枚举数据
   const initEnumData = () => {
     if (!state.initialized) {
-      state.memberGenders = enumStore.getEnumDataSync('CrmGenderEnum')
+      state.memberGenders = enumStore.getEnumDataSync('GenderEnum')
       state.initialized = true
     }
   }

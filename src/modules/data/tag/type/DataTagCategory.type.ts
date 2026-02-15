@@ -3,7 +3,6 @@ import type { TreeNode } from '@/modules/common/types/Common.type'
 
 export interface DataTagCategoryCreateRequestVo {
   parentId: string
-  code: string
   name: string
   sort: number
   description?: string

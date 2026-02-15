@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
-  import { useIamUserStore } from '@/modules/iam/stores/IamUser.store'
+  import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
 
   const userStore = useIamUserStore()
   const currentUser = ref(userStore.currentUser)

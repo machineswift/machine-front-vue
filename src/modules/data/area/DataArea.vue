@@ -48,7 +48,8 @@
             :expand-column-key="expandColumnKey"
             fixed
             row-key="id"
-            :estimated-row-height="50"
+            :estimated-row-height="60"
+            class="area-table"
           />
         </el-tab-pane>
       </el-tabs>
@@ -63,8 +64,12 @@
 </template>
 
 <script lang="ts" setup>
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:BASIC_DATA:AREA'
+  })
   import Fuse from 'fuse.js'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { useElementSize } from '@vueuse/core'
   import { ref, reactive, computed, onMounted, watch, h, nextTick } from 'vue'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
@@ -167,7 +172,8 @@
           onAdd: () => handleAdd(rowData),
           onEdit: () => handleEdit(rowData),
           onChangeParent: () => handleChangeParent(rowData),
-          onDelete: () => handleDelete(rowData)
+          onDelete: () => handleDelete(rowData),
+          onDeleteConfirm: () => handleDeleteConfirm(rowData)
         })
     }
   ]
@@ -467,6 +473,21 @@
     }
   }
 
+  const handleDeleteConfirm = async (row: { id: string; name: string }) => {
+    try {
+      await ElMessageBox.confirm(`确定要删除此区域 "${row.name}" 吗? 此操作不可恢复！`, '警告', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      await handleDelete(row)
+    } catch (error) {
+      if (error !== 'cancel') {
+        console.error('删除区域失败', error)
+      }
+    }
+  }
+
   const handleSuccess = () => {
     const tabState = currentTabState.value
     Object.keys(tabState.dialogVisible).forEach(key => {
@@ -550,5 +571,41 @@
     font-weight: bold;
     padding: 0 2px;
     border-radius: 2px;
+  }
+
+  // 操作按钮样式 - 需要深度选择器以应用到 JSX 组件
+  :deep(.table-actions) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    .el-button {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    .el-dropdown {
+      margin-left: 2px;
+    }
+  }
+
+  // 优化表格行高，增加上下间距
+  .area-table {
+    :deep(.el-virtual-scroll__item) {
+      padding: 4px 0;
+    }
+
+    :deep(.el-table-v2__row) {
+      height: 48px;
+    }
+
+    :deep(.el-table-v2__cell) {
+      padding: 4px 8px;
+    }
   }
 </style>

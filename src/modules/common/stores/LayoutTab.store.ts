@@ -12,6 +12,8 @@ export interface TabItem {
   keepAlive?: boolean
   query?: RouteLocationQuery
   params?: RouteParams
+  // 存储标签页的状态数据（如筛选条件等）
+  state?: Record<string, unknown>
 }
 
 export const useTabStore = defineStore(
@@ -57,7 +59,8 @@ export const useTabStore = defineStore(
           fixed: false,
           keepAlive: route.meta?.keepAlive !== false,
           query: route.query,
-          params: route.params
+          params: route.params,
+          state: {} // 初始化状态存储
         }
         tabs.value.push(tab)
       }
@@ -153,6 +156,24 @@ export const useTabStore = defineStore(
       activeTabPath.value = ''
     }
 
+    /**
+     * 更新标签页状态
+     */
+    const updateTabState = (fullPath: string, state: Record<string, unknown>) => {
+      const tab = tabs.value.find(tab => tab.fullPath === fullPath)
+      if (tab) {
+        tab.state = { ...tab.state, ...state }
+      }
+    }
+
+    /**
+     * 获取标签页状态
+     */
+    const getTabState = (fullPath: string): Record<string, unknown> | undefined => {
+      const tab = tabs.value.find(tab => tab.fullPath === fullPath)
+      return tab?.state
+    }
+
     return {
       // State
       tabs,
@@ -171,7 +192,9 @@ export const useTabStore = defineStore(
       refreshTab,
       updateTabOrder,
       sortTabs,
-      clearTabs
+      clearTabs,
+      updateTabState,
+      getTabState
     }
   },
   {

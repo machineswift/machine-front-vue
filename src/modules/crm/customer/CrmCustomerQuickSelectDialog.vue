@@ -177,7 +177,7 @@
   }
 
   const getCustomerGenderLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('CrmGenderEnum', type)
+    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
     return enumItem?.message || type
   }
 

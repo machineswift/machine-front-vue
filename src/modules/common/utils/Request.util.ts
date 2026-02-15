@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { useIamUserStore } from '@/modules/iam/stores/IamUser.store'
+import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
 
 export interface BaseResponse<T = unknown> {
   code: string
@@ -29,7 +29,10 @@ class RequestUtil {
   private cancelTokenMap = new Map<string, AbortController>()
   private isRefreshing = false
   private requestsQueue: Array<(token: string) => void> = []
-  private router = useRouter()
+
+  private get router() {
+    return useRouter()
+  }
 
   constructor(options: CustomRequestConfig = {}) {
     let baseUrl

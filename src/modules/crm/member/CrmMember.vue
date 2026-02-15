@@ -17,7 +17,7 @@
               <el-input v-model="state.searchForm.phone" placeholder="请输入手机号" clearable @keyup.enter="handleSearch" />
             </el-form-item>
 
-            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive">
+            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
               <el-date-picker
                 v-model="state.searchForm.createTimeRange"
                 type="daterange"
@@ -113,6 +113,10 @@
 </template>
 
 <script setup lang="ts">
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'CRM:CUSTOMER:MEMBER'
+  })
   import { onMounted, reactive, ref } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { Refresh, Search } from '@element-plus/icons-vue'
@@ -277,7 +281,7 @@
 
   // 工具函数
   const getMemberGenderLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('CrmGenderEnum', type)
+    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
     return enumItem?.message || type
   }
 
@@ -288,7 +292,7 @@
   // 生命周期
   onMounted(async () => {
     // 枚举选项
-    await Promise.all([enumStore.getEnumDataAsync('CrmGenderEnum')])
+    await Promise.all([enumStore.getEnumDataAsync('GenderEnum')])
 
     await fetchData()
   })
@@ -315,16 +319,27 @@
 
           .form-item-responsive {
             margin-bottom: 8px;
-            flex: 1 1 320px;
-            min-width: 120px;
-            max-width: 320px;
+            flex: 1 1 280px;
+            min-width: 100px;
+            max-width: 280px;
 
             &.role-selector {
-              min-width: 320px;
+              min-width: 280px;
             }
 
             &.shop-selector {
-              min-width: 320px;
+              min-width: 280px;
+            }
+
+            // 创建时间字段特殊宽度
+            &.form-item-date-picker {
+              flex: 1 1 320px;
+              max-width: 320px;
+
+              :deep(.el-date-editor) {
+                width: 100%;
+                max-width: 320px;
+              }
             }
           }
         }

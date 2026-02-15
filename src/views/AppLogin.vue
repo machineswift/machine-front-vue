@@ -51,7 +51,7 @@
   import { ElMessage } from 'element-plus'
   import { reactive, onMounted, ref } from 'vue'
   import { User, Lock } from '@element-plus/icons-vue'
-  import { useIamUserStore } from '@/modules/iam/stores/IamUser.store'
+  import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
   import type { IamAuthCaptchaResponseVo, IamAuthLoginResponseVo, IamAuthUsernameLoginRequestVo } from '@/modules/iam/auth/type/IamAuth.type'
   import { IamAuthApi } from '@/modules/iam/auth/api/IamAuth.api'
   import { IamAuth2Api } from '@/modules/iam/auth/api/IamAuth2.api'

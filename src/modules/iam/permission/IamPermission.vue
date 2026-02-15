@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 搜索卡片 -->
-    <el-card class="box-card-form">
+    <el-card ref="searchCardRef" class="box-card-form">
       <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
         <div class="form-items-group">
           <el-form-item label="名称:" prop="name">
@@ -29,7 +29,7 @@
       <el-table
         :data="state.tableDataToShow"
         row-key="id"
-        height="calc(100vh - 200px)"
+        :height="740"
         style="width: 100%"
         border
         v-loading="state.loading"
@@ -93,17 +93,32 @@
 
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="showDetailDialog(row.id)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:DETAIL']">详情</el-button>
-            <el-button size="small" type="primary" @click="showCreateDialog(row)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:CREATE']">新增</el-button>
-            <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:UPDATE']">编辑</el-button>
-            <el-button size="small" type="warning" @click="showUpdateParentDialog(row)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:UPDATE_PARENT']">
-              修改父节点
-            </el-button>
-            <el-popconfirm title="确定要删除此权限吗？" @confirm="handleDelete(row)">
-              <template #reference>
-                <el-button size="small" type="danger" v-hasPermission="['SYSTEM:AUTH:PERMISSION:DELETE']">删除</el-button>
-              </template>
-            </el-popconfirm>
+            <div class="table-actions">
+              <el-button size="small" @click="showDetailDialog(row.id)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:DETAIL']">详情</el-button>
+              <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:UPDATE']">编辑</el-button>
+              <el-dropdown trigger="click" @command="command => handlePermissionDropdownCommand(command, row)" placement="bottom-end">
+                <el-button size="small" type="info">
+                  更多
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="create" :disabled="!hasPermission(['SYSTEM:AUTH:PERMISSION:CREATE'])">
+                      <el-icon><Plus /></el-icon>
+                      <span>新增</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="updateParent" :disabled="!hasPermission(['SYSTEM:AUTH:PERMISSION:UPDATE_PARENT'])">
+                      <el-icon><Connection /></el-icon>
+                      <span>修改父节点</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:AUTH:PERMISSION:DELETE'])">
+                      <el-icon><Delete /></el-icon>
+                      <span>删除</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -118,7 +133,14 @@
 </template>
 
 <script setup lang="ts">
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:AUTH:permission'
+  })
   import { ref, reactive, onMounted } from 'vue'
+  import { ElMessageBox } from 'element-plus'
+  import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
+  import { hasPermission } from '@/modules/common/utils/Permission.util'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
   import type { IamPermissionTreeExpandResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
   import IamPermissionCreateDialog from '@/modules/iam/permission/IamPermissionCreateDialog.vue'
@@ -140,6 +162,7 @@
   const enumStore = useDictionaryEnumStore()
   const searchFormRef = ref()
   const updateParentDialogRef = ref()
+  const searchCardRef = ref<HTMLElement | null>(null)
 
   // 组件状态
   const state = reactive({
@@ -307,13 +330,16 @@
   }
 
   const getResourceTypeTag = (type?: string | null) => {
+    if (!type) return 'info'
     const enumItem = enumStore.getEnumItemByCodeSync('IamPermissionResourceTypeEnum', type)
-    return RESOURCE_TYPE_TAG_MAP[enumItem.code]
+    if (!enumItem || !enumItem.code) return 'info'
+    return RESOURCE_TYPE_TAG_MAP[enumItem.code] || 'info'
   }
 
   const getResourceTypeText = (type?: string | null) => {
+    if (!type) return '-'
     const enumItem = enumStore.getEnumItemByCodeSync('IamPermissionResourceTypeEnum', type)
-    return enumItem.message
+    return enumItem?.message || type || '-'
   }
 
   // 删除操作
@@ -324,6 +350,27 @@
     } catch (error) {
       console.error('删除权限失败', error)
     }
+  }
+
+  /** 处理权限下拉菜单命令 */
+  const handlePermissionDropdownCommand = (command: string, row: IamPermissionTreeExpandResponseVo) => {
+    const commandMap: Record<string, () => void> = {
+      create: () => showCreateDialog(row),
+      updateParent: () => showUpdateParentDialog(row),
+      delete: () => {
+        // 使用 ElMessageBox 替代 el-popconfirm，因为在下拉菜单中无法使用 el-popconfirm
+        ElMessageBox.confirm('确定要删除此权限吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+          .then(() => handleDelete(row))
+          .catch(() => {
+            // 用户取消删除
+          })
+      }
+    }
+    commandMap[command]?.()
   }
 
   // 数据获取
@@ -426,5 +473,25 @@
     background-color: #fffb8f;
     padding: 2px 4px;
     border-radius: 3px;
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    :deep(.el-button) {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    :deep(.el-dropdown) {
+      margin-left: 2px;
+    }
   }
 </style>

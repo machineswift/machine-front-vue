@@ -1,13 +1,10 @@
 import type { App, Directive, DirectiveBinding } from 'vue'
-import { useIamUserStore } from '@/modules/iam/stores/IamUser.store'
+import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+import { nextTick } from 'vue'
 
 interface PermissionDirectiveElement extends HTMLElement {
-  _permissionTooltip?: HTMLElement
-  _permissionTooltipEvents?: {
-    show: () => void
-    hide: () => void
-    preventClick: (e: Event) => void
-  }
+  _permissionDisabled?: boolean
+  _permissionClickHandler?: (e: Event) => void
 }
 
 /**
@@ -16,13 +13,22 @@ interface PermissionDirectiveElement extends HTMLElement {
  * 使用示例：
  * 1. 基本用法：<button v-hasPermission="'user:create'">创建用户</button>
  * 2. 多权限检查：<button v-hasPermission="['user:create', 'user:edit']">创建/编辑用户</button>
- * 3. 自定义提示：<button v-hasPermission:创建="'user:create'">创建用户</button>
+ *
+ * 注意：没有权限时，元素会显示但被禁用，不会隐藏
  */
 export const permissionDirective = (app: App) => {
   app.directive('hasPermission', {
-    mounted: handlePermissionCheck,
-    updated: handlePermissionCheck,
-    unmounted: cleanupTooltip
+    mounted: (el, binding) => {
+      nextTick(() => {
+        handlePermissionCheck(el, binding)
+      })
+    },
+    updated: (el, binding) => {
+      nextTick(() => {
+        handlePermissionCheck(el, binding)
+      })
+    },
+    unmounted: cleanup
   } as Directive<PermissionDirectiveElement, string | string[]>)
 }
 
@@ -38,164 +44,182 @@ function handlePermissionCheck(el: PermissionDirectiveElement, binding: Directiv
 
     if (!hasPermission) {
       disableElement(el)
-      setupPermissionTooltip(el, binding.arg || getDefaultActionName(el))
     } else {
       enableElement(el)
-      cleanupTooltip(el)
     }
   } catch (error) {
     console.error('权限检查失败:', error)
-    handlePermissionError(el)
+    disableElement(el)
   }
 }
 
 /**
- * 处理权限检查错误
+ * 查找 Element Plus 组件的实际 DOM 元素
  */
-function handlePermissionError(el: PermissionDirectiveElement) {
-  disableElement(el)
-  setupPermissionTooltip(el, '此操作')
-}
+function findComponentInfo(el: HTMLElement): { rootEl: HTMLElement } {
+  // 如果是 el-dropdown-item，查找实际的 li 元素
+  let rootEl = el
 
-/**
- * 获取默认操作名称
- */
-function getDefaultActionName(el: HTMLElement): string {
-  if (el instanceof HTMLButtonElement || el instanceof HTMLAnchorElement) {
-    return el.textContent?.trim() || '此操作'
+  // 首先检查当前元素是否是 el-dropdown-item
+  if (el.classList.contains('el-dropdown-item')) {
+    rootEl = el
+  } else {
+    // 向上查找 el-dropdown-item
+    const dropdownItem = el.closest('.el-dropdown-item') as HTMLElement
+    if (dropdownItem) {
+      rootEl = dropdownItem
+    } else {
+      // 查找最近的组件根元素
+      let current: HTMLElement | null = el
+      while (current && current !== document.body) {
+        if (
+          current.classList.contains('el-button') ||
+          current.classList.contains('el-dropdown-item') ||
+          current.classList.contains('el-switch') ||
+          current.tagName === 'BUTTON' ||
+          current.tagName === 'INPUT' ||
+          current.tagName === 'LI'
+        ) {
+          rootEl = current
+          break
+        }
+        current = current.parentElement
+      }
+    }
   }
-  return '此操作'
+
+  return { rootEl }
 }
 
 /**
  * 禁用元素
  */
 function disableElement(el: PermissionDirectiveElement) {
-  el.classList.add('no-permission')
+  if (el._permissionDisabled) return
 
-  const element = el as HTMLButtonElement | HTMLInputElement
+  const { rootEl } = findComponentInfo(el)
+
+  el.classList.add('no-permission')
+  rootEl.classList.add('no-permission')
+  el._permissionDisabled = true
+
+  // 处理原生 HTML 元素
+  const element = rootEl as HTMLButtonElement | HTMLInputElement
   if ('disabled' in element) {
     element.disabled = true
-  } else {
-    el.style.pointerEvents = 'none'
   }
 
-  el.style.opacity = '0.7'
-  el.style.cursor = 'not-allowed'
+  // 处理 Element Plus 组件
+  // el-dropdown-item 需要设置 disabled 属性和 is-disabled 类
+  rootEl.setAttribute('disabled', '')
+  rootEl.setAttribute('aria-disabled', 'true')
+  rootEl.classList.add('is-disabled')
+
+  // 对于 el-dropdown-item，需要特殊处理
+  if (rootEl.classList.contains('el-dropdown-item') || rootEl.tagName === 'LI') {
+    rootEl.style.pointerEvents = 'none'
+    rootEl.style.opacity = '0.6'
+    rootEl.style.cursor = 'not-allowed'
+
+    // 阻止 el-dropdown-item 的点击事件
+    const preventClick = (e: Event) => {
+      if (el._permissionDisabled) {
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        return false
+      }
+    }
+
+    // 移除旧的事件监听器（如果存在）
+    if (el._permissionClickHandler) {
+      rootEl.removeEventListener('click', el._permissionClickHandler, true)
+    }
+
+    el._permissionClickHandler = preventClick
+    rootEl.addEventListener('click', preventClick, true)
+
+    // 阻止 mousedown 事件
+    const preventMouseDown = (e: Event) => {
+      if (el._permissionDisabled) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+    rootEl.addEventListener('mousedown', preventMouseDown, true)
+  } else {
+    rootEl.style.pointerEvents = 'none'
+    rootEl.style.opacity = rootEl.style.opacity || '0.6'
+    rootEl.style.cursor = rootEl.style.cursor || 'not-allowed'
+
+    // 阻止点击事件
+    const preventClick = (e: Event) => {
+      if (el._permissionDisabled) {
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }
+    }
+
+    if (el._permissionClickHandler) {
+      rootEl.removeEventListener('click', el._permissionClickHandler, true)
+    }
+
+    el._permissionClickHandler = preventClick
+    rootEl.addEventListener('click', preventClick, true)
+  }
 }
 
 /**
  * 启用元素
  */
 function enableElement(el: PermissionDirectiveElement) {
-  el.classList.remove('no-permission')
+  if (!el._permissionDisabled) return
 
-  const element = el as HTMLButtonElement | HTMLInputElement
+  const { rootEl } = findComponentInfo(el)
+
+  el.classList.remove('no-permission')
+  rootEl.classList.remove('no-permission')
+  el._permissionDisabled = false
+
+  // 处理原生 HTML 元素
+  const element = rootEl as HTMLButtonElement | HTMLInputElement
   if ('disabled' in element) {
     element.disabled = false
+  }
+
+  // 处理 Element Plus 组件
+  rootEl.removeAttribute('disabled')
+  rootEl.removeAttribute('aria-disabled')
+  rootEl.classList.remove('is-disabled')
+
+  // 恢复样式
+  if (rootEl.classList.contains('el-dropdown-item') || rootEl.tagName === 'LI') {
+    rootEl.style.pointerEvents = ''
+    rootEl.style.opacity = ''
+    rootEl.style.cursor = ''
   } else {
-    el.style.pointerEvents = ''
+    rootEl.style.pointerEvents = ''
+    rootEl.style.opacity = ''
+    rootEl.style.cursor = ''
   }
 
-  el.style.opacity = ''
-  el.style.cursor = ''
+  // 移除事件监听器
+  if (el._permissionClickHandler) {
+    rootEl.removeEventListener('click', el._permissionClickHandler, true)
+    delete el._permissionClickHandler
+  }
 }
 
 /**
- * 设置权限提示
+ * 清理
  */
-function setupPermissionTooltip(el: PermissionDirectiveElement, actionName: string) {
-  cleanupTooltip(el)
-
-  const tooltip = createTooltipElement(actionName)
-  document.body.appendChild(tooltip)
-  el._permissionTooltip = tooltip
-
-  const show = () => showTooltip(el, tooltip)
-  const hide = () => hideTooltip(tooltip)
-  const preventClick = (e: Event) => {
-    if (el.classList.contains('no-permission')) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
+function cleanup(el: PermissionDirectiveElement) {
+  if (el._permissionClickHandler) {
+    const { rootEl } = findComponentInfo(el)
+    rootEl.removeEventListener('click', el._permissionClickHandler, true)
+    delete el._permissionClickHandler
   }
-
-  el.addEventListener('mouseenter', show)
-  el.addEventListener('mouseleave', hide)
-  el.addEventListener('click', preventClick)
-
-  el._permissionTooltipEvents = { show, hide, preventClick }
-}
-
-/**
- * 创建提示元素
- */
-function createTooltipElement(actionName: string): HTMLElement {
-  const tooltip = document.createElement('div')
-  tooltip.className = 'permission-tooltip'
-  tooltip.textContent = `您暂无${actionName}权限，请联系管理员`
-
-  Object.assign(tooltip.style, {
-    position: 'absolute',
-    display: 'none',
-    backgroundColor: '#ff4d4f',
-    color: 'white',
-    padding: '6px 10px',
-    borderRadius: '4px',
-    fontSize: '13px',
-    zIndex: '9999',
-    whiteSpace: 'nowrap',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-    pointerEvents: 'none'
-  })
-
-  return tooltip
-}
-
-/**
- * 显示提示
- */
-function showTooltip(el: HTMLElement, tooltip: HTMLElement) {
-  const rect = el.getBoundingClientRect()
-  tooltip.style.display = 'block'
-
-  let left = rect.left + window.scrollX
-  let top = rect.top + window.scrollY - tooltip.offsetHeight - 5
-
-  if (top < 5) {
-    top = rect.top + window.scrollY + rect.height + 5
-  }
-
-  const rightEdge = left + tooltip.offsetWidth
-  if (rightEdge > window.innerWidth) {
-    left = window.innerWidth - tooltip.offsetWidth - 5
-  }
-
-  tooltip.style.left = `${left}px`
-  tooltip.style.top = `${top}px`
-}
-
-/**
- * 隐藏提示
- */
-function hideTooltip(tooltip: HTMLElement) {
-  tooltip.style.display = 'none'
-}
-
-/**
- * 清理提示
- */
-function cleanupTooltip(el: PermissionDirectiveElement) {
-  if (el._permissionTooltip) {
-    document.body.removeChild(el._permissionTooltip)
-    delete el._permissionTooltip
-  }
-
-  if (el._permissionTooltipEvents) {
-    const { show, hide, preventClick } = el._permissionTooltipEvents
-    el.removeEventListener('mouseenter', show)
-    el.removeEventListener('mouseleave', hide)
-    el.removeEventListener('click', preventClick)
-    delete el._permissionTooltipEvents
-  }
+  enableElement(el)
+  delete el._permissionDisabled
 }

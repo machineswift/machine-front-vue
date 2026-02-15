@@ -199,6 +199,25 @@ export interface DataShopQueryPageRequestVo extends PageRequest {
   labelOptionIdSet?: string[]
 }
 
+/** 门店导出请求参数（与查询条件一致，可选 shopIdSet） */
+export interface DataShopExportRequestVo {
+  shopIdSet?: string[]
+  code?: string
+  name?: string
+  businessStatusSet?: string[]
+  operationStatusSet?: string[]
+  physicalStatusSet?: string[]
+  countryCode?: string
+  areaCodeSet?: string[]
+  organizationType?: string
+  organizationIdSet?: string[]
+  labelOptionIdSet?: string[]
+  createStartTime?: number
+  createEndTime?: number
+  updateStartTime?: number
+  updateEndTime?: number
+}
+
 // 门店分页查询接口返回参数
 export interface DataShopSimpleListResponseVo {
   id: string

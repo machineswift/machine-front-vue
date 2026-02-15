@@ -37,11 +37,11 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100px;
+    height: 50px;
 
     .el-image {
-      width: 100px;
-      height: 100px;
+      width: 50px;
+      height: 50px;
       cursor: zoom-in;
       transition: transform 0.3s ease;
       border-radius: 4px;

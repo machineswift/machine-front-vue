@@ -16,9 +16,15 @@
       </el-form-item>
 
       <el-form-item label="标签选项" prop="labelOptionIdSet">
-        <el-select v-model="state.form.labelOptionIdSet" multiple filterable placeholder="请选择标签" style="width: 100%">
-          <el-option v-for="option in state.labelOptions" :key="option.id" :label="option.name" :value="option.id" />
+        <el-select v-model="state.form.labelOptionIdSet" multiple filterable placeholder="请选择标签" style="width: 100%" :disabled="state.loading">
+          <template v-if="state.labelOptions.length > 0">
+            <el-option v-for="option in state.labelOptions" :key="option.id" :label="option.name" :value="option.id" />
+          </template>
+          <el-option v-else disabled value="">暂无可用标签选项</el-option>
         </el-select>
+        <div v-if="state.labelOptions.length === 0 && !state.loading" style="color: #909399; font-size: 12px; margin-top: 4px">
+          提示：当前门店暂无标签选项，请先为门店添加标签
+        </div>
       </el-form-item>
     </el-form>
 
@@ -54,25 +60,40 @@
     shopName: '',
     labelOptions: [] as LabelOptionDto[],
     form: {
-      id: props.shopId,
+      id: '',
       labelOptionIdSet: [] as string[]
     } as DataShopUpdateShopLabelOptionRequestVo
   })
 
   // 获取门店数据和标签选项
   const fetchData = async () => {
+    if (!props.shopId) {
+      console.warn('shopId 为空，无法获取门店标签数据')
+      return
+    }
+
     try {
       state.loading = true
+      state.form.id = props.shopId
 
       // 获取门店详情
       const shopDetail: DataShopDetailResponseVo = await DataShopApi.detail({ id: props.shopId })
-      state.shopName = shopDetail.name
+      state.shopName = shopDetail.name || ''
       state.form.labelOptionIdSet = shopDetail.labelOptionList?.map(item => item.id) || []
 
-      // 获取所有标签选项（这里需要根据实际项目获取标签选项数据）
-      // state.labelOptions = await getAllLabelOptions()
+      // 从门店详情中获取所有已存在的标签选项作为可选列表
+      // 注意：这里暂时使用门店已有的标签选项，实际应该从 API 获取所有可用的标签选项
+      if (shopDetail.labelOptionList && shopDetail.labelOptionList.length > 0) {
+        state.labelOptions = shopDetail.labelOptionList.map(item => ({
+          id: item.id,
+          name: item.name,
+          code: item.code,
+          labelId: item.labelId
+        }))
+      }
     } catch (error) {
       console.error('获取门店标签数据失败', error)
+      ElMessage.error('获取门店标签数据失败')
     } finally {
       state.loading = false
     }
@@ -99,14 +120,12 @@
   const handleDialogClosed = () => {
     // 重置表单数据
     state.form = {
-      id: props.shopId,
+      id: '',
       labelOptionIdSet: [] as string[]
     }
     // 重置其他状态
     state.shopName = ''
     state.labelOptions = []
-    // 通知父组件对话框已关闭
-    emit('update:modelValue', false)
   }
 
   // 监听props变化
@@ -115,6 +134,9 @@
     async ([modelValue, shopId]) => {
       if (modelValue && shopId) {
         await fetchData()
+      } else if (!modelValue) {
+        // 对话框关闭时重置状态
+        handleDialogClosed()
       }
     },
     { immediate: false }

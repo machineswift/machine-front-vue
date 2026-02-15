@@ -14,6 +14,7 @@ import type {
   DataShopDetailResponseVo,
   DataShopCertificateResponseVo,
   DataShopQueryPageRequestVo,
+  DataShopExportRequestVo,
   DataShopSimplePageResponse,
   DataShopExpandPageResponse
 } from '@/modules/data/shop/type/DataShop.type'
@@ -83,6 +84,11 @@ const pageExpand = async (params: DataShopQueryPageRequestVo): Promise<DataBrand
   return request.post<DataShopExpandPageResponse>(MANAGE_API_BASE_URL + 'manage/data/shop/page_expand', params)
 }
 
+// 导出门店（按条件或按选中 shopIdSet，任务创建后到下载中心查看）
+const exportShop = async (params: DataShopExportRequestVo): Promise<void> => {
+  return request.post<void>(MANAGE_API_BASE_URL + 'manage/data/shop/export', params)
+}
+
 export const DataShopApi = {
   create,
   update,
@@ -96,5 +102,6 @@ export const DataShopApi = {
   detail,
   getCertificate,
   pageSimple,
-  pageExpand
+  pageExpand,
+  exportShop
 }

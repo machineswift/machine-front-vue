@@ -1,7 +1,7 @@
 <template>
   <div>
     <transition name="slide-fade">
-      <el-card class="search-card" v-show="state.showSearchCard">
+      <el-card ref="searchCardRef" class="search-card" v-show="state.showSearchCard">
         <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
           <div class="form-items-group">
             <el-form-item label="文件名称:" prop="fileName" class="form-item-responsive">
@@ -14,7 +14,7 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive">
+            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
               <el-date-picker
                 v-model="state.searchForm.createTimeRange"
                 type="daterange"
@@ -50,27 +50,37 @@
 
     <!-- 数据卡片 -->
     <el-card class="data-card">
-      <div class="operation-buttons">
+      <div ref="operationButtonsRef" class="operation-buttons">
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
-      <el-table :data="state.tableData" border v-loading="state.loading" :height="state.dataCardHeight" style="margin: 10px 0" stripe highlight-current-row>
+      <el-table :data="state.tableData" border v-loading="state.loading" :height="tableHeight" style="margin: 10px 0" stripe highlight-current-row>
         <el-table-column prop="id" label="ID" align="center" v-if="false" />
         <el-table-column label="序号" align="center" type="index" width="60" fixed />
 
-        <el-table-column prop="attachment.name" label="文件名称" align="center" width="240">
+        <el-table-column prop="module" label="模块" align="center" width="100">
           <template #default="{ row }">
-            {{ row.attachment?.name || '-' }}
+            {{ getModuleLabel(row.module) }}
           </template>
         </el-table-column>
-        <el-table-column prop="attachment.fileSize" label="文件大小" align="center" width="80">
+        <el-table-column prop="entity" label="实体" align="center" width="120">
           <template #default="{ row }">
-            {{ row.attachment ? formatFileSize(row.attachment.size) : '-' }}
+            {{ getEntityLabel(row.entity) }}
           </template>
         </el-table-column>
-        <el-table-column prop="attachment.type" label="文件类型" align="center" width="120">
+
+        <el-table-column prop="attachmentOriginalName" label="文件名称" align="center" width="240">
           <template #default="{ row }">
-            {{ row.attachment ? getAttachmentTypeLabel(row.attachment.type) : '-' }}
+            <el-tooltip v-if="row.attachmentOriginalName" :content="row.attachmentOriginalName" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.attachmentOriginalName }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="fileType" label="文件类型" align="center" width="120">
+          <template #default="{ row }">
+            {{ row.fileType ? getFileTypeLabel(row.fileType) : '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" align="center" width="120">
@@ -81,39 +91,54 @@
           </template>
         </el-table-column>
 
+        <el-table-column prop="attachmentSize" label="文件大小" align="center" width="120">
+          <template #default="{ row }">
+            {{ row.attachmentSize != null ? formatFileSize(row.attachmentSize) : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="failCause" label="失败原因" align="center" width="240">
           <template #default="{ row }">
-            {{ row.failCause || '-' }}
+            <el-tooltip v-if="row.failCause" :content="row.failCause" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.failCause }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="createBy" label="创建人" align="center" width="120" />
+        <el-table-column prop="createName" label="创建人" align="center" width="120">
+          <template #default="{ row }">{{ row.createName || row.createBy || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" align="center" width="180">
           <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
         </el-table-column>
-        <el-table-column prop="updateBy" label="更新人" align="center" width="120" />
+        <el-table-column prop="updateName" label="更新人" align="center" width="120">
+          <template #default="{ row }">{{ row.updateName || row.updateBy || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="updateTime" label="更新时间" align="center" width="180">
           <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
         </el-table-column>
 
-        <el-table-column label="操作" align="center" width="180" fixed="right">
+        <el-table-column label="操作" align="center" width="120" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" v-hasPermission="['SYSTEM:DATA:DOWNLOAD:DETAIL']" @click="showDetail(row)">详情</el-button>
-            <el-button
-              size="small"
-              type="primary"
-              @click="handleRetry(row)"
-              v-if="row.status === 'FAIL' || row.status === 'DEAD'"
-              v-hasPermission="['SYSTEM:DATA:DOWNLOAD:RETRY']"
-            >
-              重试
-            </el-button>
-            <el-button size="small" type="success" @click="handleDownload(row)" v-if="row.status === 'FINISH' && row.attachment">下载</el-button>
+            <div class="table-actions">
+              <el-button size="small" v-hasPermission="['SYSTEM:DATA:DOWNLOAD:DETAIL']" @click="showDetail(row)">详情</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                @click="handleRetry(row)"
+                v-if="row.status === 'FAIL' || row.status === 'DEAD'"
+                v-hasPermission="['SYSTEM:DATA:DOWNLOAD:RETRY']"
+              >
+                重试
+              </el-button>
+              <el-button size="small" type="success" @click="handleDownload(row)" v-if="row.status === 'FINISH' && row.attachmentId">下载</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <el-pagination
+        ref="paginationRef"
         v-model:current-page="state.pagination.current"
         v-model:page-size="state.pagination.size"
         :page-sizes="[10, 20, 50, 100, 200, 500, 1000]"
@@ -131,13 +156,19 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted, watch } from 'vue'
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:WORKSPACE:DOWNLOAD'
+  })
+  import { ref, reactive, onMounted, watch, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh } from '@element-plus/icons-vue'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useWindowSize } from '@vueuse/core'
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
   import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
   import type { DataDownloadListResponseVo } from '@/modules/data/download/type/DataDownload.type'
+  import { DATA_FILE_TYPE_LABEL_MAP } from '@/modules/data/download/type/DataDownload.type'
   import DataDownloadDetailDialog from '@/modules/data/download/DataDownloadDetailDialog.vue'
 
   // 组合式函数
@@ -148,7 +179,6 @@
     loading: false,
     showSearchCard: true,
     currentDownloadId: '',
-    dataCardHeight: 'calc(100vh - 300px)',
     downloadStatus: [],
     pagination: {
       current: 1,
@@ -169,17 +199,31 @@
   })
 
   const searchFormRef = ref()
+  const searchCardRef = ref<HTMLElement | null>(null)
+  const operationButtonsRef = ref<HTMLElement | null>(null)
+  const paginationRef = ref<HTMLElement | null>(null)
 
-  // 监听搜索框展开状态，调整表格高度
-  watch(
-    () => state.showSearchCard,
-    newVal => {
-      setTimeout(() => {
-        state.dataCardHeight = newVal ? 'calc(100vh - 400px)' : 'calc(100vh - 200px)'
-      }, 80)
-    },
-    { immediate: false }
-  )
+  // 表格高度计算
+  const { height: windowHeight } = useWindowSize()
+  const tableHeight = ref<number>(600)
+
+  const calculateTableHeight = async () => {
+    await nextTick()
+    if (!windowHeight.value) return
+
+    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
+    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
+    const paginationHeight = paginationRef.value?.offsetHeight || 60
+    const paginationSpacing = paginationHeight > 0 ? 8 : 0
+    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
+    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
+    const availableHeight = windowHeight.value - reservedHeight
+    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
+    tableHeight.value = Math.max(400, availableHeight)
+  }
+
+  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
 
   // 方法
   const fetchDownloadList = async () => {
@@ -199,7 +243,6 @@
       state.pagination.total = res.total
     } catch (error) {
       console.error('获取下载列表失败:', error)
-      ElMessage.error('获取下载列表失败')
     } finally {
       state.loading = false
     }
@@ -243,7 +286,7 @@
 
   const handleRetry = async (row: DataDownloadListResponseVo) => {
     try {
-      await ElMessageBox.confirm(`确定要重试下载任务 "${row.attachment.fileName}" 吗?`, '提示', {
+      await ElMessageBox.confirm(`确定要重试下载任务 "${row.attachmentOriginalName || row.id}" 吗?`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -262,7 +305,8 @@
   }
 
   const handleDownload = async (row: DataDownloadListResponseVo) => {
-    const urlResponse = await DataAttachmentApi.getUrl(row.attachment.id)
+    if (!row.attachmentId) return
+    const urlResponse = await DataAttachmentApi.getUrl(row.attachmentId)
     if (urlResponse.url) {
       window.open(urlResponse.url, '_blank')
     } else {
@@ -283,14 +327,26 @@
     }
   }
 
-  const getAttachmentTypeLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataAttachmentTypeEnum', type)
-    return enumItem?.message || type
+  const getFileTypeLabel = (type: string): string => {
+    const enumItem = enumStore.getEnumItemByCodeSync('DataFileTypeEnum', type)
+    return enumItem?.message ?? DATA_FILE_TYPE_LABEL_MAP[type] ?? type
   }
 
   const getDownloadStatusLabel = (type: string): string => {
     const enumItem = enumStore.getEnumItemByCodeSync('DataDownloadStatusEnum', type)
     return enumItem?.message || type
+  }
+
+  const getModuleLabel = (code?: string): string => {
+    if (!code) return '-'
+    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEnum', code)
+    return enumItem?.message ?? code
+  }
+
+  const getEntityLabel = (code?: string): string => {
+    if (!code) return '-'
+    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEntityEnum', code)
+    return enumItem?.message ?? code
   }
 
   const formatTime = (timestamp: number) => {
@@ -307,8 +363,13 @@
 
   // 初始化
   onMounted(async () => {
-    await enumStore.getEnumDataAsync('DataAttachmentTypeEnum')
-    state.downloadStatus = await enumStore.getEnumDataAsync('DataDownloadStatusEnum')
+    await Promise.all([
+      enumStore.getEnumDataAsync('DataFileTypeEnum'),
+      enumStore.getEnumDataAsync('DataDownloadStatusEnum'),
+      enumStore.getEnumDataAsync('ModuleEnum'),
+      enumStore.getEnumDataAsync('ModuleEntityEnum')
+    ])
+    state.downloadStatus = enumStore.getEnumDataSync('DataDownloadStatusEnum')
     await fetchDownloadList()
   })
 </script>
@@ -350,9 +411,25 @@
 
       .form-item-responsive {
         margin-bottom: 8px;
-        flex: 1 1 320px;
-        min-width: 120px;
-        max-width: 320px;
+        flex: 1 1 280px;
+        min-width: 100px;
+        max-width: 280px;
+
+        // 日期选择器宽度限制
+        :deep(.el-date-editor) {
+          width: 100%;
+          max-width: 280px;
+        }
+
+        // 创建时间字段特殊宽度
+        &.form-item-date-picker {
+          flex: 1 1 320px;
+          max-width: 320px;
+
+          :deep(.el-date-editor) {
+            max-width: 320px;
+          }
+        }
       }
     }
 
@@ -374,6 +451,30 @@
         margin-left: 8px;
       }
     }
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    :deep(.el-button) {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  .text-ellipsis {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
   }
 
   /* 响应式调整 */

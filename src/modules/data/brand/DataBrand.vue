@@ -1,7 +1,7 @@
 <template>
   <div>
     <transition name="slide-fade">
-      <el-card class="search-card" v-show="state.showSearchCard">
+      <el-card ref="searchCardRef" class="search-card" v-show="state.showSearchCard">
         <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
           <div class="form-items-group">
             <el-form-item label="名称:" prop="name" class="form-item-responsive">
@@ -72,7 +72,7 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive">
+            <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
               <el-date-picker
                 v-model="state.searchForm.createTimeRange"
                 type="daterange"
@@ -84,7 +84,7 @@
               />
             </el-form-item>
 
-            <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive">
+            <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
               <el-date-picker
                 v-model="state.searchForm.updateTimeRange"
                 type="daterange"
@@ -115,17 +115,40 @@
     </transition>
 
     <!-- 数据卡片 -->
-    <el-card class="data-card">
-      <div class="operation-buttons">
+    <el-card ref="dataCardRef" class="data-card">
+      <div ref="operationButtonsRef" class="operation-buttons">
         <el-button type="primary" @click="showAddDialog" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:CREATE']">添加</el-button>
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
-      <el-table :data="state.tableData" border v-loading="state.loading" :height="state.dataCardHeight" style="margin: 10px 0" stripe highlight-current-row>
+      <el-table
+        :data="state.tableData"
+        border
+        v-loading="state.loading"
+        :height="tableHeight"
+        style="margin: 10px 0"
+        stripe
+        highlight-current-row
+        class="brand-table"
+      >
         <el-table-column prop="id" label="ID" align="center" v-if="false" />
         <el-table-column label="序号" align="center" type="index" width="60" fixed />
-        <el-table-column prop="name" label="名称" align="center" width="180" fixed />
-        <el-table-column prop="code" label="编码" align="center" width="160" />
+        <el-table-column prop="name" label="名称" align="center" width="180" fixed show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.name" :content="row.name" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.name }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="code" label="编码" align="center" width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.code" :content="row.code" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.code }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
 
         <el-table-column prop="status" label="状态" align="center" width="120">
           <template #default="{ row }">
@@ -142,31 +165,55 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="logoUrl" label="LOGO" align="center" width="150">
+        <el-table-column prop="logoUrl" label="LOGO" align="center" width="120">
           <template #default="{ row }">
             <DataBrandLogoPreview :url="row.logoUrl" />
           </template>
         </el-table-column>
 
-        <el-table-column prop="description" label="描述" align="center" show-overflow-tooltip />
-        <el-table-column prop="createName" label="创建人" align="center" width="120" />
+        <el-table-column prop="description" label="描述" align="center" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.description" :content="row.description" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.description }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createName" label="创建人" align="center" width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.createName" :content="row.createName" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.createName }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" align="center" width="180">
           <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
         </el-table-column>
-        <el-table-column prop="updateName" label="修改人" align="center" width="120" />
+        <el-table-column prop="updateName" label="修改人" align="center" width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tooltip v-if="row.updateName" :content="row.updateName" placement="top" :append-to-body="true">
+              <span class="text-ellipsis">{{ row.updateName }}</span>
+            </el-tooltip>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
           <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
         </el-table-column>
 
-        <el-table-column label="操作" align="center" width="140" fixed="right">
+        <el-table-column label="操作" align="center" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="showDetail(row)">详情</el-button>
-            <el-button size="small" type="primary" @click="showEdit(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE']">编辑</el-button>
+            <div class="table-actions">
+              <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:DETAIL']">详情</el-button>
+              <el-button size="small" type="primary" @click="showEdit(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE']">编辑</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <el-pagination
+        ref="paginationRef"
         v-model:current-page="state.pagination.current"
         v-model:page-size="state.pagination.size"
         :page-sizes="[10, 20, 50, 100, 200, 500, 1000]"
@@ -199,10 +246,15 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted, watch, computed } from 'vue'
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:BASIC_DATA:BRAND'
+  })
+  import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh } from '@element-plus/icons-vue'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useWindowSize } from '@vueuse/core'
   import { DataBrandApi } from '@/modules/data/brand/api/DataBrand.api'
   import type { DataBrandExpandPageResponse } from '@/modules/data/brand/type/DataBrand.type'
   import DataBrandAddDialog from '@/modules/data/brand/DataBrandAddDialog.vue'
@@ -220,7 +272,6 @@
     loading: false,
     showSearchCard: true,
     currentBrandId: '',
-    dataCardHeight: 'calc(100vh - 400px)',
     brandStatus: [],
     pagination: {
       current: 1,
@@ -254,6 +305,32 @@
   })
 
   const searchFormRef = ref()
+  const dataCardRef = ref<HTMLElement | null>(null)
+  const searchCardRef = ref<HTMLElement | null>(null)
+  const operationButtonsRef = ref<HTMLElement | null>(null)
+  const paginationRef = ref<HTMLElement | null>(null)
+
+  // 表格高度计算
+  const { height: windowHeight } = useWindowSize()
+  const tableHeight = ref<number>(560)
+
+  const calculateTableHeight = async () => {
+    await nextTick()
+    if (!windowHeight.value) return
+
+    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
+    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
+    const paginationHeight = paginationRef.value?.offsetHeight || 60
+    const paginationSpacing = paginationHeight > 0 ? 8 : 0
+    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
+    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
+    const availableHeight = windowHeight.value - reservedHeight
+    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
+    tableHeight.value = Math.max(400, availableHeight)
+  }
+
+  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
 
   // 计算属性
   const selectedCreateUserIds = computed({
@@ -269,17 +346,6 @@
       state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || { id })
     }
   })
-
-  // 监听搜索框展开状态，调整表格高度
-  watch(
-    () => state.showSearchCard,
-    newVal => {
-      setTimeout(() => {
-        state.dataCardHeight = newVal ? 'calc(100vh - 400px)' : 'calc(100vh - 200px)'
-      }, 80)
-    },
-    { immediate: false }
-  )
 
   // 方法
   const fetchBrandList = async () => {
@@ -476,11 +542,36 @@
 
       .form-item-responsive {
         margin-bottom: 8px;
-        flex: 1 1 320px;
-        min-width: 120px;
-        max-width: 320px;
+        flex: 1 1 280px;
+        min-width: 100px;
+        max-width: 280px;
+
         &.user-selector {
-          min-width: 320px;
+          min-width: 280px;
+
+          // 优化标签间距
+          :deep(.el-select__tags) {
+            .el-tag {
+              margin-right: 4px;
+              margin-left: 0;
+              padding: 0 6px;
+
+              &:first-child {
+                margin-left: 0;
+              }
+            }
+          }
+        }
+
+        // 创建时间和修改时间字段特殊宽度
+        &.form-item-date-picker {
+          flex: 1 1 320px;
+          max-width: 320px;
+
+          :deep(.el-date-editor) {
+            width: 100%;
+            max-width: 320px;
+          }
         }
       }
     }
@@ -502,6 +593,47 @@
       .el-switch {
         margin-left: 8px;
       }
+    }
+  }
+
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    :deep(.el-button) {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  // 优化表格行高
+  .brand-table {
+    :deep(.el-table__body) {
+      td {
+        padding: 8px 0;
+      }
+    }
+
+    :deep(.el-table__header) {
+      th {
+        padding: 8px 0;
+      }
+    }
+
+    // 文本省略样式
+    .text-ellipsis {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
     }
   }
 

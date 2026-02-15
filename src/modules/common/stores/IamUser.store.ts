@@ -83,7 +83,7 @@ export const useIamUserStore = defineStore(
       menuRouters.value = constantRoute
       routeError.value = null
       // 清空标签页
-      import('@/modules/common/stores/Tab.store').then(({ useTabStore }) => {
+      import('@/modules/common/stores/LayoutTab.store').then(({ useTabStore }) => {
         const tabStore = useTabStore()
         tabStore.clearTabs()
       })

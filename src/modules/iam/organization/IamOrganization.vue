@@ -44,11 +44,13 @@
             :columns="tableColumns"
             :data="currentTabState.displayData"
             :width="tableWidth"
-            :height="680"
+            :height="660"
             :expand-column-key="expandColumnKey"
             fixed
             row-key="id"
-            :estimated-row-height="50"
+            :estimated-row-height="60"
+            class="organization-table"
+            style="margin: 10px 0"
           />
         </el-tab-pane>
       </el-tabs>
@@ -63,8 +65,12 @@
 </template>
 
 <script lang="ts" setup>
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:AUTH:ORGANIZATION'
+  })
   import Fuse from 'fuse.js'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { useElementSize } from '@vueuse/core'
   import { ref, reactive, computed, onMounted, watch, h, nextTick } from 'vue'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
@@ -130,7 +136,7 @@
       key: 'code',
       title: '编码',
       dataKey: 'code',
-      width: 200,
+      width: 160,
       align: 'left',
       cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: IamOrganizationExpandTreeResponseVo }) =>
         rowData.highlight?.code ? h('span', { innerHTML: rowData.highlight.code }) : cellData
@@ -138,7 +144,7 @@
     { key: 'organizationNumber', title: '组织数', dataKey: 'organizationNumber', width: 100, align: 'center' },
     { key: 'shopNumber', title: '门店数', dataKey: 'shopNumber', width: 100, align: 'center' },
     { key: 'userNumber', title: '用户数', dataKey: 'userNumber', width: 100, align: 'center' },
-    { key: 'sort', title: '排序', dataKey: 'sort', width: 80, align: 'center' },
+    { key: 'sort', title: '排序', dataKey: 'sort', width: 160, align: 'center' },
     { key: 'createName', title: '创建人', dataKey: 'createName', width: 120, align: 'center' },
     {
       key: 'createTime',
@@ -170,7 +176,8 @@
           onAdd: () => handleAdd(rowData),
           onEdit: () => handleEdit(rowData),
           onChangeParent: () => handleChangeParent(rowData),
-          onDelete: () => handleDelete(rowData)
+          onDelete: () => handleDelete(rowData),
+          onDeleteConfirm: () => handleDeleteConfirm(rowData)
         })
     }
   ]
@@ -249,6 +256,7 @@
     const tabState = currentTabState.value
 
     try {
+      tabState.searchReady = false
       const response = await IamOrganizationApi.treeExpand({ type: state.activeTab })
       tabState.rootNode = response
       tabState.allData = response.children || []
@@ -258,12 +266,14 @@
       state.initializedTabs.add(state.activeTab)
     } catch (error) {
       console.error('获取组织树数据失败', error)
+      ElMessage.error('获取组织数据失败，请稍后重试')
+      tabState.searchReady = false
     }
   }
 
   // 初始化搜索工具
   const initSearchTools = (tabState: TabState) => {
-    const flatData = TreeDataUtil.collectAllNodes(tabState.allData)
+    const flatData = TreeDataUtil.collectAllNodes(tabState.allData) || []
 
     tabState.nameFuse = new Fuse(flatData, {
       keys: ['name'],
@@ -425,6 +435,12 @@
     // 如果该类型数据尚未加载，则加载数据
     if (!state.initializedTabs.has(tabCode)) {
       await fetchOrganizationTree()
+    } else {
+      // 如果 tab 已初始化，确保 searchReady 为 true（可能之前加载失败导致为 false）
+      const tabState = currentTabState.value
+      if (!tabState.searchReady && tabState.allData.length > 0) {
+        tabState.searchReady = true
+      }
     }
 
     //切换强制重新渲染
@@ -432,7 +448,8 @@
     await nextTick(() => {
       shouldRenderTable.value = true
     })
-    handleSearch()
+    // 切换 tab 时重置搜索状态，显示所有数据
+    resetSearch()
   }
 
   const handleDetail = (row: IamOrganizationExpandTreeResponseVo) => {
@@ -467,6 +484,21 @@
       handleSuccess()
     } catch (error) {
       console.error('删除组织失败', error)
+    }
+  }
+
+  const handleDeleteConfirm = async (row: { id: string; name: string }) => {
+    try {
+      await ElMessageBox.confirm(`确定要删除此组织 "${row.name}" 吗? 此操作不可恢复！`, '警告', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      await handleDelete(row)
+    } catch (error) {
+      if (error !== 'cancel') {
+        console.error('删除组织失败', error)
+      }
     }
   }
 
@@ -553,5 +585,67 @@
     font-weight: bold;
     padding: 0 2px;
     border-radius: 2px;
+  }
+
+  // 操作按钮样式 - 需要深度选择器以应用到 JSX 组件
+  :deep(.table-actions) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    .el-button {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    .el-dropdown {
+      margin-left: 2px;
+    }
+  }
+
+  // 优化表格行高，增加上下间距，添加边框
+  .organization-table {
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+
+    :deep(.el-virtual-scroll__item) {
+      padding: 4px 0;
+    }
+
+    :deep(.el-table-v2__row) {
+      height: 48px;
+    }
+
+    :deep(.el-table-v2__cell) {
+      padding: 4px 8px;
+      border-right: 1px solid var(--el-border-color);
+      border-bottom: 1px solid var(--el-border-color);
+    }
+
+    :deep(.el-table-v2__header-row) {
+      .el-table-v2__header-cell {
+        border-right: 1px solid var(--el-border-color);
+        border-bottom: 1px solid var(--el-border-color);
+      }
+    }
+
+    :deep(.el-table-v2__row:last-child) {
+      .el-table-v2__cell {
+        border-bottom: none;
+      }
+    }
+
+    :deep(.el-table-v2__cell:last-child) {
+      border-right: none;
+    }
+
+    :deep(.el-table-v2__header-cell:last-child) {
+      border-right: none;
+    }
   }
 </style>

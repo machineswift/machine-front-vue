@@ -45,7 +45,7 @@
                   </el-select>
                 </el-form-item>
 
-                <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive">
+                <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
                   <el-date-picker
                     v-model="state.searchForm.createTimeRange"
                     type="daterange"
@@ -57,7 +57,7 @@
                   />
                 </el-form-item>
 
-                <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive">
+                <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
                   <el-date-picker
                     v-model="state.searchForm.updateTimeRange"
                     type="daterange"
@@ -176,6 +176,10 @@
 </template>
 
 <script setup lang="ts">
+  // 定义组件名称，用于 keep-alive 缓存
+  defineOptions({
+    name: 'SYSTEM:BASIC_DATA:MATERIAL'
+  })
   import { ElTreeV2, ElMessage } from 'element-plus'
   import { ref, watch, onMounted, reactive } from 'vue'
   import { Refresh, Search } from '@element-plus/icons-vue'
@@ -569,9 +573,20 @@
 
         .form-item-responsive {
           margin-bottom: 8px;
-          flex: 1 1 320px;
-          min-width: 120px;
-          max-width: 320px;
+          flex: 1 1 280px;
+          min-width: 100px;
+          max-width: 280px;
+
+          // 创建时间和修改时间字段特殊宽度
+          &.form-item-date-picker {
+            flex: 1 1 320px;
+            max-width: 320px;
+
+            :deep(.el-date-editor) {
+              width: 100%;
+              max-width: 320px;
+            }
+          }
         }
       }
 

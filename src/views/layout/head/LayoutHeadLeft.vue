@@ -40,11 +40,22 @@
   .breadcrumb-container {
     display: flex;
     align-items: center;
+    height: 100%;
   }
 
   .expand-icon {
-    margin-right: 10px;
+    margin-right: 12px;
     cursor: pointer;
+    font-size: 32px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+
+    &:hover {
+      border-color: var(--el-border-color);
+      transform: scale(1.1);
+    }
   }
 
   .breadcrumb-icon {

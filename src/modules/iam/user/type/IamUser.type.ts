@@ -62,6 +62,28 @@ export interface IamUserQueryPageRequestVo extends PageRequest {
   updateEndTime?: number
 }
 
+/** 用户导出请求（支持按条件导出或按 userIdSet 导出选中） */
+export interface IamUserExportRequestVo {
+  userIdSet?: string[]
+  username?: string
+  name?: string
+  code?: string
+  status?: string
+  phone?: string
+  gender?: string
+  shopIdSet?: string[]
+  departmentIdSet?: string[]
+  organizationType?: string
+  organizationIdSet?: string[]
+  roleIdSet?: string[]
+  createUserIdSet?: string[]
+  updateUserIdSet?: string[]
+  createStartTime?: number
+  createEndTime?: number
+  updateStartTime?: number
+  updateEndTime?: number
+}
+
 export interface IamUserRoleInfoResponse {
   id: string
   type: string

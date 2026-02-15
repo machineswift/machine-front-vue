@@ -136,6 +136,6 @@
   }
   // 初始化枚举数据
   onMounted(async () => {
-    state.userGenders = enumStore.getEnumDataSync('CrmGenderEnum')
+    state.userGenders = enumStore.getEnumDataSync('GenderEnum')
   })
 </script>
