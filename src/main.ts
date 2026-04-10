@@ -21,10 +21,6 @@ const app = createApp(App)
 // 使用 Pinia
 app.use(pinia)
 
-// 初始化路由
-const userStore = useIamUserStore()
-userStore.initAsyncRoute()
-
 // 然后注册全局组件
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(`el-icon-${key}`, component)
@@ -36,6 +32,15 @@ app.use(permissionDirective)
 app.use(ElementPlus, {
   locale: zhCn
 })
-app.use(router)
 
-app.mount('#app')
+// 初始化异步路由后再挂载应用
+const userStore = useIamUserStore()
+userStore
+  .initAsyncRoute()
+  .catch(() => {
+    // 忽略初始化失败，路由守卫会处理未登录等情况
+  })
+  .finally(() => {
+    app.use(router)
+    app.mount('#app')
+  })

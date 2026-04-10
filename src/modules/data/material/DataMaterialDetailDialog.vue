@@ -1,56 +1,49 @@
 <template>
-  <el-dialog v-model="visible" title="素材详情" width="700px" :close-on-click-modal="false">
-    <el-descriptions :column="1" border>
-      <el-descriptions-item label="素材ID">{{ detailData.id }}</el-descriptions-item>
-      <el-descriptions-item label="素材标题">{{ detailData.title }}</el-descriptions-item>
-      <el-descriptions-item label="素材类型">
-        <el-tag>{{ getMaterialTypeLabel(detailData.type) }}</el-tag>
+  <el-dialog v-model="visible" title="素材详情" width="620px" :close-on-click-modal="false">
+    <el-descriptions :column="1" border v-loading="loading">
+      <el-descriptions-item label="ID">{{ detailData.id || '无' }}</el-descriptions-item>
+      <el-descriptions-item label="文件类型">
+        <el-tag size="small">{{ getFileTypeLabel(detailData.fileType) }}</el-tag>
       </el-descriptions-item>
-      <el-descriptions-item label="存储类型">
-        <el-tag>{{ getStorageTypeLabel(detailData.storageType) }}</el-tag>
+      <el-descriptions-item label="素材标题">{{ detailData.title || '无' }}</el-descriptions-item>
+      <el-descriptions-item label="附件">
+        <template v-if="detailData.attachmentId">
+          <template v-if="detailData.fileType === 'IMAGE' && attachmentUrl">
+            <el-image
+              :src="attachmentUrl"
+              fit="contain"
+              class="detail-preview-image material-preview-image"
+              :preview-src-list="[attachmentUrl]"
+              preview-teleported
+              hide-on-click-modal
+              :zoom-rate="1.2"
+              :max-scale="7"
+              :min-scale="0.2"
+            />
+          </template>
+          <template v-else-if="attachmentUrl">
+            <a :href="attachmentUrl" target="_blank" rel="noopener" class="detail-download-link">查看 / 下载附件</a>
+          </template>
+          <span v-else class="attachment-loading">加载中…</span>
+        </template>
+        <span v-else>无</span>
       </el-descriptions-item>
-      <el-descriptions-item label="状态">
-        <el-tag :type="getStatusTagType(detailData.status)">
-          {{ getStatusLabel(detailData.status) }}
-        </el-tag>
-      </el-descriptions-item>
+      <el-descriptions-item label="处理状态">{{ getProcessStatusLabel(detailData.processStatus) }}</el-descriptions-item>
+      <el-descriptions-item label="业务状态">{{ getBusinessStatusLabel(detailData.businessStatus) }}</el-descriptions-item>
+      <el-descriptions-item label="审核状态">{{ getAuditStatusLabel(detailData.auditStatus) }}</el-descriptions-item>
       <el-descriptions-item label="分类">
-        <el-tag v-for="categoryId in detailData.categoryIdSet" :key="categoryId" size="small" style="margin-right: 5px; margin-bottom: 5px">
-          {{ getCategoryName(categoryId) }}
-        </el-tag>
+        <template v-if="detailData.categoryIdSet && detailData.categoryIdSet.length">
+          <el-tag v-for="cid in detailData.categoryIdSet" :key="cid" size="small" style="margin-right: 4px; margin-bottom: 4px">
+            {{ getCategoryName(cid) }}
+          </el-tag>
+        </template>
+        <span v-else>无</span>
       </el-descriptions-item>
-      <el-descriptions-item label="文件大小">{{ formatFileSize(detailData.size) }}</el-descriptions-item>
-      <el-descriptions-item label="过期时间">{{ detailData.expireTime ? formatTimestamp(detailData.expireTime) : '永久' }}</el-descriptions-item>
-      <el-descriptions-item label="描述">{{ detailData.description || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="创建人">{{ detailData.createName }}</el-descriptions-item>
+      <el-descriptions-item label="创建人">{{ detailData.createName || '无' }}</el-descriptions-item>
       <el-descriptions-item label="创建时间">{{ formatTimestamp(detailData.createTime) }}</el-descriptions-item>
-      <el-descriptions-item label="修改人">{{ detailData.updateName }}</el-descriptions-item>
+      <el-descriptions-item label="修改人">{{ detailData.updateName || '无' }}</el-descriptions-item>
       <el-descriptions-item label="修改时间">{{ formatTimestamp(detailData.updateTime) }}</el-descriptions-item>
     </el-descriptions>
-
-    <!-- 根据不同类型显示元数据 -->
-    <div v-if="detailData.textMetaInfo" class="meta-info-section">
-      <h3>文本信息</h3>
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="格式">{{ detailData.textMetaInfo.format }}</el-descriptions-item>
-        <el-descriptions-item label="内容">
-          <pre>{{ detailData.textMetaInfo.content }}</pre>
-        </el-descriptions-item>
-      </el-descriptions>
-    </div>
-
-    <div v-if="detailData.imageMetaInfo" class="meta-info-section">
-      <h3>图片信息</h3>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="格式">{{ detailData.imageMetaInfo.format }}</el-descriptions-item>
-        <el-descriptions-item label="宽度">{{ detailData.imageMetaInfo.width }}px</el-descriptions-item>
-        <el-descriptions-item label="高度">{{ detailData.imageMetaInfo.height }}px</el-descriptions-item>
-        <el-descriptions-item label="DPI">{{ detailData.imageMetaInfo.dpi || '未知' }}</el-descriptions-item>
-      </el-descriptions>
-    </div>
-
-    <!-- 其他类型的元数据显示类似 -->
-
     <template #footer>
       <el-button @click="visible = false">关闭</el-button>
     </template>
@@ -58,128 +51,91 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
+  import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
   import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
   import type { DataMaterialDetailResponseVo } from '@/modules/data/material/type/DataMaterial.type'
 
   const props = defineProps({
-    modelValue: {
-      type: Boolean,
-      required: true
-    },
-    materialId: {
-      type: String,
-      required: true
-    }
+    modelValue: { type: Boolean, required: true },
+    materialId: { type: String, default: '' },
+    categoryNameMap: { type: Object as () => Record<string, string>, default: () => ({}) }
   })
 
   const emit = defineEmits(['update:modelValue'])
 
   const enumStore = useDictionaryEnumStore()
-  const visible = ref(false)
-  const detailData = ref<DataMaterialDetailResponseVo>({} as DataMaterialDetailResponseVo)
-  const categoryMap = ref<Map<string, string>>(new Map())
+  const visible = computed({
+    get: () => props.modelValue,
+    set: val => emit('update:modelValue', val)
+  })
+  const loading = ref(false)
+  const detailData = ref<DataMaterialDetailResponseVo>({})
+  const attachmentUrl = ref('')
 
-  // 获取素材详情
+  const getCategoryName = (categoryId: string): string => {
+    return (props.categoryNameMap && props.categoryNameMap[categoryId]) || categoryId
+  }
+
+  const getFileTypeLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataFileTypeEnum', code)?.message || code : '无')
+  const getProcessStatusLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataMaterialProcessStatusEnum', code)?.message || code : '无')
+  const getBusinessStatusLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataMaterialBusinessStatusEnum', code)?.message || code : '无')
+  const getAuditStatusLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataMaterialAuditStatusEnum', code)?.message || code : '无')
+  const formatTimestamp = (timestamp?: number) => (timestamp ? new Date(timestamp).toLocaleString() : '无')
+
+  const loadAttachmentUrl = async (attachmentId: string) => {
+    if (!attachmentId) {
+      attachmentUrl.value = ''
+      return
+    }
+    try {
+      const res = await DataAttachmentApi.getUrl(attachmentId)
+      attachmentUrl.value = res?.url || ''
+    } catch {
+      attachmentUrl.value = ''
+    }
+  }
+
   const fetchDetail = async () => {
     if (!props.materialId) return
     try {
+      loading.value = true
       const res = await DataMaterialApi.detail({ id: props.materialId })
-      detailData.value = res
+      detailData.value = res || {}
+      if (res?.attachmentId) {
+        await loadAttachmentUrl(res.attachmentId)
+      } else {
+        attachmentUrl.value = ''
+      }
     } catch (error) {
       console.error('获取素材详情失败', error)
+    } finally {
+      loading.value = false
     }
-  }
-
-  // 获取分类名称
-  const getCategoryName = (categoryId: string): string => {
-    return categoryMap.value.get(categoryId) || categoryId
-  }
-
-  // 获取素材类型标签
-  const getMaterialTypeLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataMaterialTypeEnum', type)
-    return enumItem?.message || type
-  }
-
-  // 获取存储类型标签
-  const getStorageTypeLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataMaterialStorageTypeEnum', type)
-    return enumItem?.message || type
-  }
-
-  // 获取状态标签
-  const getStatusLabel = (status: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataMaterialStatusEnum', status)
-    return enumItem?.message || status
-  }
-
-  // 获取状态标签类型
-  const getStatusTagType = (status: string): string => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'success'
-      case 'INACTIVE':
-        return 'danger'
-      default:
-        return 'info'
-    }
-  }
-
-  // 格式化文件大小
-  const formatFileSize = (bytes?: number): string => {
-    if (!bytes) return '0 B'
-    const units = ['B', 'KB', 'MB', 'GB', 'TB']
-    let size = bytes
-    let unitIndex = 0
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024
-      unitIndex++
-    }
-    return `${size.toFixed(2)} ${units[unitIndex]}`
-  }
-
-  // 格式化时间戳
-  const formatTimestamp = (timestamp?: number): string => {
-    return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
   watch(
     () => props.modelValue,
     val => {
-      visible.value = val
-      if (val && props.materialId) {
-        fetchDetail()
-      }
-    }
+      if (val && props.materialId) fetchDetail()
+      else attachmentUrl.value = ''
+    },
+    { immediate: false }
   )
-
-  watch(visible, val => {
-    emit('update:modelValue', val)
-  })
-
-  // 初始化分类映射
-  const initCategoryMap = async () => {
-    // 这里需要实现获取分类映射的逻辑
-    // 可以从父组件传递过来，或者单独调用API获取
-  }
-
-  initCategoryMap()
 </script>
 
 <style scoped>
-  .meta-info-section {
-    margin-top: 20px;
+  .detail-preview-image {
+    max-width: 280px;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color);
   }
-  .meta-info-section h3 {
-    margin: 10px 0;
-    font-size: 16px;
-    font-weight: bold;
+  .detail-download-link {
+    color: var(--el-color-primary);
   }
-  pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    margin: 0;
+  .attachment-loading {
+    color: var(--el-text-color-secondary);
   }
 </style>

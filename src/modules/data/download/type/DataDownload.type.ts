@@ -56,6 +56,7 @@ export interface DataDownloadListResponseVo {
   fileType?: string
   attachmentOriginalName?: string
   attachmentSize?: number
+  expireTime?: number
   failCause?: string
   createName?: string
   createBy?: string

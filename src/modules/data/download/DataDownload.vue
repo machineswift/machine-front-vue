@@ -96,6 +96,13 @@
             {{ row.attachmentSize != null ? formatFileSize(row.attachmentSize) : '-' }}
           </template>
         </el-table-column>
+        <el-table-column prop="expireTime" label="过期时间" align="center" width="200">
+          <template #default="{ row }">
+            <el-tag v-if="row.expireTime && isExpired(row.expireTime)" type="warning">已过期</el-tag>
+            <span v-if="row.expireTime">{{ formatTime(row.expireTime) }}</span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="failCause" label="失败原因" align="center" width="240">
           <template #default="{ row }">
             <el-tooltip v-if="row.failCause" :content="row.failCause" placement="top" :append-to-body="true">
@@ -131,7 +138,10 @@
               >
                 重试
               </el-button>
-              <el-button size="small" type="success" @click="handleDownload(row)" v-if="row.status === 'FINISH' && row.attachmentId">下载</el-button>
+              <el-tooltip v-if="row.status === 'FINISH' && row.attachmentId && isExpired(row.expireTime)" content="文件已过期，无法下载" placement="top">
+                <el-button size="small" type="success" disabled>下载</el-button>
+              </el-tooltip>
+              <el-button size="small" type="success" @click="handleDownload(row)" v-else-if="row.status === 'FINISH' && row.attachmentId">下载</el-button>
             </div>
           </template>
         </el-table-column>
@@ -351,6 +361,11 @@
 
   const formatTime = (timestamp: number) => {
     return timestamp ? new Date(timestamp).toLocaleString() : '-'
+  }
+
+  const isExpired = (expireTime?: number) => {
+    if (!expireTime) return false
+    return Date.now() > expireTime
   }
 
   const formatFileSize = (bytes: number) => {

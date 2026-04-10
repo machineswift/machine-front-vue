@@ -1,157 +1,90 @@
 import type { PageRequest, PageResponse } from '@/modules/common/types/Common.type'
 
-export interface DataMaterialTextDto {
-  format: string
-  content?: string
-}
+/** 文件类型（与后端 DataFileTypeEnum 一致，传字符串） */
+export type DataFileTypeEnum = string
 
-export interface DataMaterialImageDto {
-  format: string
-  width: number
-  height: number
-  dpi?: number
-}
+/** 系统处理状态（与后端 DataMaterialProcessStatusEnum 一致） */
+export type DataMaterialProcessStatusEnum = string
 
-export interface DataMaterialAudioDto {
-  format: string
-  duration: number
-  bitrate: number
-  sampleRate?: number
-  channels?: number
-}
+/** 业务状态（与后端 DataMaterialBusinessStatusEnum 一致） */
+export type DataMaterialBusinessStatusEnum = string
 
-export interface DataMaterialVideoDto {
-  format: string
-  duration: number
-  width: number
-  height: number
-  bitrate?: number
-  fps?: number
-  codec?: string
-  audioCodec?: string
-}
+/** 审核状态（与后端 DataMaterialAuditStatusEnum 一致） */
+export type DataMaterialAuditStatusEnum = string
 
-export interface DataMaterialDocumentDto {
-  format: string
-  pageCount: number
-}
-
-export interface DataMaterialFileDto {
-  format: string
-  checksum: string
-}
-
-export interface DataMaterialUploadParams {
-  materIalType: string
-  file: File
-}
-
-export interface DataMaterialUploadImageParams {
-  thumbnailWeight?: number
-  thumbnailHeight?: number
-  file: File
-}
-
+/** 新增素材 */
 export interface DataMaterialCreateRequestVo {
-  materialId: string
-  type: string
+  fileType: DataFileTypeEnum
   title: string
-  categoryIdSet?: Set<string>
-  expireTime?: number
-  description?: string
-
-  textMetaInfo?: DataMaterialTextDto
-  imageMetaInfo?: DataMaterialImageDto
-  audioMetaInfo?: DataMaterialAudioDto
-  videoMetaInfo?: DataMaterialVideoDto
-  documentMetaInfo?: DataMaterialDocumentDto
-  fileMetaInfo?: DataMaterialFileDto
+  categoryIdSet?: string[]
 }
 
+/** 更新素材 */
 export interface DataMaterialUpdateRequestVo {
   id: string
   title: string
-  categoryIdSet?: Set<string>
-  expireTime?: number
-  description?: string
-
-  textMetaInfo?: DataMaterialTextDto
-  imageMetaInfo?: DataMaterialImageDto
-  audioMetaInfo?: DataMaterialAudioDto
-  videoMetaInfo?: DataMaterialVideoDto
-  documentMetaInfo?: DataMaterialDocumentDto
-  fileMetaInfo?: DataMaterialFileDto
+  categoryIdSet?: string[]
+  attachmentId: string
 }
 
-export interface DataMaterialUrlResponseVo {
-  url: string
+/** 修改素材分类 */
+export interface DataMaterialUpdateCategoryRequestVo {
+  id: string
+  categoryIdSet?: string[]
 }
 
+/** 素材分页查询（管理端） */
 export interface DataMaterialQueryPageRequestVo extends PageRequest {
-  status?: string
-  type?: string
-  storageType?: string
+  /** 文件类型集合，多选；为空则不按文件类型过滤 */
+  fileTypeSet?: DataFileTypeEnum[]
   title?: string
   name?: string
-  categoryIdSet?: Set<string>
-  createUserIdSet?: Set<string>
-  updateUserIdSet?: Set<string>
+  processStatus?: DataMaterialProcessStatusEnum
+  businessStatus?: DataMaterialBusinessStatusEnum
+  auditStatus?: DataMaterialAuditStatusEnum
+  categoryIdSet?: string[]
+  createUserIdSet?: string[]
+  updateUserIdSet?: string[]
   updateStartTime?: number
   updateEndTime?: number
   createStartTime?: number
   createEndTime?: number
 }
 
+/** 素材详情 */
 export interface DataMaterialDetailResponseVo {
   id?: string
-  status?: string
-  type?: string
-  storageType?: string
+  attachmentId?: string
+  fileType?: DataFileTypeEnum
+  processStatus?: DataMaterialProcessStatusEnum
+  businessStatus?: DataMaterialBusinessStatusEnum
+  auditStatus?: DataMaterialAuditStatusEnum
   title?: string
-  name?: string
-  categoryIdSet?: Set<string>
-  size?: number
-  expireTime?: number
-  description?: string
+  categoryIdSet?: string[]
   createName?: string
   createBy?: string
   createTime?: number
   updateName?: string
   updateBy?: string
   updateTime?: number
-
-  textMetaInfo?: DataMaterialTextDto
-  imageMetaInfo?: DataMaterialImageDto
-  audioMetaInfo?: DataMaterialAudioDto
-  videoMetaInfo?: DataMaterialVideoDto
-  documentMetaInfo?: DataMaterialDocumentDto
-  fileMetaInfo?: DataMaterialFileDto
 }
 
+/** 素材分页列表项（管理端展开） */
 export interface DataMaterialExpandListResponseVo {
   id?: string
-  status?: string
-  type?: string
-  storageType?: string
+  attachmentId?: string
+  fileType?: DataFileTypeEnum
+  processStatus?: DataMaterialProcessStatusEnum
+  businessStatus?: DataMaterialBusinessStatusEnum
+  auditStatus?: DataMaterialAuditStatusEnum
   title?: string
-  name?: string
-  categoryIdSet?: Set<string>
-  size?: number
-  expireTime?: number
-  description?: string
+  categoryIdSet?: string[]
   createName?: string
   createBy?: string
   createTime?: number
   updateName?: string
   updateBy?: string
   updateTime?: number
-
-  textMetaInfo?: DataMaterialTextDto
-  imageMetaInfo?: DataMaterialImageDto
-  audioMetaInfo?: DataMaterialAudioDto
-  videoMetaInfo?: DataMaterialVideoDto
-  documentMetaInfo?: DataMaterialDocumentDto
-  fileMetaInfo?: DataMaterialFileDto
 }
 
 export type DataMaterialExpandPageResponse = PageResponse<DataMaterialExpandListResponseVo>

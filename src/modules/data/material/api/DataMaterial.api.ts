@@ -1,68 +1,41 @@
 import request from '@/modules/common/utils/Request.util'
 import { MANAGE_API_BASE_URL } from '@/modules/common/constant/Common.constant'
-import type { IdResponse } from '@/modules/common/types/Common.type'
+import type { IdRequest, IdResponse } from '@/modules/common/types/Common.type'
 import type {
-  DataMaterialUploadParams,
   DataMaterialCreateRequestVo,
   DataMaterialUpdateRequestVo,
+  DataMaterialUpdateCategoryRequestVo,
   DataMaterialQueryPageRequestVo,
   DataMaterialDetailResponseVo,
-  DataMaterialUrlResponseVo,
-  DataMaterialExpandPageResponse,
-  DataMaterialUploadImageParams
+  DataMaterialExpandPageResponse
 } from '../type/DataMaterial.type'
 
-const upload = async (params: DataMaterialUploadParams): Promise<IdResponse> => {
-  return request.upload<IdResponse>(MANAGE_API_BASE_URL + 'manage/data/file/material/upload', params.file, {
-    materIalType: params.materIalType
-  })
-}
-
-const uploadImage = async (params: DataMaterialUploadImageParams): Promise<IdResponse> => {
-  return request.upload<IdResponse>(MANAGE_API_BASE_URL + 'manage/data/file/material/upload_image', params.file, {
-    thumbnailWeight: params.thumbnailWeight,
-    thumbnailHeight: params.thumbnailHeight,
-    materIalType: params.materIalType
-  })
-}
+const MATERIAL_BASE = MANAGE_API_BASE_URL + 'manage/data/file/material'
 
 const create = async (params: DataMaterialCreateRequestVo): Promise<IdResponse> => {
-  return request.post<IdResponse>(MANAGE_API_BASE_URL + 'manage/data/file/material/create', params)
+  return request.post<IdResponse>(MATERIAL_BASE + '/create', params)
 }
 
 const update = async (params: DataMaterialUpdateRequestVo): Promise<void> => {
-  return request.post(MANAGE_API_BASE_URL + 'manage/data/file/material/update', params)
+  return request.post(MATERIAL_BASE + '/update', params)
 }
 
-const getUrl = async (materialId: string, expireSecond?: number): Promise<DataMaterialUrlResponseVo> => {
-  return request.get<DataMaterialUrlResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file/material/get_url', {
-    materialId,
-    expireSecond
-  })
-}
-
-const getThumbnailUrl = async (materialId: string, expireSecond?: number): Promise<DataMaterialUrlResponseVo> => {
-  return request.get<DataMaterialUrlResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file/material/get_thumbnail_url', {
-    materialId,
-    expireSecond
-  })
+const updateCategory = async (params: DataMaterialUpdateCategoryRequestVo): Promise<void> => {
+  return request.post(MATERIAL_BASE + '/update_category', params)
 }
 
 const detail = async (params: IdRequest): Promise<DataMaterialDetailResponseVo> => {
-  return request.post<DataMaterialDetailResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file/material/detail', params)
+  return request.post<DataMaterialDetailResponseVo>(MATERIAL_BASE + '/detail', params)
 }
 
 const pageExpand = async (params: DataMaterialQueryPageRequestVo): Promise<DataMaterialExpandPageResponse> => {
-  return request.post<DataMaterialExpandPageResponse>(MANAGE_API_BASE_URL + 'manage/data/file/material/page_expand', params)
+  return request.post<DataMaterialExpandPageResponse>(MATERIAL_BASE + '/page_expand', params)
 }
 
 export const DataMaterialApi = {
-  upload,
-  uploadImage,
-  getUrl,
-  getThumbnailUrl,
   create,
   update,
+  updateCategory,
   detail,
   pageExpand
 }

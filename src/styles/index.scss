@@ -1,5 +1,22 @@
 @use "./reset.scss" as *;
 
+// 图片预览层：置于弹窗之上，全屏深色遮罩，点击空白关闭（大厂常见交互）
+.el-image-viewer__wrapper {
+  z-index: 3000 !important;
+}
+.el-image-viewer__mask {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+}
+
+// 素材模块图片：点击放大预览时的手型与悬停提示
+.material-preview-image {
+  cursor: zoom-in;
+  transition: opacity 0.2s ease;
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
 //滚动条外观
 ::-webkit-scrollbar{
   width: 12px;
