@@ -2,9 +2,9 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { cloneDeep } from 'lodash'
 import router from '@/router'
-import { PermissionUtil } from '@/modules/common/utils/Permission.util'
+import { PermissionUtil } from '@/common/utils/Permission.util'
 import { constantRoute } from '@/router/constant'
-import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
+import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
 import { IamAuthApi } from '@/modules/iam/auth/api/IamAuth.api'
 import { IamCurrentApi } from '@/modules/iam/auth/api/IamCurrent.api'
 import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
@@ -40,6 +40,9 @@ export const useIamUserStore = defineStore(
     const routeLoading = ref(false)
     const routeError = ref<Error | null>(null)
     let routeLoadingPromise: Promise<boolean> | null = null
+
+    // token刷新并发控制
+    let refreshPromise: Promise<string> | null = null
 
     // Actions
     const setAuthInfo = (authInfo: IamAuthLoginResponseVo) => {
@@ -83,7 +86,7 @@ export const useIamUserStore = defineStore(
       menuRouters.value = constantRoute
       routeError.value = null
       // 清空标签页
-      import('@/modules/common/stores/LayoutTab.store').then(({ useTabStore }) => {
+      import('@/common/stores/LayoutTab.store').then(({ useTabStore }) => {
         const tabStore = useTabStore()
         tabStore.clearTabs()
       })
@@ -106,7 +109,11 @@ export const useIamUserStore = defineStore(
 
         setUserInfo(userInfo)
         setPermissionInfo(permissionInfo)
-        await setAsyncRoute()
+        const routeReady = await setAsyncRoute()
+        if (!routeReady) {
+          clearAuthInfo()
+          return false
+        }
         return true
       } catch (error) {
         clearAuthInfo()
@@ -161,11 +168,20 @@ export const useIamUserStore = defineStore(
       if (isTokenValid()) {
         return auth.value.accessToken
       }
+
+      // 如果已经有刷新操作在进行中，复用同一个 Promise，避免并发刷新
+      if (refreshPromise) {
+        return refreshPromise
+      }
+
       try {
-        return await refreshToken()
+        refreshPromise = refreshToken()
+        return await refreshPromise
       } catch (error) {
         clearAuthInfo()
         throw error
+      } finally {
+        refreshPromise = null
       }
     }
 

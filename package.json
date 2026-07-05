@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --mode development",
-    "build:test": "vite build --mode test",
-    "build:production": "vite build --mode production && vue-tsc --noEmit",
+    "build": "vite build --mode production",
     "preview": "vite preview",
     "lint:check": "eslint src",
     "lint:format": "eslint src --fix",
@@ -16,7 +14,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "@types/matter-js": "^0.19.8",
-    "axios": "^1.13.5",
+    "axios": "1.15.0",
     "element-plus": "^2.13.2",
     "fuse.js": "^7.1.0",
     "lodash": "^4.17.21",
@@ -37,7 +35,7 @@
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.33.1",
     "@vitejs/plugin-vue": "^6.0.4",
-    "@vitejs/plugin-vue-jsx": "^4.2.0",
+    "@vitejs/plugin-vue-jsx": "^5.1.5",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.28.0",
@@ -62,7 +60,7 @@
     "stylelint-scss": "^6.12.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.33.1",
-    "vite": "^6.4.1",
+    "vite": "8.0.5",
     "vite-plugin-svg-icons": "^2.0.1",
     "vue-tsc": "^3.2.4"
   }

@@ -11,9 +11,9 @@
 <script setup lang="ts">
   import { watch, ref, nextTick, computed } from 'vue'
   import { useRoute } from 'vue-router'
-  import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
-  import { useTabStore } from '@/modules/common/stores/LayoutTab.store'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useSettingStore } from '@/common/stores/SystemSetting.store'
+  import { useTabStore } from '@/common/stores/LayoutTab.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
 
   const route = useRoute()
   const settingStore = useSettingStore()

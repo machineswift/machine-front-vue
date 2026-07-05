@@ -95,8 +95,8 @@
   import { Menu, Delete } from '@element-plus/icons-vue'
   import { ref, nextTick, reactive, watch } from 'vue'
   import { type TabPaneName, type FormInstance } from 'element-plus'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import type { DataPermissionMetaDto, DataPermissionMetaScopeDto } from '@/modules/common/types/CommonIam.type'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import type { DataPermissionMetaDto, DataPermissionMetaScopeDto } from '@/common/types/CommonIam.type'
 
   const props = defineProps<{
     modelValue: DataPermissionMetaDto[]

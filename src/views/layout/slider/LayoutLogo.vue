@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
   import appSetting from '@/setting'
-  import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
+  import { useSettingStore } from '@/common/stores/SystemSetting.store'
 
   const settingStore = useSettingStore()
 </script>

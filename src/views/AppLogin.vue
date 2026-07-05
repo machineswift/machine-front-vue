@@ -51,7 +51,7 @@
   import { ElMessage } from 'element-plus'
   import { reactive, onMounted, ref } from 'vue'
   import { User, Lock } from '@element-plus/icons-vue'
-  import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+  import { useIamUserStore } from '@/common/stores/IamUser.store'
   import type { IamAuthCaptchaResponseVo, IamAuthLoginResponseVo, IamAuthUsernameLoginRequestVo } from '@/modules/iam/auth/type/IamAuth.type'
   import { IamAuthApi } from '@/modules/iam/auth/api/IamAuth.api'
   import { IamAuth2Api } from '@/modules/iam/auth/api/IamAuth2.api'
@@ -71,7 +71,7 @@
   const loginFormRules = reactive({
     username: [
       { required: true, message: '请输入用户名', trigger: 'blur' },
-      { min: 3, max: 20, message: '长度在3到20个字符', trigger: 'blur' }
+      { min: 2, max: 20, message: '长度在3到20个字符', trigger: 'blur' }
     ],
     password: [
       { required: true, message: '请输入密码', trigger: 'blur' },
@@ -99,13 +99,14 @@
       loading.value = true
       const authInfo: IamAuthLoginResponseVo = await IamAuthApi.loginByUsername(loginFormModel)
       const success = await userStore.login(authInfo)
-      // login 方法内部已经调用了 setAsyncRoute，无需重复调用
-      if (success) {
-        await router.push({
-          path: '/layout',
-          query: { redirect: router.currentRoute.value.query.redirect as string }
-        })
+      if (!success) {
+        ElMessage.error('用户菜单权限加载失败，请检查账号权限配置')
+        return
       }
+      // login 方法内部已经调用了 setAsyncRoute，无需重复调用
+      // 使用 replace 跳转，避免登录页出现在浏览器历史中
+      const redirect = router.currentRoute.value.query.redirect
+      await router.replace(redirect ? (redirect as string) : '/home')
     } catch (error) {
       console.error('登录失败', error)
       await getPicCaptcha()

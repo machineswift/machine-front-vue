@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/modules/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/common/types/Common.type'
 
 export interface DataAttachmentDto {
   id?: string
@@ -12,22 +12,7 @@ export interface DataAttachmentDto {
 }
 
 export interface DataAttachmentUploadParams {
-  attachmentType: string
   file: File
-}
-
-export interface DataAttachmentUploadImageParams {
-  thumbnailWeight?: number
-  thumbnailHeight?: number
-  file: File
-}
-
-export interface DataMaterialUpdateRequestVo {
-  id: string
-  title: string
-  categoryIdSet?: Set<string>
-  expireTime?: number
-  description?: string
 }
 
 export interface DataAttachmentUrlResponseVo {

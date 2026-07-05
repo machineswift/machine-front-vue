@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/modules/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/common/types/Common.type'
 
 /** 文件类型（与后端 DataFileTypeEnum 一致，传字符串） */
 export type DataFileTypeEnum = string
@@ -12,10 +12,18 @@ export type DataMaterialBusinessStatusEnum = string
 /** 审核状态（与后端 DataMaterialAuditStatusEnum 一致） */
 export type DataMaterialAuditStatusEnum = string
 
+/** 临时文件创建参数（与后端 DataFileTempCreateDto 一致） */
+export interface DataFileTempCreateDto {
+  fileId: string
+  sort?: number
+  features?: string
+}
+
 /** 新增素材 */
 export interface DataMaterialCreateRequestVo {
   fileType: DataFileTypeEnum
   title: string
+  fileTemp: DataFileTempCreateDto
   categoryIdSet?: string[]
 }
 
@@ -24,7 +32,7 @@ export interface DataMaterialUpdateRequestVo {
   id: string
   title: string
   categoryIdSet?: string[]
-  attachmentId: string
+  fileTemp?: DataFileTempCreateDto
 }
 
 /** 修改素材分类 */

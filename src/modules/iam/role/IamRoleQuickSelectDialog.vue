@@ -120,7 +120,7 @@
   import { ElMessage, ElTable } from 'element-plus'
   import { reactive, watch, computed, ref } from 'vue'
   import { IamRoleApi } from '@/modules/iam/role/api/IamRole.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import type { IamRoleQueryPageRequestVo, IamRoleSimpleListResponseVo } from '@/modules/iam/role/type/IamRole.type'
 
   const props = defineProps({

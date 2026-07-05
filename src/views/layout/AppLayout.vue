@@ -29,9 +29,9 @@
   import LayoutMenu from '@/views/layout/slider/LayoutMenu.vue'
   import LayoutMain from '@/views/layout/main/LayoutMain.vue'
   import LayoutHead from '@/views/layout/head/LayoutHead.vue'
-  import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
-  import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
-  import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
+  import { useIamUserStore } from '@/common/stores/IamUser.store'
+  import { useSettingStore } from '@/common/stores/SystemSetting.store'
+  import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
 
   const userStore = useIamUserStore()
   const settingStore = useSettingStore()

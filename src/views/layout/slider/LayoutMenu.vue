@@ -33,8 +33,8 @@
 <script setup lang="ts">
   import { defineProps } from 'vue'
   import { useRouter } from 'vue-router'
-  import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
-  import SvgIcon from '@/modules/common/components/svgIcon/SvgIcon.vue'
+  import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
+  import SvgIcon from '@/common/components/svgIcon/SvgIcon.vue'
 
   // 获取父组件数据
   defineProps<{

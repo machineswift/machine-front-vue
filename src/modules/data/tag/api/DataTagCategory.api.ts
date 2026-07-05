@@ -1,6 +1,6 @@
-import request from '@/modules/common/utils/Request.util'
-import { MANAGE_API_BASE_URL } from '@/modules/common/constant/Common.constant'
-import type { IdRequest, IdResponse } from '@/modules/common/types/Common.type'
+import request from '@/common/utils/Request.util'
+import { MANAGE_API_BASE_URL } from '@/common/constant/Common.constant'
+import type { IdRequest, IdResponse } from '@/common/types/Common.type'
 import type {
   DataTagCategoryCreateRequestVo,
   DataTagCategoryUpdateRequestVo,

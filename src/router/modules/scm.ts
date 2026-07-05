@@ -1,4 +1,4 @@
-import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
+import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
 
 /**
  * 供应链模块路由配置
@@ -16,6 +16,55 @@ export const scmRoutes: ExtendedRouteRecordRaw[] = [
     },
     children: [
       {
+        path: '/scm/category',
+        name: 'SCM:CATEGORY',
+        meta: {
+          code: 'SCM:CATEGORY',
+          title: '类目管理',
+          icon: 'el-icon-Menu',
+          hidden: false,
+          isDynamic: true
+        },
+        children: [
+          {
+            path: '/scm/category/front',
+            component: () => import('@/modules/scm/category/ScmFrontCategory.vue'),
+            name: 'SCM:CATEGORY:FRONT',
+            meta: {
+              code: 'SCM:CATEGORY:FRONT',
+              title: '前台类目',
+              icon: 'el-icon-View',
+              hidden: false,
+              isDynamic: true
+            }
+          },
+          {
+            path: '/scm/category/back',
+            component: () => import('@/modules/scm/category/ScmBackCategory.vue'),
+            name: 'SCM:CATEGORY:BACK',
+            meta: {
+              code: 'SCM:CATEGORY:BACK',
+              title: '后台类目',
+              icon: 'el-icon-Setting',
+              hidden: false,
+              isDynamic: true
+            }
+          },
+          {
+            path: '/scm/category/property',
+            component: () => import('@/modules/scm/category/ScmProperty.vue'),
+            name: 'SCM:CATEGORY:PROPERTY',
+            meta: {
+              code: 'SCM:CATEGORY:PROPERTY',
+              title: '属性管理',
+              icon: 'el-icon-List',
+              hidden: false,
+              isDynamic: true
+            }
+          }
+        ]
+      },
+      {
         path: '/scm/item',
         name: 'SCM:ITEM',
         meta: {
@@ -28,7 +77,7 @@ export const scmRoutes: ExtendedRouteRecordRaw[] = [
         children: [
           {
             path: '/scm/item/sku',
-            component: () => import('@/modules/scm/components/item/ScmItemSku.vue'),
+            component: () => import('@/modules/scm/item/ScmItemSku.vue'),
             name: 'SCM:ITEM:SKU',
             meta: {
               code: 'SCM:ITEM:SKU',
@@ -40,7 +89,7 @@ export const scmRoutes: ExtendedRouteRecordRaw[] = [
           },
           {
             path: '/scm/item/spu',
-            component: () => import('@/modules/scm/components/item/ScmItemSpu.vue'),
+            component: () => import('@/modules/scm/item/ScmItemSpu.vue'),
             name: 'SCM:ITEM:SPU',
             meta: {
               code: 'SCM:ITEM:SPU',
@@ -52,7 +101,7 @@ export const scmRoutes: ExtendedRouteRecordRaw[] = [
           },
           {
             path: '/scm/item/attribute',
-            component: () => import('@/modules/scm/components/item/ScmItemAttribute.vue'),
+            component: () => import('@/modules/scm/item/ScmItemAttribute.vue'),
             name: 'SCM:ITEM:attribute',
             meta: {
               code: 'SCM:ITEM:ATTRIBUTE',

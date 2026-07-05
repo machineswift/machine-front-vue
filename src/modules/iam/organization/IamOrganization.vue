@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div ref="pageContainerRef" class="organization-page">
     <!-- 搜索表单区域 -->
-    <el-card class="box-card-form">
+    <el-card ref="searchCardRef" class="box-card-form">
       <el-form :model="currentTabState.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
         <div class="form-items-group">
           <el-form-item label="名称:" prop="name">
@@ -38,20 +38,21 @@
           </div>
 
           <!-- 数据表格 -->
-          <el-table-v2
-            v-if="shouldRenderTable"
-            v-model:expanded-row-keys="currentTabState.expandedRowKeys"
-            :columns="tableColumns"
-            :data="currentTabState.displayData"
-            :width="tableWidth"
-            :height="660"
-            :expand-column-key="expandColumnKey"
-            fixed
-            row-key="id"
-            :estimated-row-height="60"
-            class="organization-table"
-            style="margin: 10px 0"
-          />
+          <div :ref="el => setTableContainerRef(el, tab.code)" class="table-wrapper">
+            <el-table-v2
+              v-if="shouldRenderTable"
+              v-model:expanded-row-keys="currentTabState.expandedRowKeys"
+              :columns="tableColumns"
+              :data="currentTabState.displayData"
+              :width="tableWidth"
+              :height="tableHeight"
+              :expand-column-key="expandColumnKey"
+              fixed
+              row-key="id"
+              :estimated-row-height="60"
+              class="organization-table"
+            />
+          </div>
         </el-tab-pane>
       </el-tabs>
     </el-card>
@@ -72,10 +73,10 @@
   import Fuse from 'fuse.js'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useElementSize } from '@vueuse/core'
-  import { ref, reactive, computed, onMounted, watch, h, nextTick } from 'vue'
+  import { ref, reactive, computed, onMounted, watch, h, nextTick, onBeforeUnmount } from 'vue'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
   import TableActions from '@/modules/iam/organization/IamOrganizationTableActions'
   import type { IamOrganizationExpandTreeResponseVo, IamDictionaryEnumInfoResponse } from '@/modules/iam/types'
   import IamOrganizationCreateDialog from '@/modules/iam/organization/IamOrganizationCreateDialog.vue'
@@ -185,7 +186,12 @@
   // 状态管理
   const shouldRenderTable = ref(true)
   const enumStore = useDictionaryEnumStore()
-  const boxCardData = ref<HTMLElement | null>(null)
+  const searchCardRef = ref()
+  const boxCardData = ref()
+  const pageContainerRef = ref<HTMLElement | null>(null)
+  const tableHeight = ref(400)
+  const tableContainerRefMap = new Map<string, HTMLElement>()
+  let resizeObserver: ResizeObserver | null = null
   const { width: containerWidth } = useElementSize(boxCardData)
 
   // 全局状态
@@ -213,6 +219,47 @@
   const updateParentDialog = ref<InstanceType<typeof IamOrganizationUpdateParentDialog>>()
   const expandColumnKey = ref('name')
   const tableWidth = computed(() => Math.max(containerWidth.value - 24, 800))
+
+  const resolveElement = (target: unknown): HTMLElement | null => {
+    if (target instanceof HTMLElement) return target
+    if (target && typeof target === 'object' && '$el' in target) {
+      const el = (target as { $el?: Element }).$el
+      return el instanceof HTMLElement ? el : null
+    }
+    return null
+  }
+
+  const setTableContainerRef = (el: Element | null, tabCode: string) => {
+    if (el instanceof HTMLElement) {
+      tableContainerRefMap.set(tabCode, el)
+      if (tabCode === state.activeTab) {
+        updateTableHeight()
+      }
+      return
+    }
+    tableContainerRefMap.delete(tabCode)
+  }
+
+  const updateTableHeight = () => {
+    const tableContainer = tableContainerRefMap.get(state.activeTab)
+    if (!tableContainer) return
+    tableHeight.value = Math.max(tableContainer.clientHeight, 260)
+  }
+
+  const setupResizeObserver = () => {
+    const pageContainerEl = pageContainerRef.value
+    const searchCardEl = resolveElement(searchCardRef.value)
+    const dataCardEl = resolveElement(boxCardData.value)
+    if (!pageContainerEl || !searchCardEl || !dataCardEl) return
+
+    resizeObserver = new ResizeObserver(() => {
+      updateTableHeight()
+    })
+
+    resizeObserver.observe(pageContainerEl)
+    resizeObserver.observe(searchCardEl)
+    resizeObserver.observe(dataCardEl)
+  }
 
   // 创建默认的tab状态
   const createDefaultTabState = (): TabState => ({
@@ -406,6 +453,7 @@
     tabState.expandedRowKeys = Array.from(parentIds).slice(0, 50)
     tabState.searchTimeCost = Math.round(performance.now() - startTime)
     tabState.showSearchNotice = tabState.matchedCount > 50
+    nextTick(updateTableHeight)
   }
 
   // 事件处理
@@ -428,6 +476,7 @@
     tabState.showSearchNotice = false
     tabState.displayData = tabState.allData
     tabState.expandedRowKeys = []
+    nextTick(updateTableHeight)
   }
 
   const handleTabChange = async (tabCode: string) => {
@@ -450,6 +499,8 @@
     })
     // 切换 tab 时重置搜索状态，显示所有数据
     resetSearch()
+    await nextTick()
+    updateTableHeight()
   }
 
   const handleDetail = (row: IamOrganizationExpandTreeResponseVo) => {
@@ -527,12 +578,32 @@
     if (state.activeTab) {
       await fetchOrganizationTree()
     }
+    await nextTick()
+    setupResizeObserver()
+    updateTableHeight()
+  })
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
+    tableContainerRefMap.clear()
   })
 </script>
 
 <style scoped lang="scss">
+  .organization-page {
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
   .box-card-form {
-    margin: 4px;
+    margin: 0;
+    flex-shrink: 0;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 
@@ -565,9 +636,39 @@
   }
 
   .box-card-data {
-    margin: 4px;
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      padding: 12px;
+    }
+
+    :deep(.el-tabs) {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    :deep(.el-tabs__content) {
+      flex: 1;
+      min-height: 0;
+    }
+
+    :deep(.el-tab-pane) {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
 
     .operation-buttons {
       margin-bottom: 10px;
@@ -575,6 +676,11 @@
 
     .search-notice {
       margin-bottom: 10px;
+    }
+
+    .table-wrapper {
+      flex: 1;
+      min-height: 0;
     }
   }
 

@@ -1,5 +1,5 @@
 import type { App, Directive, DirectiveBinding } from 'vue'
-import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+import { useIamUserStore } from '@/common/stores/IamUser.store'
 import { nextTick } from 'vue'
 
 interface PermissionDirectiveElement extends HTMLElement {

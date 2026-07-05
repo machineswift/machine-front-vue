@@ -31,7 +31,7 @@
 
           <el-form-item label="权限类型" prop="resourceType">
             <el-radio-group v-model="state.formData.resourceType" disabled>
-              <el-radio v-for="item in state.permissionResourceTypes" :key="item.code" :value="item.code" border :disabled="shouldDisableRadio(item.code)">
+              <el-radio v-for="item in state.permissionResourceTypes" :key="item.code" :value="item.code" border>
                 {{ item.message }}
               </el-radio>
             </el-radio-group>
@@ -72,8 +72,8 @@
   import { reactive, watch, computed, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import type { DataPermissionMetaDto } from '@/modules/common/types/CommonIam.type'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import type { DataPermissionMetaDto } from '@/common/types/CommonIam.type'
   import IamPermissionDataPermissionScope from '@/modules/iam/permission/IamPermissionDataPermissionScope.vue'
 
   const props = defineProps({
@@ -124,11 +124,6 @@
     resourceType: [{ required: true, message: '请选择权限类型', trigger: ['change', 'blur'] }],
     icon: [{ required: false, message: '请输入图标', trigger: ['blur'] }],
     sort: [{ required: true, message: '请输入排序值', trigger: ['blur', 'change'] }]
-  }
-
-  // 禁用 APP 和 MODULE 选项
-  const shouldDisableRadio = (value: string) => {
-    return ['APP', 'MODULE'].includes(value)
   }
 
   const showIconSelector = () => {

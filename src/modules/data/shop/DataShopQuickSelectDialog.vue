@@ -185,8 +185,8 @@
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
   import type {
     DataShopQueryPageRequestVo,
     DataShopSimpleListResponseVo,

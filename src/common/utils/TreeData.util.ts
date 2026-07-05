@@ -1,4 +1,4 @@
-import type { TreeNode } from '@/modules/common/types/Common.type'
+import type { TreeNode } from '@/common/types/Common.type'
 
 export class TreeDataUtil {
   /**

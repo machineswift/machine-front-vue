@@ -1,4 +1,4 @@
-import type { TreeNode } from '@/modules/common/types/Common.type'
+import type { TreeNode } from '@/common/types/Common.type'
 
 /** 创建素材分类 */
 export interface DataMaterialCategoryCreateRequestVo {

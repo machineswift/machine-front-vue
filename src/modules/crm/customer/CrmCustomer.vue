@@ -111,7 +111,7 @@
   import { ElMessageBox } from 'element-plus'
   import { Refresh, Search } from '@element-plus/icons-vue'
   import { CrmCustomerApi } from '@/modules/crm/customer/api/CrmCustomer.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import type { CrmCustomerDetailResponseVo, CrmCustomerExpandPageResponse, CrmCustomerQueryPageRequestVo } from '@/modules/crm/customer/type/CrmCustomer.type'
   import CrmCustomerAddDialog from '@/modules/crm/customer/CrmCustomerAddDialog.vue'
   import CrmCustomerDetailDialog from '@/modules/crm/customer/CrmCustomerDetailDialog.vue'

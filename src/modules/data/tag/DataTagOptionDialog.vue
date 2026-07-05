@@ -6,7 +6,7 @@
     :close-on-press-escape="false"
     :show-close="false"
     :destroy-on-close="true"
-    @close="handleDialogClosed"
+    @closed="handleDialogClosed"
     width="80%"
     top="8vh"
   >
@@ -97,7 +97,7 @@
   import { ArrowDown, EditPen, Sort, Delete } from '@element-plus/icons-vue'
   import { DataTagOptionApi } from '@/modules/data/tag/api/DataTagOption.api'
   import type { DataTagOptionExpandListResponseVo } from '@/modules/data/tag/type/DataTagOption.type'
-  import { hasPermission } from '@/modules/common/utils/Permission.util'
+  import { hasPermission } from '@/common/utils/Permission.util'
   import DataTagOptionAddDialog from '@/modules/data/tag/DataTagOptionAddDialog.vue'
   import DataTagOptionEditDialog from '@/modules/data/tag/DataTagOptionEditDialog.vue'
   import DataTagOptionDetailDialog from '@/modules/data/tag/DataTagOptionDetailDialog.vue'

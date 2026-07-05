@@ -1,6 +1,6 @@
 import { asyncRoute } from '@/router/modules'
 import router from '@/router'
-import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
+import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
 import type { RouteRecordNormalized } from 'vue-router'
 
 /**

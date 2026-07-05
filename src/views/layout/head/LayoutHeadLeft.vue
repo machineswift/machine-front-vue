@@ -21,8 +21,8 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRoute } from 'vue-router'
-  import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
-  import SvgIcon from '@/modules/common/components/svgIcon/SvgIcon.vue'
+  import { useSettingStore } from '@/common/stores/SystemSetting.store'
+  import SvgIcon from '@/common/components/svgIcon/SvgIcon.vue'
 
   const route = useRoute()
   const settingStore = useSettingStore()

@@ -1,5 +1,5 @@
 <template>
-  <div class="material-page-div">
+  <div ref="pageContainerRef" class="material-page-div">
     <el-splitter>
       <el-splitter-panel collapsible size="18%">
         <el-card class="box-card-tree-select">
@@ -16,394 +16,411 @@
               添加
             </el-button>
           </div>
-          <el-tree-v2
-            ref="categoryTreeRef"
-            :data="currentCategoryTreeOptions"
-            :props="CATEGORY_TREE_PROPS"
-            :filter-method="categoryFilterMethod"
-            @check="handleCategoryCheck"
-            show-checkbox
-            :height="760"
-          >
-            <template #default="{ node, data }">
-              <div class="custom-tree-node">
-                <span class="tree-node-label">{{ node.label }}</span>
-                <div class="tree-node-actions">
-                  <el-tooltip v-if="isCategoryVirtualNode(data)" content="虚拟节点不可操作" placement="top">
-                    <span class="tree-node-actions-wrap">
-                      <el-dropdown disabled trigger="click" @command="command => handleDropdownCommand(command, data)" placement="bottom-end">
-                        <el-button type="primary" link class="tree-node-more-btn" @click.stop disabled>
-                          <el-icon><MoreFilled /></el-icon>
+          <!-- 树组件高度动态计算，初始不显示 -->
+          <div v-show="treeHeightReady" style="flex: 1; min-height: 0">
+            <el-tree-v2
+              ref="categoryTreeRef"
+              :data="currentCategoryTreeOptions"
+              :props="CATEGORY_TREE_PROPS"
+              :filter-method="categoryFilterMethod"
+              @check="handleCategoryCheck"
+              show-checkbox
+              :height="treeHeight"
+            >
+              <template #default="{ node, data }">
+                <div class="custom-tree-node">
+                  <span class="tree-node-label">{{ node.label }}</span>
+                  <div class="tree-node-actions">
+                    <el-tooltip v-if="isCategoryVirtualNode(data)" content="虚拟节点不可操作" placement="top">
+                      <span class="tree-node-actions-wrap">
+                        <el-dropdown disabled trigger="click" @command="command => handleDropdownCommand(command, data)" placement="bottom-end">
+                          <el-button type="primary" link class="tree-node-more-btn" @click.stop disabled>
+                            <el-icon><MoreFilled /></el-icon>
+                          </el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item command="add" disabled>
+                                <el-icon><Plus /></el-icon>
+                                <span>添加子分类</span>
+                              </el-dropdown-item>
+                              <el-dropdown-item command="edit" disabled>
+                                <el-icon><Edit /></el-icon>
+                                <span>修改</span>
+                              </el-dropdown-item>
+                              <el-dropdown-item command="detail" disabled>
+                                <el-icon><View /></el-icon>
+                                <span>详情</span>
+                              </el-dropdown-item>
+                              <el-dropdown-item command="updateParent" disabled>
+                                <el-icon><Connection /></el-icon>
+                                <span>修改父分类</span>
+                              </el-dropdown-item>
+                              <el-dropdown-item command="delete" divided disabled>
+                                <el-icon><Delete /></el-icon>
+                                <span>删除</span>
+                              </el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </span>
+                    </el-tooltip>
+                    <el-dropdown v-else trigger="click" @command="command => handleDropdownCommand(command, data)" placement="bottom-end">
+                      <el-button type="primary" link class="tree-node-more-btn" @click.stop>
+                        <el-icon><MoreFilled /></el-icon>
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item command="add" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:CREATE'])">
+                            <el-icon><Plus /></el-icon>
+                            <span>添加子分类</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="edit" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE'])">
+                            <el-icon><Edit /></el-icon>
+                            <span>修改</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="detail" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:DETAIL'])">
+                            <el-icon><View /></el-icon>
+                            <span>详情</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="updateParent" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE_PARENT'])">
+                            <el-icon><Connection /></el-icon>
+                            <span>修改父分类</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:DELETE'])">
+                            <el-icon><Delete /></el-icon>
+                            <span>删除</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </div>
+              </template>
+            </el-tree-v2>
+          </div>
+          <div v-show="!treeHeightReady" class="tree-placeholder">
+            <el-skeleton :rows="8" animated />
+          </div>
+        </el-card>
+      </el-splitter-panel>
+      <el-splitter-panel :min="200">
+        <div ref="rightContentRef" class="material-main-content">
+          <transition name="slide-fade">
+            <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
+              <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="100px">
+                <div class="form-items-group">
+                  <el-form-item label="文件类型:" prop="fileTypeSet" class="form-item-responsive">
+                    <el-select
+                      v-model="state.searchForm.fileTypeSet"
+                      placeholder="请选择文件类型"
+                      multiple
+                      clearable
+                      collapse-tags
+                      collapse-tags-tooltip
+                      @change="handleFileTypeChange"
+                      style="width: 100%"
+                    >
+                      <el-option v-for="option in state.fileTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="素材标题:" prop="title" class="form-item-responsive">
+                    <el-input v-model="state.searchForm.title" placeholder="请输入素材标题" clearable @keyup.enter="handleSearch" />
+                  </el-form-item>
+                  <el-form-item label="素材名称:" prop="name" class="form-item-responsive">
+                    <el-input v-model="state.searchForm.name" placeholder="请输入素材名称" clearable @keyup.enter="handleSearch" />
+                  </el-form-item>
+                  <el-form-item label="处理状态:" prop="processStatus" class="form-item-responsive">
+                    <el-select v-model="state.searchForm.processStatus" placeholder="选择处理状态" clearable>
+                      <el-option v-for="option in state.processStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="业务状态:" prop="businessStatus" class="form-item-responsive">
+                    <el-select v-model="state.searchForm.businessStatus" placeholder="选择业务状态" clearable>
+                      <el-option v-for="option in state.businessStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="审核状态:" prop="auditStatus" class="form-item-responsive">
+                    <el-select v-model="state.searchForm.auditStatus" placeholder="选择审核状态" clearable>
+                      <el-option v-for="option in state.auditStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="创建人:" prop="createUserIdSet" class="form-item-responsive user-selector">
+                    <el-select
+                      v-model="selectedCreateUserIds"
+                      multiple
+                      clearable
+                      collapse-tags
+                      collapse-tags-tooltip
+                      placeholder="请选择创建人"
+                      @remove-tag="removeQueryCreateUser"
+                      @clear="clearSelectorAllCreateUsers"
+                    >
+                      <el-option v-for="user in state.selectedCreateUsers" :key="user.id" :label="user.name || user.username" :value="user.id" />
+                      <template #prefix>
+                        <el-button
+                          size="small"
+                          type="primary"
+                          plain
+                          @click.stop="showCreateUserSelectorDialog"
+                          v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                          style="margin-right: 8px; height: 24px"
+                        >
+                          选择
+                        </el-button>
+                      </template>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="修改人:" prop="updateUserIdSet" class="form-item-responsive user-selector">
+                    <el-select
+                      v-model="selectedUpdateUserIds"
+                      multiple
+                      clearable
+                      collapse-tags
+                      collapse-tags-tooltip
+                      placeholder="请选择修改人"
+                      @remove-tag="removeQueryUpdateUser"
+                      @clear="clearSelectorAllUpdateUsers"
+                    >
+                      <el-option v-for="user in state.selectedUpdateUsers" :key="user.id" :label="user.name || user.username" :value="user.id" />
+                      <template #prefix>
+                        <el-button
+                          size="small"
+                          type="primary"
+                          plain
+                          @click.stop="showUpdateUserSelectorDialog"
+                          v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                          style="margin-right: 8px; height: 24px"
+                        >
+                          选择
+                        </el-button>
+                      </template>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
+                    <el-date-picker
+                      v-model="state.searchForm.createTimeRange"
+                      type="daterange"
+                      range-separator="至"
+                      start-placeholder="开始日期"
+                      end-placeholder="结束日期"
+                      value-format="x"
+                      @change="handleCreateTimeChange"
+                    />
+                  </el-form-item>
+                  <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
+                    <el-date-picker
+                      v-model="state.searchForm.updateTimeRange"
+                      type="daterange"
+                      range-separator="至"
+                      start-placeholder="开始日期"
+                      end-placeholder="结束日期"
+                      value-format="x"
+                      @change="handleUpdateTimeChange"
+                    />
+                  </el-form-item>
+                </div>
+                <div class="button-group">
+                  <el-form-item>
+                    <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:PAGE_EXPAND']">
+                      <el-icon><Search /></el-icon>
+                      搜索
+                    </el-button>
+                    <el-button @click="resetSearch" v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:PAGE_EXPAND']">
+                      <el-icon><Refresh /></el-icon>
+                      重置
+                    </el-button>
+                  </el-form-item>
+                </div>
+              </el-form>
+            </el-card>
+          </transition>
+
+          <el-card ref="dataCardRef" class="box-card-data">
+            <div ref="operationButtonsRef" class="operation-buttons">
+              <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:CREATE']">新增</el-button>
+              <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
+            </div>
+
+            <!-- 表格区域：初始不显示，等高度计算完成后再显示 -->
+            <div v-show="tableHeightReady" style="flex: 1; min-height: 0">
+              <el-table
+                :data="state.tableData"
+                row-key="id"
+                border
+                style="margin: 10px 0"
+                v-loading="state.loading"
+                :height="tableHeight"
+                stripe
+                highlight-current-row
+                class="material-table"
+              >
+                <el-table-column label="序号" align="center" type="index" width="60" fixed></el-table-column>
+                <el-table-column prop="id" label="ID" align="center" v-if="false" fixed></el-table-column>
+                <el-table-column prop="title" label="素材标题" align="center" width="160" fixed>
+                  <template #default="{ row }">
+                    <el-tooltip v-if="row.title" :content="row.title" placement="top" :append-to-body="true">
+                      <span class="text-ellipsis">{{ row.title }}</span>
+                    </el-tooltip>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="缩略图" align="center" width="80">
+                  <template #default="{ row }">
+                    <template v-if="row.fileType === 'IMAGE' && row.attachmentId">
+                      <el-image
+                        v-if="state.thumbnailUrlMap[row.attachmentId]"
+                        :src="state.thumbnailUrlMap[row.attachmentId]"
+                        fit="cover"
+                        class="list-thumb material-preview-image"
+                        :preview-src-list="[state.thumbnailUrlMap[row.attachmentId]]"
+                        preview-teleported
+                        hide-on-click-modal
+                        :zoom-rate="1.2"
+                        :max-scale="7"
+                        :min-scale="0.2"
+                      />
+                      <span v-else class="thumb-placeholder">加载中</span>
+                    </template>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="fileType" label="文件类型" align="center" width="100">
+                  <template #default="{ row }">
+                    <el-tag size="small">{{ getEnumLabel('DataFileTypeEnum', row.fileType) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="processStatus" label="处理状态" align="center" width="100">
+                  <template #default="{ row }">
+                    <el-tag size="small" type="info">{{ getEnumLabel('DataMaterialProcessStatusEnum', row.processStatus) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="businessStatus" label="业务状态" align="center" width="100">
+                  <template #default="{ row }">
+                    <el-tag size="small">{{ getEnumLabel('DataMaterialBusinessStatusEnum', row.businessStatus) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="auditStatus" label="审核状态" align="center" width="120">
+                  <template #default="{ row }">
+                    <el-tag size="small">{{ getEnumLabel('DataMaterialAuditStatusEnum', row.auditStatus) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="分类" align="center" width="140">
+                  <template #default="{ row }">
+                    <template v-if="row.categoryIdSet && row.categoryIdSet.length">
+                      <el-tag v-for="cid in row.categoryIdSet.slice(0, 2)" :key="cid" size="small" style="margin: 1px">{{ getCategoryName(cid) }}</el-tag>
+                      <el-tag v-if="row.categoryIdSet.length > 2" size="small">+{{ row.categoryIdSet.length - 2 }}</el-tag>
+                    </template>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="createName" label="创建人" align="center" width="100">
+                  <template #default="{ row }">
+                    <el-tooltip v-if="row.createName" :content="row.createName" placement="top" :append-to-body="true">
+                      <span class="text-ellipsis">{{ row.createName }}</span>
+                    </el-tooltip>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="createTime" label="创建时间" align="center" width="170">
+                  <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
+                </el-table-column>
+                <el-table-column prop="updateName" label="修改人" align="center" width="100">
+                  <template #default="{ row }">
+                    <el-tooltip v-if="row.updateName" :content="row.updateName" placement="top" :append-to-body="true">
+                      <span class="text-ellipsis">{{ row.updateName }}</span>
+                    </el-tooltip>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="updateTime" label="修改时间" align="center" width="170">
+                  <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
+                </el-table-column>
+                <el-table-column label="操作" align="center" width="200" fixed="right">
+                  <template #default="{ row }">
+                    <div class="table-actions">
+                      <el-button
+                        size="small"
+                        @click="showDetailDialog(row)"
+                        :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL:DETAIL'])"
+                        v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:DETAIL']"
+                      >
+                        详情
+                      </el-button>
+                      <el-button
+                        size="small"
+                        type="primary"
+                        @click="showEditDialog(row)"
+                        :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL:UPDATE'])"
+                        v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:UPDATE']"
+                      >
+                        编辑
+                      </el-button>
+                      <el-dropdown trigger="click" @command="command => handleMaterialDropdownCommand(command, row)" placement="bottom-end">
+                        <el-button size="small" type="info">
+                          更多
+                          <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                         </el-button>
                         <template #dropdown>
                           <el-dropdown-menu>
-                            <el-dropdown-item command="add" disabled>
-                              <el-icon><Plus /></el-icon>
-                              <span>添加子分类</span>
-                            </el-dropdown-item>
-                            <el-dropdown-item command="edit" disabled>
-                              <el-icon><Edit /></el-icon>
-                              <span>修改</span>
-                            </el-dropdown-item>
-                            <el-dropdown-item command="detail" disabled>
-                              <el-icon><View /></el-icon>
-                              <span>详情</span>
-                            </el-dropdown-item>
-                            <el-dropdown-item command="updateParent" disabled>
+                            <el-dropdown-item command="category" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL:UPDATE_CATEGORY'])">
                               <el-icon><Connection /></el-icon>
-                              <span>修改父分类</span>
-                            </el-dropdown-item>
-                            <el-dropdown-item command="delete" divided disabled>
-                              <el-icon><Delete /></el-icon>
-                              <span>删除</span>
+                              <span>修改分类</span>
                             </el-dropdown-item>
                           </el-dropdown-menu>
                         </template>
                       </el-dropdown>
-                    </span>
-                  </el-tooltip>
-                  <el-dropdown v-else trigger="click" @command="command => handleDropdownCommand(command, data)" placement="bottom-end">
-                    <el-button type="primary" link class="tree-node-more-btn" @click.stop>
-                      <el-icon><MoreFilled /></el-icon>
-                    </el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="add" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:CREATE'])">
-                          <el-icon><Plus /></el-icon>
-                          <span>添加子分类</span>
-                        </el-dropdown-item>
-                        <el-dropdown-item command="edit" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE'])">
-                          <el-icon><Edit /></el-icon>
-                          <span>修改</span>
-                        </el-dropdown-item>
-                        <el-dropdown-item command="detail" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:DETAIL'])">
-                          <el-icon><View /></el-icon>
-                          <span>详情</span>
-                        </el-dropdown-item>
-                        <el-dropdown-item command="updateParent" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE_PARENT'])">
-                          <el-icon><Connection /></el-icon>
-                          <span>修改父分类</span>
-                        </el-dropdown-item>
-                        <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:DELETE'])">
-                          <el-icon><Delete /></el-icon>
-                          <span>删除</span>
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
-                </div>
-              </div>
-            </template>
-          </el-tree-v2>
-        </el-card>
-      </el-splitter-panel>
-      <el-splitter-panel :min="200">
-        <transition name="slide-fade">
-          <el-card class="box-card-form" v-show="state.showSearchCard">
-            <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="100px">
-              <div class="form-items-group">
-                <el-form-item label="文件类型:" prop="fileTypeSet" class="form-item-responsive">
-                  <el-select
-                    v-model="state.searchForm.fileTypeSet"
-                    placeholder="请选择文件类型"
-                    multiple
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    @change="handleFileTypeChange"
-                    style="width: 100%"
-                  >
-                    <el-option v-for="option in state.fileTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="素材标题:" prop="title" class="form-item-responsive">
-                  <el-input v-model="state.searchForm.title" placeholder="请输入素材标题" clearable @keyup.enter="handleSearch" />
-                </el-form-item>
-                <el-form-item label="素材名称:" prop="name" class="form-item-responsive">
-                  <el-input v-model="state.searchForm.name" placeholder="请输入素材名称" clearable @keyup.enter="handleSearch" />
-                </el-form-item>
-                <el-form-item label="处理状态:" prop="processStatus" class="form-item-responsive">
-                  <el-select v-model="state.searchForm.processStatus" placeholder="选择处理状态" clearable>
-                    <el-option v-for="option in state.processStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="业务状态:" prop="businessStatus" class="form-item-responsive">
-                  <el-select v-model="state.searchForm.businessStatus" placeholder="选择业务状态" clearable>
-                    <el-option v-for="option in state.businessStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="审核状态:" prop="auditStatus" class="form-item-responsive">
-                  <el-select v-model="state.searchForm.auditStatus" placeholder="选择审核状态" clearable>
-                    <el-option v-for="option in state.auditStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="创建人:" prop="createUserIdSet" class="form-item-responsive user-selector">
-                  <el-select
-                    v-model="selectedCreateUserIds"
-                    multiple
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    placeholder="请选择创建人"
-                    @remove-tag="removeQueryCreateUser"
-                    @clear="clearSelectorAllCreateUsers"
-                  >
-                    <el-option v-for="user in state.selectedCreateUsers" :key="user.id" :label="user.name || user.username" :value="user.id" />
-                    <template #prefix>
-                      <el-button
-                        size="small"
-                        type="primary"
-                        plain
-                        @click.stop="showCreateUserSelectorDialog"
-                        v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
-                        style="margin-right: 8px; height: 24px"
-                      >
-                        选择
-                      </el-button>
-                    </template>
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="修改人:" prop="updateUserIdSet" class="form-item-responsive user-selector">
-                  <el-select
-                    v-model="selectedUpdateUserIds"
-                    multiple
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    placeholder="请选择修改人"
-                    @remove-tag="removeQueryUpdateUser"
-                    @clear="clearSelectorAllUpdateUsers"
-                  >
-                    <el-option v-for="user in state.selectedUpdateUsers" :key="user.id" :label="user.name || user.username" :value="user.id" />
-                    <template #prefix>
-                      <el-button
-                        size="small"
-                        type="primary"
-                        plain
-                        @click.stop="showUpdateUserSelectorDialog"
-                        v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
-                        style="margin-right: 8px; height: 24px"
-                      >
-                        选择
-                      </el-button>
-                    </template>
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
-                  <el-date-picker
-                    v-model="state.searchForm.createTimeRange"
-                    type="daterange"
-                    range-separator="至"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    value-format="x"
-                    @change="handleCreateTimeChange"
-                  />
-                </el-form-item>
-                <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
-                  <el-date-picker
-                    v-model="state.searchForm.updateTimeRange"
-                    type="daterange"
-                    range-separator="至"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    value-format="x"
-                    @change="handleUpdateTimeChange"
-                  />
-                </el-form-item>
-              </div>
-              <div class="button-group">
-                <el-form-item>
-                  <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:PAGE_EXPAND']">
-                    <el-icon><Search /></el-icon>
-                    搜索
-                  </el-button>
-                  <el-button @click="resetSearch" v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:PAGE_EXPAND']">
-                    <el-icon><Refresh /></el-icon>
-                    重置
-                  </el-button>
-                </el-form-item>
-              </div>
-            </el-form>
+                    </div>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <el-pagination
+                ref="paginationRef"
+                v-model:current-page="state.pagination.current"
+                v-model:page-size="state.pagination.size"
+                :page-sizes="PAGE_SIZES"
+                :background="true"
+                layout="prev, pager, next, jumper, ->, total, sizes"
+                :total="state.pagination.total"
+                @current-change="handlePageChange"
+                @size-change="handleSizeChange"
+                v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:PAGE_EXPAND']"
+              />
+            </div>
+
+            <!-- 骨架屏占位 -->
+            <div v-show="!tableHeightReady" class="table-placeholder">
+              <el-skeleton :rows="8" animated />
+            </div>
           </el-card>
-        </transition>
 
-        <el-card class="box-card-data">
-          <div class="operation-buttons">
-            <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:CREATE']">新增素材</el-button>
-            <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
-          </div>
+          <DataMaterialAddDialog v-model="state.dialog.add" @success="handleAddSuccess" />
+          <DataMaterialDetailDialog v-model="state.dialog.detail" :materialId="state.currentMaterialId" :categoryNameMap="state.categoryNameMap" />
+          <DataMaterialEditDialog v-model="state.dialog.edit" :materialId="state.currentMaterialId" @success="handleEditSuccess" />
+          <DataMaterialCategoryDialog v-model="state.dialog.category" :materialId="state.currentMaterialId" @success="handleCategoryUpdateSuccess" />
 
-          <el-table
-            :data="state.tableData"
-            row-key="id"
-            border
-            style="margin: 10px 0"
-            v-loading="state.loading"
-            :height="state.dataCardHeight"
-            stripe
-            highlight-current-row
-            class="material-table"
-          >
-            <el-table-column label="序号" align="center" type="index" width="60" fixed></el-table-column>
-            <el-table-column prop="id" label="ID" align="center" v-if="false" fixed></el-table-column>
-            <el-table-column prop="title" label="素材标题" align="center" width="160" fixed>
-              <template #default="{ row }">
-                <el-tooltip v-if="row.title" :content="row.title" placement="top" :append-to-body="true">
-                  <span class="text-ellipsis">{{ row.title }}</span>
-                </el-tooltip>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="缩略图" align="center" width="80">
-              <template #default="{ row }">
-                <template v-if="row.fileType === 'IMAGE' && row.attachmentId">
-                  <el-image
-                    v-if="state.thumbnailUrlMap[row.attachmentId]"
-                    :src="state.thumbnailUrlMap[row.attachmentId]"
-                    fit="cover"
-                    class="list-thumb material-preview-image"
-                    :preview-src-list="[state.thumbnailUrlMap[row.attachmentId]]"
-                    preview-teleported
-                    hide-on-click-modal
-                    :zoom-rate="1.2"
-                    :max-scale="7"
-                    :min-scale="0.2"
-                  />
-                  <span v-else class="thumb-placeholder">加载中</span>
-                </template>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="fileType" label="文件类型" align="center" width="100">
-              <template #default="{ row }">
-                <el-tag size="small">{{ getEnumLabel('DataFileTypeEnum', row.fileType) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="processStatus" label="处理状态" align="center" width="100">
-              <template #default="{ row }">
-                <el-tag size="small" type="info">{{ getEnumLabel('DataMaterialProcessStatusEnum', row.processStatus) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="businessStatus" label="业务状态" align="center" width="100">
-              <template #default="{ row }">
-                <el-tag size="small">{{ getEnumLabel('DataMaterialBusinessStatusEnum', row.businessStatus) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="auditStatus" label="审核状态" align="center" width="120">
-              <template #default="{ row }">
-                <el-tag size="small">{{ getEnumLabel('DataMaterialAuditStatusEnum', row.auditStatus) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="分类" align="center" width="140">
-              <template #default="{ row }">
-                <template v-if="row.categoryIdSet && row.categoryIdSet.length">
-                  <el-tag v-for="cid in row.categoryIdSet.slice(0, 2)" :key="cid" size="small" style="margin: 1px">{{ getCategoryName(cid) }}</el-tag>
-                  <el-tag v-if="row.categoryIdSet.length > 2" size="small">+{{ row.categoryIdSet.length - 2 }}</el-tag>
-                </template>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createName" label="创建人" align="center" width="100">
-              <template #default="{ row }">
-                <el-tooltip v-if="row.createName" :content="row.createName" placement="top" :append-to-body="true">
-                  <span class="text-ellipsis">{{ row.createName }}</span>
-                </el-tooltip>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" align="center" width="170">
-              <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
-            </el-table-column>
-            <el-table-column prop="updateName" label="修改人" align="center" width="100">
-              <template #default="{ row }">
-                <el-tooltip v-if="row.updateName" :content="row.updateName" placement="top" :append-to-body="true">
-                  <span class="text-ellipsis">{{ row.updateName }}</span>
-                </el-tooltip>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="updateTime" label="修改时间" align="center" width="170">
-              <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
-            </el-table-column>
-            <el-table-column label="操作" align="center" width="200" fixed="right">
-              <template #default="{ row }">
-                <div class="table-actions">
-                  <el-button
-                    size="small"
-                    @click="showDetailDialog(row)"
-                    :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL:DETAIL'])"
-                    v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:DETAIL']"
-                  >
-                    详情
-                  </el-button>
-                  <el-button
-                    size="small"
-                    type="primary"
-                    @click="showEditDialog(row)"
-                    :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL:UPDATE'])"
-                    v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:UPDATE']"
-                  >
-                    编辑
-                  </el-button>
-                  <el-dropdown trigger="click" @command="command => handleMaterialDropdownCommand(command, row)" placement="bottom-end">
-                    <el-button size="small" type="info">
-                      更多
-                      <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                    </el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="category" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:MATERIAL:UPDATE_CATEGORY'])">
-                          <el-icon><Connection /></el-icon>
-                          <span>修改分类</span>
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
-                </div>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <el-pagination
-            v-model:current-page="state.pagination.current"
-            v-model:page-size="state.pagination.size"
-            :page-sizes="PAGE_SIZES"
-            :background="true"
-            layout="prev, pager, next, jumper, ->, total, sizes"
-            :total="state.pagination.total"
-            @current-change="handlePageChange"
-            @size-change="handleSizeChange"
-            v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL:PAGE_EXPAND']"
+          <DataMaterialCategoryAddDialog v-model="state.dialog.addCategory" :parentId="state.currentCategoryParentId" @success="handleCategoryAddSuccess" />
+          <DataMaterialCategoryEditDialog v-model="state.dialog.editCategory" :categoryId="state.currentCategoryId" @success="handleCategoryEditSuccess" />
+          <DataMaterialCategoryDetailDialog v-model="state.dialog.detailCategory" :categoryId="state.currentCategoryId" />
+          <DataMaterialCategoryUpdateParentDialog
+            v-model="state.dialog.updateParentCategory"
+            :categoryId="state.currentCategoryId"
+            @success="handleCategoryUpdateParentSuccess"
           />
-        </el-card>
 
-        <DataMaterialAddDialog v-model="state.dialog.add" @success="handleAddSuccess" />
-        <DataMaterialDetailDialog v-model="state.dialog.detail" :materialId="state.currentMaterialId" :categoryNameMap="state.categoryNameMap" />
-        <DataMaterialEditDialog v-model="state.dialog.edit" :materialId="state.currentMaterialId" @success="handleEditSuccess" />
-        <DataMaterialCategoryDialog v-model="state.dialog.category" :materialId="state.currentMaterialId" @success="handleCategoryUpdateSuccess" />
-
-        <DataMaterialCategoryAddDialog v-model="state.dialog.addCategory" :parentId="state.currentCategoryParentId" @success="handleCategoryAddSuccess" />
-        <DataMaterialCategoryEditDialog v-model="state.dialog.editCategory" :categoryId="state.currentCategoryId" @success="handleCategoryEditSuccess" />
-        <DataMaterialCategoryDetailDialog v-model="state.dialog.detailCategory" :categoryId="state.currentCategoryId" />
-        <DataMaterialCategoryUpdateParentDialog
-          v-model="state.dialog.updateParentCategory"
-          :categoryId="state.currentCategoryId"
-          @success="handleCategoryUpdateParentSuccess"
-        />
-
-        <IamUserQuickSelectDialog
-          v-model="state.createUserDialogVisible"
-          @confirm="handleCreateUserSelect"
-          :multiple="true"
-          :selected-users="state.selectedCreateUsers"
-        />
-        <IamUserQuickSelectDialog
-          v-model="state.updateUserDialogVisible"
-          @confirm="handleUpdateUserSelect"
-          :multiple="true"
-          :selected-users="state.selectedUpdateUsers"
-        />
+          <IamUserQuickSelectDialog
+            v-model="state.createUserDialogVisible"
+            @confirm="handleCreateUserSelect"
+            :multiple="true"
+            :selected-users="state.selectedCreateUsers"
+          />
+          <IamUserQuickSelectDialog
+            v-model="state.updateUserDialogVisible"
+            @confirm="handleUpdateUserSelect"
+            :multiple="true"
+            :selected-users="state.selectedUpdateUsers"
+          />
+        </div>
       </el-splitter-panel>
     </el-splitter>
   </div>
@@ -412,14 +429,14 @@
 <script setup lang="ts">
   defineOptions({ name: 'SYSTEM:BASIC_DATA:MATERIAL' })
   import { ElTreeV2 } from 'element-plus'
-  import { onMounted, reactive, ref, watch, computed } from 'vue'
+  import { onMounted, reactive, ref, watch, computed, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Refresh, Search, Plus, Edit, View, Connection, Delete, MoreFilled, ArrowDown } from '@element-plus/icons-vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { hasPermission } from '@/modules/common/utils/Permission.util'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { hasPermission } from '@/common/utils/Permission.util'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
   import type { DataMaterialExpandListResponseVo, DataMaterialQueryPageRequestVo } from '@/modules/data/material/type/DataMaterial.type'
   import type { DataMaterialCategorySimpleTreeResponseVo } from '@/modules/data/material/type/DataMaterialCategory.type'
   import DataMaterialAddDialog from '@/modules/data/material/DataMaterialAddDialog.vue'
@@ -440,8 +457,6 @@
   const DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID = 'data_material_category_virtual_node'
   const CATEGORY_TREE_PROPS = { value: 'id', label: 'name', children: 'children' } as const
   const PAGE_SIZES = [20, 50, 100, 200, 500, 1000]
-  const DATA_CARD_HEIGHT_OPEN = 'calc(100vh - 500px)'
-  const DATA_CARD_HEIGHT_COLLAPSED = 'calc(100vh - 200px)'
 
   const isCategoryVirtualNode = (data: DataMaterialCategorySimpleTreeResponseVo) => data?.id === DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID
   const formatTimestamp = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '无')
@@ -478,7 +493,6 @@
   const state = reactive({
     loading: false,
     showSearchCard: true,
-    dataCardHeight: '580',
     fileTypeOptions: [] as Array<{ code: string; message: string }>,
     processStatusOptions: [] as Array<{ code: string; message: string }>,
     businessStatusOptions: [] as Array<{ code: string; message: string }>,
@@ -526,17 +540,109 @@
 
   const categoryTreeRef = ref<InstanceType<typeof ElTreeV2>>()
   const currentCategoryTreeOptions = ref<DataMaterialCategorySimpleTreeResponseVo[]>([])
+  const pageContainerRef = ref<HTMLElement | null>(null)
+  const rightContentRef = ref<HTMLElement | null>(null)
+  const searchCardRef = ref()
+  const dataCardRef = ref()
+  const operationButtonsRef = ref<HTMLElement | null>(null)
+  const paginationRef = ref<HTMLElement | null>(null)
+
+  // 表格高度 - 初始为0，等计算完成后再显示
+  const tableHeight = ref<number>(0)
+  const tableHeightReady = ref<boolean>(false)
+  // 树组件高度
+  const treeHeight = ref<number>(0)
+  const treeHeightReady = ref<boolean>(false)
+
+  let resizeObserver: ResizeObserver | null = null
+  let isFirstTableCalculation = true
+  let isFirstTreeCalculation = true
+
+  const resolveElement = (target: unknown): HTMLElement | null => {
+    if (target instanceof HTMLElement) return target
+    if (target && typeof target === 'object' && '$el' in target) {
+      const el = (target as { $el?: Element }).$el
+      return el instanceof HTMLElement ? el : null
+    }
+    return null
+  }
+
+  const calculateTableHeight = async () => {
+    await nextTick()
+    const dataCardEl = resolveElement(dataCardRef.value)
+    if (!dataCardEl) return
+    const cardBody = dataCardEl.querySelector('.el-card__body')
+    if (!(cardBody instanceof HTMLElement)) return
+    const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
+    const paginationHeight = paginationRef.value?.offsetHeight || 60
+    const contentSpacing = 16
+    const newHeight = Math.max(320, cardBody.clientHeight - operationButtonsHeight - paginationHeight - contentSpacing)
+
+    if (tableHeight.value !== newHeight) {
+      tableHeight.value = newHeight
+    }
+
+    // 首次计算完成后显示表格
+    if (isFirstTableCalculation && tableHeight.value > 0) {
+      tableHeightReady.value = true
+      isFirstTableCalculation = false
+    }
+  }
+
+  const calculateTreeHeight = async () => {
+    await nextTick()
+    const treeCard = document.querySelector('.box-card-tree-select')
+    if (!treeCard) return
+    const cardBody = treeCard.querySelector('.el-card__body')
+    if (!(cardBody instanceof HTMLElement)) return
+    // 工具栏高度（输入框 + 按钮 + 间距）约 60px，内边距约 24px
+    const toolbarHeight = 60
+    const paddingHeight = 24
+    const contentSpacing = 16
+    const newHeight = Math.max(400, cardBody.clientHeight - toolbarHeight - paddingHeight - contentSpacing)
+
+    if (treeHeight.value !== newHeight) {
+      treeHeight.value = newHeight
+    }
+
+    // 首次计算完成后显示树组件
+    if (isFirstTreeCalculation && treeHeight.value > 0) {
+      treeHeightReady.value = true
+      isFirstTreeCalculation = false
+    }
+  }
+
+  const setupResizeObserver = () => {
+    const pageContainerEl = pageContainerRef.value
+    const rightContentEl = rightContentRef.value
+    const searchCardEl = resolveElement(searchCardRef.value)
+    const dataCardEl = resolveElement(dataCardRef.value)
+    const treeCardEl = document.querySelector('.box-card-tree-select')
+
+    if (!pageContainerEl || !rightContentEl || !searchCardEl || !dataCardEl || !treeCardEl) return
+
+    resizeObserver = new ResizeObserver(() => {
+      calculateTableHeight()
+      calculateTreeHeight()
+    })
+
+    resizeObserver.observe(pageContainerEl)
+    resizeObserver.observe(rightContentEl)
+    resizeObserver.observe(searchCardEl)
+    resizeObserver.observe(dataCardEl)
+    resizeObserver.observe(treeCardEl)
+  }
 
   const selectedCreateUserIds = computed({
     get: () => state.selectedCreateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || { id })
+      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id } as IamUserSimpleListResponseVo))
     }
   })
   const selectedUpdateUserIds = computed({
     get: () => state.selectedUpdateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || { id })
+      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id } as IamUserSimpleListResponseVo))
     }
   })
 
@@ -661,8 +767,8 @@
     fetchData()
   }
 
-  /** 仅素材相关弹窗需要先选文件类型，分类管理不校验 */
-  const needFileTypeCheck = (dialogKey: string) => !String(dialogKey).includes('Category')
+  /** 仅「新增素材」需先在查询条件中选文件类型；详情、编辑、修改素材分类等不校验 */
+  const needFileTypeCheck = (_dialogKey: keyof typeof state.dialog) => false
 
   const checkFileTypeSelected = (): boolean => {
     if (!state.searchForm.fileTypeSet?.length) {
@@ -676,7 +782,7 @@
     if (needFileTypeCheck(dialogKey) && !checkFileTypeSelected()) return
     if (id !== undefined) state.currentCategoryId = id
     if (parentId !== undefined) state.currentCategoryParentId = parentId
-    if (dialogKey === 'add' && needFileTypeCheck(dialogKey)) state.currentMaterialId = ''
+    if (dialogKey === 'add') state.currentMaterialId = ''
     state.dialog[dialogKey] = true
   }
 
@@ -758,12 +864,9 @@
 
   watch(
     () => state.showSearchCard,
-    newVal => {
-      setTimeout(() => {
-        state.dataCardHeight = newVal ? DATA_CARD_HEIGHT_OPEN : DATA_CARD_HEIGHT_COLLAPSED
-      }, 80)
-    },
-    { immediate: false }
+    () => {
+      calculateTableHeight()
+    }
   )
 
   onMounted(async () => {
@@ -779,6 +882,15 @@
     state.auditStatusOptions = auditStatusOptions || []
     await reloadCategoryTree()
     await fetchData()
+    await nextTick()
+    setupResizeObserver()
+    await calculateTableHeight()
+    await calculateTreeHeight()
+  })
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
   })
 </script>
 
@@ -798,19 +910,40 @@
     padding-bottom: 0;
   }
   .material-page-div {
-    margin: 4px;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
+    box-sizing: border-box;
+    :deep(.el-splitter) {
+      height: 100%;
+      min-height: 0;
+    }
+    :deep(.el-splitter-panel) {
+      min-height: 0;
+    }
     .box-card-tree-select {
-      margin: 4px 4px 4px 0;
+      margin: 0 8px 0 0;
       width: 100%;
+      height: 100%;
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+
+      :deep(.el-card__body) {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+      }
+
       .tree-toolbar {
         display: flex;
         align-items: center;
         gap: 8px;
         margin-bottom: 10px;
+        flex-shrink: 0;
 
         .tree-toolbar-input {
           flex: 1;
@@ -822,11 +955,26 @@
         }
       }
     }
+
+    .tree-placeholder {
+      flex: 1;
+      padding: 10px 0;
+    }
+  }
+
+  .material-main-content {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
   .box-card-form {
-    margin: 4px;
+    margin: 0;
+    flex-shrink: 0;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.6s ease;
     .search-form {
       display: flex;
       flex-direction: column;
@@ -857,14 +1005,30 @@
     }
   }
   .box-card-data {
-    margin: 4px;
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.6s ease;
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 8px;
+    }
     .operation-buttons {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 8px;
+    }
+    .table-placeholder {
+      flex: 1;
+      padding: 10px 0;
     }
   }
   .table-actions {

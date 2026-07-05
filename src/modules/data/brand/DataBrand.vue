@@ -1,7 +1,8 @@
 <template>
-  <div>
+  <div ref="pageContainerRef" class="brand-page">
+    <!-- 搜索卡片 -->
     <transition name="slide-fade">
-      <el-card ref="searchCardRef" class="search-card" v-show="state.showSearchCard">
+      <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
         <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
           <div class="form-items-group">
             <el-form-item label="名称:" prop="name" class="form-item-responsive">
@@ -115,114 +116,135 @@
     </transition>
 
     <!-- 数据卡片 -->
-    <el-card ref="dataCardRef" class="data-card">
+    <el-card ref="dataCardRef" class="box-card-data">
       <div ref="operationButtonsRef" class="operation-buttons">
         <el-button type="primary" @click="showAddDialog" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:CREATE']">添加</el-button>
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
-      <el-table
-        :data="state.tableData"
-        border
-        v-loading="state.loading"
-        :height="tableHeight"
-        style="margin: 10px 0"
-        stripe
-        highlight-current-row
-        class="brand-table"
-      >
-        <el-table-column prop="id" label="ID" align="center" v-if="false" />
-        <el-table-column label="序号" align="center" type="index" width="60" fixed />
-        <el-table-column prop="name" label="名称" align="center" width="180" fixed show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-tooltip v-if="row.name" :content="row.name" placement="top" :append-to-body="true">
-              <span class="text-ellipsis">{{ row.name }}</span>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="code" label="编码" align="center" width="160" show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-tooltip v-if="row.code" :content="row.code" placement="top" :append-to-body="true">
-              <span class="text-ellipsis">{{ row.code }}</span>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
+      <!-- 使用 v-show 配合 tableHeightReady 控制显示，避免高度闪烁 -->
+      <div v-show="tableHeightReady" style="flex: 1; min-height: 0">
+        <el-table
+          :data="state.tableData"
+          border
+          v-loading="state.loading"
+          :height="tableHeight"
+          style="margin: 10px 0"
+          stripe
+          highlight-current-row
+          class="brand-table"
+        >
+          <el-table-column prop="id" label="ID" align="center" v-if="false" />
+          <el-table-column label="序号" align="center" type="index" width="60" fixed />
+          <el-table-column prop="name" label="名称" align="center" width="160" fixed show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tooltip v-if="row.name" :content="row.name" placement="top" :append-to-body="true">
+                <span class="text-ellipsis">{{ row.name }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="code" label="编码" align="center" width="160" show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tooltip v-if="row.code" :content="row.code" placement="top" :append-to-body="true">
+                <span class="text-ellipsis">{{ row.code }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
 
-        <el-table-column prop="status" label="状态" align="center" width="120">
-          <template #default="{ row }">
-            <el-switch
-              v-model="row.status"
-              :active-value="'ENABLE'"
-              :inactive-value="'DISABLE'"
-              active-text="启用"
-              inactive-text="禁用"
-              inline-prompt
-              @change="toggleStatus(row)"
-              v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE_STATUS']"
-            />
-          </template>
-        </el-table-column>
+          <el-table-column prop="status" label="状态" align="center" width="120">
+            <template #default="{ row }">
+              <el-switch
+                v-model="row.status"
+                :active-value="'ENABLE'"
+                :inactive-value="'DISABLE'"
+                active-text="启用"
+                inactive-text="禁用"
+                inline-prompt
+                @change="toggleStatus(row)"
+                v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE_STATUS']"
+              />
+            </template>
+          </el-table-column>
 
-        <el-table-column prop="logoUrl" label="LOGO" align="center" width="120">
-          <template #default="{ row }">
-            <DataBrandLogoPreview :url="row.logoUrl" />
-          </template>
-        </el-table-column>
+          <el-table-column prop="logoUrl" label="LOGO" align="center" width="120">
+            <template #default="{ row }">
+              <DataBrandLogoPreview :url="row.logoUrl" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="description" label="描述" align="center" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tooltip v-if="row.description" :content="row.description" placement="top" :append-to-body="true">
+                <span class="text-ellipsis">{{ row.description }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createName" label="创建人" align="center" width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tooltip v-if="row.createName" :content="row.createName" placement="top" :append-to-body="true">
+                <span class="text-ellipsis">{{ row.createName }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="创建时间" align="center" width="180">
+            <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
+          </el-table-column>
+          <el-table-column prop="updateName" label="修改人" align="center" width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tooltip v-if="row.updateName" :content="row.updateName" placement="top" :append-to-body="true">
+                <span class="text-ellipsis">{{ row.updateName }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
+            <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
+          </el-table-column>
 
-        <el-table-column prop="description" label="描述" align="center" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-tooltip v-if="row.description" :content="row.description" placement="top" :append-to-body="true">
-              <span class="text-ellipsis">{{ row.description }}</span>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createName" label="创建人" align="center" width="120" show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-tooltip v-if="row.createName" :content="row.createName" placement="top" :append-to-body="true">
-              <span class="text-ellipsis">{{ row.createName }}</span>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" align="center" width="180">
-          <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
-        </el-table-column>
-        <el-table-column prop="updateName" label="修改人" align="center" width="120" show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-tooltip v-if="row.updateName" :content="row.updateName" placement="top" :append-to-body="true">
-              <span class="text-ellipsis">{{ row.updateName }}</span>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
-          <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
-        </el-table-column>
+          <el-table-column label="操作" width="200" align="center" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:DETAIL']">详情</el-button>
+                <el-button size="small" type="primary" @click="showEdit(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE']">编辑</el-button>
+                <el-dropdown trigger="click" @command="onBrandDropdownCommand($event, row)" placement="bottom-end">
+                  <el-button size="small" type="info">
+                    更多
+                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="delete" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:BRAND:DELETE'])">
+                        <el-icon><Delete /></el-icon>
+                        <span>删除</span>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
 
-        <el-table-column label="操作" align="center" width="200" fixed="right">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:DETAIL']">详情</el-button>
-              <el-button size="small" type="primary" @click="showEdit(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE']">编辑</el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-pagination
+          ref="paginationRef"
+          v-model:current-page="state.pagination.current"
+          v-model:page-size="state.pagination.size"
+          :page-sizes="[20, 50, 100, 200, 500, 1000]"
+          :background="true"
+          layout="prev, pager, next, jumper, ->, total, sizes"
+          :total="state.pagination.total"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
+      </div>
 
-      <el-pagination
-        ref="paginationRef"
-        v-model:current-page="state.pagination.current"
-        v-model:page-size="state.pagination.size"
-        :page-sizes="[10, 20, 50, 100, 200, 500, 1000]"
-        :background="true"
-        layout="prev, pager, next, jumper, ->, total, sizes"
-        :total="state.pagination.total"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
-      />
+      <!-- 骨架屏占位，避免高度突变 -->
+      <div v-show="!tableHeightReady" class="table-placeholder">
+        <el-skeleton :rows="8" animated />
+      </div>
     </el-card>
 
     <!-- 对话框组件 -->
@@ -250,11 +272,11 @@
   defineOptions({
     name: 'SYSTEM:BASIC_DATA:BRAND'
   })
-  import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
+  import { ref, reactive, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Search, Refresh } from '@element-plus/icons-vue'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { useWindowSize } from '@vueuse/core'
+  import { Search, Refresh, ArrowDown, Delete } from '@element-plus/icons-vue'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { hasPermission } from '@/common/utils/Permission.util'
   import { DataBrandApi } from '@/modules/data/brand/api/DataBrand.api'
   import type { DataBrandExpandPageResponse } from '@/modules/data/brand/type/DataBrand.type'
   import DataBrandAddDialog from '@/modules/data/brand/DataBrandAddDialog.vue'
@@ -305,47 +327,111 @@
   })
 
   const searchFormRef = ref()
+  const pageContainerRef = ref<HTMLElement | null>(null)
+  const searchCardRef = ref()
   const dataCardRef = ref<HTMLElement | null>(null)
-  const searchCardRef = ref<HTMLElement | null>(null)
   const operationButtonsRef = ref<HTMLElement | null>(null)
   const paginationRef = ref<HTMLElement | null>(null)
 
-  // 表格高度计算
-  const { height: windowHeight } = useWindowSize()
-  const tableHeight = ref<number>(560)
+  // 表格高度 - 初始不设置默认值，等待计算完成后再显示
+  const tableHeight = ref<number>(0)
+  const tableHeightReady = ref<boolean>(false)
+  let resizeObserver: ResizeObserver | null = null
+  let isFirstCalculation = true
+
+  const resolveElement = (target: unknown): HTMLElement | null => {
+    if (target instanceof HTMLElement) return target
+    if (target && typeof target === 'object' && '$el' in target) {
+      const el = (target as { $el?: Element }).$el
+      return el instanceof HTMLElement ? el : null
+    }
+    return null
+  }
 
   const calculateTableHeight = async () => {
     await nextTick()
-    if (!windowHeight.value) return
-
-    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
-    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const dataCardEl = resolveElement(dataCardRef.value)
+    if (!dataCardEl) return
+    const cardBody = dataCardEl.querySelector('.el-card__body')
+    if (!(cardBody instanceof HTMLElement)) return
     const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
     const paginationHeight = paginationRef.value?.offsetHeight || 60
-    const paginationSpacing = paginationHeight > 0 ? 8 : 0
-    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
-    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
-    const availableHeight = windowHeight.value - reservedHeight
-    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
-    tableHeight.value = Math.max(400, availableHeight)
+    const contentSpacing = 16
+    const newHeight = Math.max(320, cardBody.clientHeight - operationButtonsHeight - paginationHeight - contentSpacing)
+
+    // 只有当高度真正变化时才更新
+    if (tableHeight.value !== newHeight) {
+      tableHeight.value = newHeight
+    }
+
+    // 首次计算完成后，显示表格
+    if (isFirstCalculation && tableHeight.value > 0) {
+      tableHeightReady.value = true
+      isFirstCalculation = false
+    }
   }
 
-  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
+  const setupResizeObserver = () => {
+    const pageContainerEl = pageContainerRef.value
+    const searchCardEl = resolveElement(searchCardRef.value)
+    const dataCardEl = resolveElement(dataCardRef.value)
+    if (!pageContainerEl || !searchCardEl || !dataCardEl) return
+
+    resizeObserver = new ResizeObserver(() => {
+      calculateTableHeight()
+    })
+
+    resizeObserver.observe(pageContainerEl)
+    resizeObserver.observe(searchCardEl)
+    resizeObserver.observe(dataCardEl)
+  }
+
+  watch(
+    () => state.showSearchCard,
+    () => {
+      calculateTableHeight()
+    }
+  )
 
   // 计算属性
   const selectedCreateUserIds = computed({
     get: () => state.selectedCreateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || { id })
+      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id: id } as IamUserSimpleListResponseVo))
     }
   })
 
   const selectedUpdateUserIds = computed({
     get: () => state.selectedUpdateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || { id })
+      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id: id } as IamUserSimpleListResponseVo))
     }
   })
+
+  // 品牌下拉命令
+  const onBrandDropdownCommand = async (command: string, row: { id: string; name: string }) => {
+    if (command === 'delete') {
+      await handleDelete(row)
+    }
+  }
+
+  const handleDelete = async (row: { id: string; name: string }) => {
+    try {
+      await ElMessageBox.confirm(`确定要删除品牌 "${row.name}" 吗?`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      await DataBrandApi.destroy({ id: row.id })
+      ElMessage.success('删除成功')
+      await fetchBrandList()
+    } catch (error) {
+      if (error !== 'cancel') {
+        console.error('删除品牌失败', error)
+        ElMessage.error('删除失败')
+      }
+    }
+  }
 
   // 方法
   const fetchBrandList = async () => {
@@ -501,6 +587,15 @@
     // 枚举选项
     state.brandStatus = await enumStore.getEnumDataAsync('StatusEnum')
     await fetchBrandList()
+    await nextTick()
+    setupResizeObserver()
+    // 立即计算高度（不等待 ResizeObserver 第一次触发）
+    await calculateTableHeight()
+  })
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
   })
 </script>
 
@@ -522,11 +617,21 @@
     padding-bottom: 0;
   }
 
-  .search-card,
-  .data-card {
+  .brand-page {
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
+  .box-card-form {
+    margin: 0;
+    flex-shrink: 0;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    margin: 4px;
     transition: all 0.6s ease;
   }
 
@@ -583,16 +688,37 @@
     }
   }
 
-  .data-card {
+  .box-card-data {
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.6s ease;
+
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 8px;
+    }
+
     .operation-buttons {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
 
       .el-switch {
         margin-left: 8px;
       }
+    }
+
+    .table-placeholder {
+      flex: 1;
+      padding: 10px 0;
     }
   }
 

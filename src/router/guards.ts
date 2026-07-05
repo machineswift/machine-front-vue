@@ -1,5 +1,5 @@
 import type { RouteLocationNormalized, RouteLocationNormalizedLoaded } from 'vue-router'
-import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+import { useIamUserStore } from '@/common/stores/IamUser.store'
 import { findFirstVisibleRoutePath } from './utils/route-helper'
 
 /**
@@ -40,7 +40,7 @@ export const checkAuth = async (to: RouteLocationNormalized) => {
   const userStore = useIamUserStore()
   if (!userStore.isAuthenticated) {
     // 如果未登录，清空标签页
-    const { useTabStore } = await import('@/modules/common/stores/LayoutTab.store')
+    const { useTabStore } = await import('@/common/stores/LayoutTab.store')
     const tabStore = useTabStore()
     tabStore.clearTabs()
 

@@ -1,18 +1,70 @@
 <template>
-  <el-dialog v-model="visible" title="素材详情" width="620px" :close-on-click-modal="false">
-    <el-descriptions :column="1" border v-loading="loading">
-      <el-descriptions-item label="ID">{{ detailData.id || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="文件类型">
-        <el-tag size="small">{{ getFileTypeLabel(detailData.fileType) }}</el-tag>
-      </el-descriptions-item>
-      <el-descriptions-item label="素材标题">{{ detailData.title || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="附件">
+  <el-dialog
+    v-model="visible"
+    title="素材详情"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+    :show-close="false"
+    :destroy-on-close="true"
+    @closed="handleDialogClosed"
+    width="50%"
+    top="5vh"
+  >
+    <el-form :model="detailData" label-width="100px" v-loading="loading">
+      <el-divider content-position="left">基本信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="素材标题">
+            <el-input :model-value="detailData.title || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文件类型">
+            <el-tag size="small">{{ getFileTypeLabel(detailData.fileType) }}</el-tag>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="处理状态">
+            <el-input :model-value="getProcessStatusLabel(detailData.processStatus)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="业务状态">
+            <el-input :model-value="getBusinessStatusLabel(detailData.businessStatus)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="审核状态">
+            <el-input :model-value="getAuditStatusLabel(detailData.auditStatus)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="分类">
+            <template v-if="detailData.categoryIdSet && detailData.categoryIdSet.length">
+              <el-tag v-for="cid in detailData.categoryIdSet" :key="cid" size="small" style="margin-right: 4px; margin-bottom: 4px">
+                {{ getCategoryName(cid) }}
+              </el-tag>
+            </template>
+            <span v-else>无</span>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="附件">
         <template v-if="detailData.attachmentId">
+          <!-- 图片预览 -->
           <template v-if="detailData.fileType === 'IMAGE' && attachmentUrl">
             <el-image
               :src="attachmentUrl"
               fit="contain"
-              class="detail-preview-image material-preview-image"
+              class="detail-preview-image"
               :preview-src-list="[attachmentUrl]"
               preview-teleported
               hide-on-click-modal
@@ -21,31 +73,49 @@
               :min-scale="0.2"
             />
           </template>
-          <template v-else-if="attachmentUrl">
-            <a :href="attachmentUrl" target="_blank" rel="noopener" class="detail-download-link">查看 / 下载附件</a>
+          <!-- 视频预览 -->
+          <template v-else-if="detailData.fileType === 'VIDEO' && attachmentUrl">
+            <video :src="attachmentUrl" controls class="detail-preview-video" />
           </template>
-          <span v-else class="attachment-loading">加载中…</span>
+          <!-- 图片/视频加载中 -->
+          <span v-else-if="detailData.fileType === 'IMAGE' || detailData.fileType === 'VIDEO'" class="attachment-loading">加载中…</span>
+          <!-- 其他类型：点击下载 -->
+          <el-button v-else size="small" type="primary" @click="downloadAttachment" :loading="downloadLoading">下载附件</el-button>
         </template>
         <span v-else>无</span>
-      </el-descriptions-item>
-      <el-descriptions-item label="处理状态">{{ getProcessStatusLabel(detailData.processStatus) }}</el-descriptions-item>
-      <el-descriptions-item label="业务状态">{{ getBusinessStatusLabel(detailData.businessStatus) }}</el-descriptions-item>
-      <el-descriptions-item label="审核状态">{{ getAuditStatusLabel(detailData.auditStatus) }}</el-descriptions-item>
-      <el-descriptions-item label="分类">
-        <template v-if="detailData.categoryIdSet && detailData.categoryIdSet.length">
-          <el-tag v-for="cid in detailData.categoryIdSet" :key="cid" size="small" style="margin-right: 4px; margin-bottom: 4px">
-            {{ getCategoryName(cid) }}
-          </el-tag>
-        </template>
-        <span v-else>无</span>
-      </el-descriptions-item>
-      <el-descriptions-item label="创建人">{{ detailData.createName || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="创建时间">{{ formatTimestamp(detailData.createTime) }}</el-descriptions-item>
-      <el-descriptions-item label="修改人">{{ detailData.updateName || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="修改时间">{{ formatTimestamp(detailData.updateTime) }}</el-descriptions-item>
-    </el-descriptions>
+      </el-form-item>
+
+      <el-divider content-position="left">操作信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建人">
+            <el-input :model-value="detailData.createName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="修改人">
+            <el-input :model-value="detailData.updateName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建时间">
+            <el-input :model-value="formatTimestamp(detailData.createTime)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="修改时间">
+            <el-input :model-value="formatTimestamp(detailData.updateTime)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+
     <template #footer>
-      <el-button @click="visible = false">关闭</el-button>
+      <el-button type="primary" @click="visible = false">关闭</el-button>
     </template>
   </el-dialog>
 </template>
@@ -53,8 +123,7 @@
 <script setup lang="ts">
   import { ref, watch, computed } from 'vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
-  import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import type { DataMaterialDetailResponseVo } from '@/modules/data/material/type/DataMaterial.type'
 
   const props = defineProps({
@@ -71,6 +140,7 @@
     set: val => emit('update:modelValue', val)
   })
   const loading = ref(false)
+  const downloadLoading = ref(false)
   const detailData = ref<DataMaterialDetailResponseVo>({})
   const attachmentUrl = ref('')
 
@@ -84,16 +154,30 @@
   const getAuditStatusLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataMaterialAuditStatusEnum', code)?.message || code : '无')
   const formatTimestamp = (timestamp?: number) => (timestamp ? new Date(timestamp).toLocaleString() : '无')
 
-  const loadAttachmentUrl = async (attachmentId: string) => {
-    if (!attachmentId) {
+  const loadAttachmentUrl = async (materialId: string) => {
+    if (!materialId) {
       attachmentUrl.value = ''
       return
     }
     try {
-      const res = await DataAttachmentApi.getUrl(attachmentId)
-      attachmentUrl.value = res?.url || ''
+      const url = await DataMaterialApi.getDownloadUrl({ id: materialId })
+      attachmentUrl.value = url
     } catch {
       attachmentUrl.value = ''
+    }
+  }
+
+  /** 非图片/视频类型：点击下载按钮触发下载 */
+  const downloadAttachment = async () => {
+    if (!props.materialId) return
+    try {
+      downloadLoading.value = true
+      const url = await DataMaterialApi.getDownloadUrl({ id: props.materialId })
+      window.open(url, '_blank')
+    } catch {
+      // 错误由 API 层处理
+    } finally {
+      downloadLoading.value = false
     }
   }
 
@@ -103,8 +187,8 @@
       loading.value = true
       const res = await DataMaterialApi.detail({ id: props.materialId })
       detailData.value = res || {}
-      if (res?.attachmentId) {
-        await loadAttachmentUrl(res.attachmentId)
+      if (res?.attachmentId && (res.fileType === 'IMAGE' || res.fileType === 'VIDEO')) {
+        await loadAttachmentUrl(props.materialId)
       } else {
         attachmentUrl.value = ''
       }
@@ -115,11 +199,20 @@
     }
   }
 
+  const handleDialogClosed = () => {
+    detailData.value = {}
+    attachmentUrl.value = ''
+    loading.value = false
+    downloadLoading.value = false
+  }
+
   watch(
     () => props.modelValue,
     val => {
       if (val && props.materialId) fetchDetail()
-      else attachmentUrl.value = ''
+      else {
+        attachmentUrl.value = ''
+      }
     },
     { immediate: false }
   )
@@ -132,10 +225,17 @@
     border-radius: 8px;
     border: 1px solid var(--el-border-color);
   }
-  .detail-download-link {
-    color: var(--el-color-primary);
+  .detail-preview-video {
+    max-width: 280px;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color);
   }
   .attachment-loading {
     color: var(--el-text-color-secondary);
+  }
+
+  .el-row {
+    width: 100%;
   }
 </style>

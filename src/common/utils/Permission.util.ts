@@ -1,7 +1,7 @@
 import { cloneDeep } from 'lodash'
-import { routeLookup } from '@/modules/common/utils/RouteLookup.util'
-import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
-import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
+import { routeLookup } from '@/common/utils/RouteLookup.util'
+import { useIamUserStore } from '@/common/stores/IamUser.store'
+import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
 import type { IamPermissionTreeSimpleResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
 
 export class PermissionUtil {

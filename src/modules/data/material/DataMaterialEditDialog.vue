@@ -4,8 +4,12 @@
       <el-form-item label="素材标题" prop="title">
         <el-input v-model="form.title" placeholder="请输入素材标题" />
       </el-form-item>
+      <el-form-item label="文件类型">
+        <el-tag size="small">{{ getFileTypeLabel(detailData.fileType) }}</el-tag>
+      </el-form-item>
       <el-form-item label="当前附件">
-        <div v-if="form.attachmentId" class="attachment-preview">
+        <div v-if="detailData.attachmentId || currentAttachmentId" class="attachment-preview">
+          <!-- 图片预览 -->
           <template v-if="detailData.fileType === 'IMAGE' && attachmentPreviewUrl">
             <el-image
               :src="attachmentPreviewUrl"
@@ -19,9 +23,16 @@
               :min-scale="0.2"
             />
           </template>
-          <template v-else>
-            <a :href="attachmentPreviewUrl" target="_blank" rel="noopener" class="preview-link">查看 / 下载附件</a>
+          <!-- 视频预览 -->
+          <template v-else-if="detailData.fileType === 'VIDEO' && attachmentPreviewUrl">
+            <video :src="attachmentPreviewUrl" controls class="preview-video" />
           </template>
+          <!-- 图片/视频加载中 -->
+          <span v-else-if="isPreviewLoading && (detailData.fileType === 'IMAGE' || detailData.fileType === 'VIDEO')" class="attachment-loading">加载中…</span>
+          <!-- 图片/视频预览不可用 -->
+          <span v-else-if="detailData.fileType === 'IMAGE' || detailData.fileType === 'VIDEO'" class="attachment-loading">预览暂不可用，保存后可正常查看</span>
+          <!-- 其他类型：点击下载 -->
+          <el-button v-else size="small" type="primary" @click="downloadAttachment" :loading="downloadLoading">下载附件</el-button>
           <div class="attachment-actions">
             <el-button size="small" type="primary" plain @click="triggerReplaceFile" :loading="uploading">更换附件</el-button>
             <input ref="replaceFileInputRef" type="file" class="hidden-file-input" @change="onReplaceFileChange" />
@@ -63,7 +74,8 @@
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import type { DataMaterialDetailResponseVo, DataMaterialUpdateRequestVo } from '@/modules/data/material/type/DataMaterial.type'
   import type { DataMaterialCategorySimpleTreeResponseVo } from '@/modules/data/material/type/DataMaterialCategory.type'
 
@@ -77,14 +89,19 @@
 
   const emit = defineEmits(['update:modelValue', 'success'])
 
+  const enumStore = useDictionaryEnumStore()
+  const getFileTypeLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataFileTypeEnum', code)?.message || code : '无')
+
   const formRef = ref()
   const replaceFileInputRef = ref<HTMLInputElement>()
   const visible = ref(false)
   const loading = ref(false)
   const submitting = ref(false)
   const uploading = ref(false)
+  const downloadLoading = ref(false)
   const detailData = ref<DataMaterialDetailResponseVo>({})
   const attachmentPreviewUrl = ref('')
+  const isPreviewLoading = ref(false)
   const categoryTreeOptions = ref<(DataMaterialCategorySimpleTreeResponseVo & { disabled?: boolean })[]>([])
   const categoryTreeRef = ref<InstanceType<typeof ElTreeV2>>()
   const categoryQuery = ref('')
@@ -106,13 +123,14 @@
   const form = ref<DataMaterialUpdateRequestVo>({
     id: '',
     title: '',
-    categoryIdSet: [],
-    attachmentId: ''
+    categoryIdSet: []
   })
 
+  /** 标记附件是否被更换过 */
+  const isAttachmentChanged = ref(false)
+
   const rules = {
-    title: [{ required: true, message: '请输入素材标题', trigger: 'blur' }],
-    attachmentId: [{ required: true, message: '请上传附件或保留原附件', trigger: 'change' }]
+    title: [{ required: true, message: '请输入素材标题', trigger: 'blur' }]
   }
 
   const loadCategoryTree = async () => {
@@ -156,16 +174,33 @@
     })
   }
 
-  const loadAttachmentPreview = async (attachmentId: string) => {
-    if (!attachmentId) {
+  const loadAttachmentPreview = async (materialId: string) => {
+    if (!materialId) {
       attachmentPreviewUrl.value = ''
       return
     }
+    isPreviewLoading.value = true
     try {
-      const res = await DataAttachmentApi.getUrl(attachmentId)
-      attachmentPreviewUrl.value = res?.url || ''
+      const url = await DataMaterialApi.getDownloadUrl({ id: materialId })
+      attachmentPreviewUrl.value = url
     } catch {
       attachmentPreviewUrl.value = ''
+    } finally {
+      isPreviewLoading.value = false
+    }
+  }
+
+  /** 非图片/视频类型：点击下载按钮触发下载 */
+  const downloadAttachment = async () => {
+    if (!props.materialId) return
+    try {
+      downloadLoading.value = true
+      const url = await DataMaterialApi.getDownloadUrl({ id: props.materialId })
+      window.open(url, '_blank')
+    } catch {
+      // 错误由 API 层处理
+    } finally {
+      downloadLoading.value = false
     }
   }
 
@@ -175,14 +210,19 @@
       loading.value = true
       const res = await DataMaterialApi.detail({ id: props.materialId })
       detailData.value = res || {}
+      const attachmentId = res!.attachmentId || ''
       const categoryIdSet = res!.categoryIdSet ? [...res!.categoryIdSet].filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID) : []
       form.value = {
         id: res!.id!,
         title: res!.title || '',
-        categoryIdSet,
-        attachmentId: res!.attachmentId || ''
+        categoryIdSet
       }
-      await loadAttachmentPreview(form.value.attachmentId)
+      isAttachmentChanged.value = false
+      if (attachmentId && (res!.fileType === 'IMAGE' || res!.fileType === 'VIDEO')) {
+        await loadAttachmentPreview(props.materialId)
+      } else {
+        attachmentPreviewUrl.value = ''
+      }
       syncCategoryTreeCheckedKeys(form.value.categoryIdSet || [])
     } catch (error) {
       console.error('获取素材详情失败', error)
@@ -195,18 +235,27 @@
     replaceFileInputRef.value?.click()
   }
 
+  const currentAttachmentId = ref('')
+
   const onReplaceFileChange = async (e: Event) => {
     const target = e.target as HTMLInputElement
     const f = target.files?.[0]
     if (!f || !form.value.id) return
     try {
       uploading.value = true
-      const isImage = detailData.value.fileType === 'IMAGE'
-      const res = isImage ? await DataAttachmentApi.uploadImageForMaterial(form.value.id, f) : await DataAttachmentApi.uploadForMaterial(form.value.id, f)
+      const res = await DataAttachmentApi.upload({ file: f })
       const newId = res?.id
       if (newId) {
-        form.value.attachmentId = newId
-        await loadAttachmentPreview(newId)
+        currentAttachmentId.value = newId
+        isAttachmentChanged.value = true
+        // 文件已在前端内存，直接用 ObjectURL 本地预览，无需调后端接口
+        if (detailData.value.fileType === 'IMAGE' || detailData.value.fileType === 'VIDEO') {
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl)
+          previewObjectUrl = URL.createObjectURL(f)
+          attachmentPreviewUrl.value = previewObjectUrl
+        } else {
+          attachmentPreviewUrl.value = ''
+        }
         ElMessage.success('附件已更换，请点击保存')
       } else {
         ElMessage.error('上传失败')
@@ -222,18 +271,18 @@
   const handleSubmit = async () => {
     try {
       await formRef.value?.validate()
-      if (!form.value.attachmentId) {
-        ElMessage.warning('请上传附件或保留原附件')
-        return
-      }
       submitting.value = true
       const categoryIdSet = form.value.categoryIdSet?.filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID)
-      await DataMaterialApi.update({
+      const payload: DataMaterialUpdateRequestVo = {
         id: form.value.id,
         title: form.value.title,
-        categoryIdSet: categoryIdSet?.length ? categoryIdSet : undefined,
-        attachmentId: form.value.attachmentId
-      })
+        categoryIdSet: categoryIdSet?.length ? categoryIdSet : undefined
+      }
+      // 仅当附件被更换时传入 fileTemp
+      if (isAttachmentChanged.value && currentAttachmentId.value) {
+        payload.fileTemp = { fileId: currentAttachmentId.value }
+      }
+      await DataMaterialApi.update(payload)
       ElMessage.success('保存成功')
       emit('success')
       visible.value = false
@@ -244,10 +293,19 @@
     }
   }
 
+  let previewObjectUrl = ''
+
   const handleClosed = () => {
     formRef.value?.resetFields()
+    // 释放本地 ObjectURL
+    if (previewObjectUrl) {
+      URL.revokeObjectURL(previewObjectUrl)
+      previewObjectUrl = ''
+    }
     attachmentPreviewUrl.value = ''
     categoryQuery.value = ''
+    currentAttachmentId.value = ''
+    isAttachmentChanged.value = false
     if (replaceFileInputRef.value) replaceFileInputRef.value.value = ''
   }
 
@@ -282,6 +340,12 @@
     border-radius: 8px;
     border: 1px solid var(--el-border-color);
   }
+  .preview-video {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color);
+  }
   .preview-link {
     color: var(--el-color-primary);
     margin-right: 8px;
@@ -305,5 +369,8 @@
   }
   .category-query-input {
     margin-bottom: 10px;
+  }
+  .attachment-loading {
+    color: var(--el-text-color-secondary);
   }
 </style>

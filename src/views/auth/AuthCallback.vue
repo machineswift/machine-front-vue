@@ -32,7 +32,7 @@
   import { onBeforeUnmount, onMounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { CircleCheckFilled, CircleCloseFilled, Loading } from '@element-plus/icons-vue'
-  import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+  import { useIamUserStore } from '@/common/stores/IamUser.store'
   import type { IamAuthLoginResponseVo } from '@/modules/iam/auth/type/IamAuth.type'
 
   const route = useRoute()

@@ -44,7 +44,7 @@
 <script setup lang="ts">
   import { reactive, watch, computed, ref, onMounted } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import { IamUserApi } from '@/modules/iam/user/api/IamUser.api'
   import type { IamUserUpdateRequestVo } from '@/modules/iam/types'
 

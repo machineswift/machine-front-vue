@@ -1,5 +1,5 @@
-import type { PageRequest, PageResponse } from '@/modules/common/types/Common.type'
-import type { DataPermissionRuleDto } from '@/modules/common/types/CommonIam.type'
+import type { PageRequest, PageResponse } from '@/common/types/Common.type'
+import type { DataPermissionRuleDto } from '@/common/types/CommonIam.type'
 
 export interface IamRoleCreateRequestVo {
   type: string

@@ -1,12 +1,64 @@
 <template>
-  <el-dialog v-model="state.visible" title="素材分类详情" :close-on-click-modal="false" :destroy-on-close="true" @close="handleDialogClosed" width="520px">
-    <el-descriptions :column="1" border v-loading="state.loading">
-      <el-descriptions-item label="ID">{{ state.detailData.id || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="父ID">{{ state.detailData.parentId || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="编码">{{ state.detailData.code || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="名称">{{ state.detailData.name || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="排序">{{ state.detailData.sort ?? '无' }}</el-descriptions-item>
-    </el-descriptions>
+  <el-dialog
+    v-model="state.visible"
+    title="素材分类详情"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+    :show-close="false"
+    :destroy-on-close="true"
+    @closed="handleDialogClosed"
+    width="50%"
+    top="8vh"
+  >
+    <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
+      <el-divider content-position="left">基本信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="编码">
+            <el-input :model-value="state.detailData.code || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="名称">
+            <el-input :model-value="state.detailData.name || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="排序">
+        <el-input :model-value="state.detailData.sort ?? '无'" disabled style="width: 200px" />
+      </el-form-item>
+
+      <el-divider content-position="left">操作信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建人">
+            <el-input :model-value="state.detailData.createName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新人">
+            <el-input :model-value="state.detailData.updateName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建时间">
+            <el-input :model-value="formatTimestamp(state.detailData.createTime)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新时间">
+            <el-input :model-value="formatTimestamp(state.detailData.updateTime)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+
     <template #footer>
       <el-button type="primary" @click="state.visible = false">关闭</el-button>
     </template>
@@ -34,6 +86,11 @@
     loading: false,
     detailData: {} as Partial<DataMaterialCategoryDetailResponseVo>
   })
+
+  // 格式化时间戳
+  const formatTimestamp = (timestamp?: number): string => {
+    return timestamp ? new Date(timestamp).toLocaleString() : '无'
+  }
 
   const fetchData = async () => {
     if (!props.categoryId) return
@@ -63,8 +120,8 @@
   )
 </script>
 
-<style scoped lang="scss">
-  .el-descriptions {
-    margin: 10px;
+<style lang="scss" scoped>
+  .el-row {
+    width: 100%;
   }
 </style>

@@ -13,49 +13,86 @@
     <el-tabs type="border-card" v-loading="state.loading" class="el-tabs-card">
       <!-- 基本信息标签页 -->
       <el-tab-pane label="基本信息" class="el-main-tab-pane">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="角色ID">
-            {{ state.detailData.id }}
-          </el-descriptions-item>
-          <el-descriptions-item label="角色名称">
-            {{ state.detailData.name || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="角色编码">
-            {{ state.detailData.code || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="角色类型">
-            {{ getRoleTypeText(state.detailData.type) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            {{ getRoleStatusText(state.detailData.status) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="默认角色">
-            <el-tag :type="state.detailData.defaultRole ? 'success' : 'info'">
-              {{ state.detailData.defaultRole ? '是' : '否' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="关联用户数">
-            {{ state.detailData.userNumber || 0 }}
-          </el-descriptions-item>
-          <el-descriptions-item label="数据权限范围">
-            {{ getScopeTypeText(state.detailData.dataPermissionRule?.scopeCode) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="创建人">
-            {{ state.detailData.createName }}
-          </el-descriptions-item>
-          <el-descriptions-item label="更新人">
-            {{ state.detailData.updateName }}
-          </el-descriptions-item>
-          <el-descriptions-item label="创建时间">
-            {{ formatTime(state.detailData.createTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="更新时间">
-            {{ formatTime(state.detailData.updateTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="描述">
-            {{ state.detailData.description || '无' }}
-          </el-descriptions-item>
-        </el-descriptions>
+        <el-form :model="state.detailData" label-width="100px">
+          <el-divider content-position="left">基本信息</el-divider>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="角色名称">
+                <el-input :model-value="state.detailData.name || '无'" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="角色编码">
+                <el-input :model-value="state.detailData.code || '无'" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="角色类型">
+                <el-input :model-value="getRoleTypeText(state.detailData.type)" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="状态">
+                <el-input :model-value="getRoleStatusText(state.detailData.status)" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="默认角色">
+                <el-tag :type="state.detailData.defaultRole ? 'success' : 'info'">
+                  {{ state.detailData.defaultRole ? '是' : '否' }}
+                </el-tag>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="关联用户数">
+                <el-input :model-value="state.detailData.userNumber ?? 0" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-form-item label="数据权限范围">
+            <el-input :model-value="getScopeTypeText(state.detailData.dataPermissionRule?.scopeCode) || '无'" disabled style="width: 200px" />
+          </el-form-item>
+
+          <el-form-item label="描述" v-if="state.detailData.description">
+            <el-input :model-value="state.detailData.description" type="textarea" :rows="3" disabled />
+          </el-form-item>
+
+          <el-divider content-position="left">操作信息</el-divider>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="创建人">
+                <el-input :model-value="state.detailData.createName || '无'" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="更新人">
+                <el-input :model-value="state.detailData.updateName || '无'" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="创建时间">
+                <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="更新时间">
+                <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
       </el-tab-pane>
 
       <!-- 数据权限标签页 -->
@@ -156,12 +193,12 @@
   import { IamRoleApi } from '@/modules/iam/role/api/IamRole.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
   import type { IamPermissionTreeExpandResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
   import IamRoleEditPermissionDrawer from '@/modules/iam/role/IamRoleEditPermissionDrawer.vue'
-  import type { DataPermissionRuleDto } from '@/modules/common/types/CommonIam.type'
+  import type { DataPermissionRuleDto } from '@/common/types/CommonIam.type'
   import { ElMessage } from 'element-plus'
 
   const props = defineProps({
@@ -508,6 +545,10 @@
 
     .data-permission-tabs {
       height: 100%;
+    }
+
+    .el-row {
+      width: 100%;
     }
   }
 

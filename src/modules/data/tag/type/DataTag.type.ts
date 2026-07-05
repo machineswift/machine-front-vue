@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/modules/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/common/types/Common.type'
 
 // 创建智能标签请求参数
 export interface DataTagCreateRequestVo {

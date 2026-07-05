@@ -6,50 +6,86 @@
     :close-on-press-escape="false"
     :show-close="false"
     :destroy-on-close="true"
-    @close="handleDialogClosed"
-    width="80%"
-    top="20vh"
+    @closed="handleDialogClosed"
+    width="50%"
+    top="8vh"
   >
-    <el-descriptions :column="2" border v-loading="state.loading">
-      <el-descriptions-item label="任务ID">
-        {{ state.detailData.id || '-' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="模块">
-        {{ getModuleLabel(state.detailData.module) }}
-      </el-descriptions-item>
-      <el-descriptions-item label="实体">
-        {{ getEntityLabel(state.detailData.entity) }}
-      </el-descriptions-item>
-      <el-descriptions-item label="文件名称">
-        {{ state.detailData.attachmentOriginalName || '-' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="文件类型">
-        {{ state.detailData.fileType ? getFileTypeLabel(state.detailData.fileType) : '-' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="状态">
-        <el-tag :type="getDownloadStatusTagType(state.detailData.status)">
-          {{ getStatusText(state.detailData.status) }}
-        </el-tag>
-      </el-descriptions-item>
-      <el-descriptions-item label="文件大小">
-        {{ formatFileSize(state.detailData.attachmentSize || 0) }}
-      </el-descriptions-item>
-      <el-descriptions-item label="失败原因" span="2" v-if="state.detailData.failCause">
-        {{ state.detailData.failCause }}
-      </el-descriptions-item>
-      <el-descriptions-item label="创建人">
-        {{ state.detailData.createBy || '无' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="创建时间">
-        {{ formatTime(state.detailData.createTime) }}
-      </el-descriptions-item>
-      <el-descriptions-item label="更新人">
-        {{ state.detailData.updateBy || '无' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="更新时间">
-        {{ formatTime(state.detailData.updateTime) }}
-      </el-descriptions-item>
-    </el-descriptions>
+    <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
+      <el-divider content-position="left">基本信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="模块">
+            <el-input :model-value="getModuleLabel(state.detailData.module)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="实体">
+            <el-input :model-value="getEntityLabel(state.detailData.entity)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="文件名称">
+            <el-input :model-value="state.detailData.attachmentOriginalName || '-'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文件类型">
+            <el-input :model-value="state.detailData.fileType ? getFileTypeLabel(state.detailData.fileType) : '-'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="状态">
+            <el-tag :type="getDownloadStatusTagType(state.detailData.status)">
+              {{ getStatusText(state.detailData.status) }}
+            </el-tag>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文件大小">
+            <el-input :model-value="formatFileSize(state.detailData.attachmentSize || 0)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="失败原因" v-if="state.detailData.failCause">
+        <el-input :model-value="state.detailData.failCause" type="textarea" :rows="3" disabled />
+      </el-form-item>
+
+      <el-divider content-position="left">操作信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建人">
+            <el-input :model-value="state.detailData.createBy || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新人">
+            <el-input :model-value="state.detailData.updateBy || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建时间">
+            <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新时间">
+            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
 
     <template #footer>
       <el-button type="primary" @click="state.dialogVisible = false">关闭</el-button>
@@ -63,7 +99,7 @@
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
   import type { QueryDownloadDetailResponseVo } from '@/modules/data/download/type/DataDownload.type'
   import { DATA_FILE_TYPE_LABEL_MAP } from '@/modules/data/download/type/DataDownload.type'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
 
   // 组合式函数
   const enumStore = useDictionaryEnumStore()
@@ -200,3 +236,9 @@
     { immediate: false }
   )
 </script>
+
+<style lang="scss" scoped>
+  .el-row {
+    width: 100%;
+  }
+</style>

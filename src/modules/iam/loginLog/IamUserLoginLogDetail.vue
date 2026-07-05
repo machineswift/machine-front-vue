@@ -6,46 +6,111 @@
     :close-on-press-escape="false"
     :show-close="false"
     :destroy-on-close="true"
-    @close="handleDialogClosed"
-    width="80%"
-    top="5vh"
+    @closed="handleDialogClosed"
+    width="50%"
+    top="8vh"
   >
-    <el-skeleton :loading="state.loading" animated>
-      <template #template>
-        <el-skeleton-item variant="text" style="width: 50%" />
-        <el-skeleton-item variant="text" />
-        <el-skeleton-item variant="text" style="width: 50%" />
-        <el-skeleton-item variant="text" />
-      </template>
-      <template #default>
-        <el-descriptions :column="2" border label-width="80px">
-          <el-descriptions-item label="ID">{{ state.detailData.id || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="用户ID">{{ state.detailData.userId || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="用户名">{{ state.detailData.username || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="姓名">{{ state.detailData.name || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="手机号">{{ state.detailData.phone || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="认证动作">
+    <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
+      <el-divider content-position="left">基本信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="用户ID">
+            <el-input :model-value="state.detailData.userId || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="用户名">
+            <el-input :model-value="state.detailData.username || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="姓名">
+            <el-input :model-value="state.detailData.name || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="手机号">
+            <el-input :model-value="state.detailData.phone || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="认证动作">
             <el-tag>{{ formatAuthAction(state.detailData.authAction) }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="认证方式">
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="认证方式">
             <el-tag>{{ formatAuthMethod(state.detailData.authMethod) }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="认证结果">
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="认证结果">
             <el-tag :type="state.detailData.authResult === 'SUCCESS' ? 'success' : 'danger'">
               {{ formatAuthResult(state.detailData.authResult) }}
             </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="失败原因">{{ state.detailData.failReason || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="IP地址">{{ state.detailData.ipAddress || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="平台">{{ state.detailData.platform || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="User Agent">{{ state.detailData.userAgent || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="创建人">{{ state.detailData.createName || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间">{{ formatTime(state.detailData.createTime) }}</el-descriptions-item>
-          <el-descriptions-item label="更新人">{{ state.detailData.updateName || '无' }}</el-descriptions-item>
-          <el-descriptions-item label="更新时间">{{ formatTime(state.detailData.updateTime) }}</el-descriptions-item>
-        </el-descriptions>
-      </template>
-    </el-skeleton>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="IP地址">
+            <el-input :model-value="state.detailData.ipAddress || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="失败原因" v-if="state.detailData.failReason">
+        <el-input :model-value="state.detailData.failReason" type="textarea" :rows="3" disabled />
+      </el-form-item>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="平台">
+            <el-input :model-value="state.detailData.platform || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="User Agent">
+        <el-input :model-value="state.detailData.userAgent || '无'" type="textarea" :rows="2" disabled />
+      </el-form-item>
+
+      <el-divider content-position="left">操作信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建人">
+            <el-input :model-value="state.detailData.createName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新人">
+            <el-input :model-value="state.detailData.updateName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建时间">
+            <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新时间">
+            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
 
     <template #footer>
       <el-button type="primary" @click="state.visible = false">关闭</el-button>
@@ -57,7 +122,7 @@
   import { reactive, watch, computed } from 'vue'
   import { IamUserLoginLogApi } from '@/modules/iam/loginLog/api/IamUserLoginLog.api'
   import type { IamUserLoginLogDetailResponseVo } from '@/modules/iam/loginLog/type/IamUserLoginLog.type'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
 
   const enumStore = useDictionaryEnumStore()
 
@@ -137,3 +202,9 @@
     { immediate: false }
   )
 </script>
+
+<style lang="scss" scoped>
+  .el-row {
+    width: 100%;
+  }
+</style>

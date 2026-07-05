@@ -1,253 +1,274 @@
 <template>
-  <div class="user-page-div">
+  <div ref="pageContainerRef" class="user-page-div">
     <el-splitter>
       <el-splitter-panel collapsible size="18%">
-        <el-card class="box-card-tree-select">
+        <el-card ref="treeCardRef" class="box-card-tree-select">
           <template #header>
             <el-select v-model="state.searchForm.organizationType">
               <el-option v-for="option in state.organizationTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
             </el-select>
           </template>
-          <el-input v-model="state.organizationQuery" placeholder="请输入关键字" @input="onOrganizationQueryChanged" />
-          <el-tree-v2
-            ref="organizationTreeRef"
-            :data="currentOrganizationTreeOptions"
-            :props="state.organizationProps"
-            :filter-method="organizationFilterMethod"
-            @check="handleOrganizationCheck"
-            show-checkbox
-            :height="700"
-          />
+          <div ref="treeBodyRef" class="tree-body">
+            <el-input ref="treeSearchInputRef" v-model="state.organizationQuery" placeholder="请输入关键字" @input="onOrganizationQueryChanged" />
+            <!-- 树组件高度动态计算，初始不显示 -->
+            <div v-show="treeHeightReady" style="flex: 1; min-height: 0">
+              <el-tree-v2
+                ref="organizationTreeRef"
+                :data="currentOrganizationTreeOptions"
+                :props="state.organizationProps"
+                :filter-method="organizationFilterMethod"
+                @check="handleOrganizationCheck"
+                show-checkbox
+                :height="organizationTreeHeight"
+              />
+            </div>
+            <div v-show="!treeHeightReady" class="tree-placeholder">
+              <el-skeleton :rows="6" animated />
+            </div>
+          </div>
         </el-card>
       </el-splitter-panel>
       <el-splitter-panel :min="200">
-        <!-- 搜索卡片 -->
-        <transition name="slide-fade">
-          <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
-            <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
-              <div class="form-items-group">
-                <el-form-item label="角色:" prop="roleIdSet" class="form-item-responsive role-selector">
-                  <el-select
-                    v-model="selectedRoleIds"
-                    multiple
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    placeholder="请选择角色"
-                    @remove-tag="removeQueryRole"
-                    @clear="clearSelectorAllRoles"
-                  >
-                    <el-option v-for="role in state.selectedRoles" :key="role.id" :label="role.name" :value="role.id" />
-                    <template #prefix>
-                      <el-button size="small" type="primary" plain @click.stop="showRoleSelectorDialog" style="margin-right: 8px; height: 24px">选择</el-button>
-                    </template>
-                  </el-select>
-                </el-form-item>
+        <div ref="rightContentRef" class="user-main-content">
+          <!-- 搜索卡片 -->
+          <transition name="slide-fade">
+            <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
+              <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
+                <div class="form-items-group">
+                  <el-form-item label="角色:" prop="roleIdSet" class="form-item-responsive role-selector">
+                    <el-select
+                      v-model="selectedRoleIds"
+                      multiple
+                      clearable
+                      collapse-tags
+                      collapse-tags-tooltip
+                      placeholder="请选择角色"
+                      @remove-tag="removeQueryRole"
+                      @clear="clearSelectorAllRoles"
+                    >
+                      <el-option v-for="role in state.selectedRoles" :key="role.id" :label="role.name" :value="role.id" />
+                      <template #prefix>
+                        <el-button size="small" type="primary" plain @click.stop="showRoleSelectorDialog" style="margin-right: 8px; height: 24px">
+                          选择
+                        </el-button>
+                      </template>
+                    </el-select>
+                  </el-form-item>
 
-                <el-form-item label="门店:" prop="shopIdSet" class="form-item-responsive shop-selector">
-                  <el-select
-                    v-model="selectedShopIds"
-                    multiple
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    placeholder="请选择门店"
-                    @remove-tag="removeQueryShop"
-                    @clear="clearSelectorAllShops"
-                  >
-                    <el-option v-for="shop in state.selectedShops" :key="shop.id" :label="shop.name" :value="shop.id" />
-                    <template #prefix>
-                      <el-button size="small" type="primary" plain @click.stop="showShopSelectorDialog" style="margin-right: 8px; height: 24px">选择</el-button>
-                    </template>
-                  </el-select>
-                </el-form-item>
+                  <el-form-item label="门店:" prop="shopIdSet" class="form-item-responsive shop-selector">
+                    <el-select
+                      v-model="selectedShopIds"
+                      multiple
+                      clearable
+                      collapse-tags
+                      collapse-tags-tooltip
+                      placeholder="请选择门店"
+                      @remove-tag="removeQueryShop"
+                      @clear="clearSelectorAllShops"
+                    >
+                      <el-option v-for="shop in state.selectedShops" :key="shop.id" :label="shop.name" :value="shop.id" />
+                      <template #prefix>
+                        <el-button size="small" type="primary" plain @click.stop="showShopSelectorDialog" style="margin-right: 8px; height: 24px">
+                          选择
+                        </el-button>
+                      </template>
+                    </el-select>
+                  </el-form-item>
 
-                <el-form-item label="用户名:" prop="username" class="form-item-responsive">
-                  <el-input v-model="state.searchForm.username" placeholder="请输入用户名" clearable @keyup.enter="handleSearch" />
-                </el-form-item>
+                  <el-form-item label="用户名:" prop="username" class="form-item-responsive">
+                    <el-input v-model="state.searchForm.username" placeholder="请输入用户名" clearable @keyup.enter="handleSearch" />
+                  </el-form-item>
 
-                <el-form-item label="姓名:" prop="name" class="form-item-responsive">
-                  <el-input v-model="state.searchForm.name" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
-                </el-form-item>
+                  <el-form-item label="姓名:" prop="name" class="form-item-responsive">
+                    <el-input v-model="state.searchForm.name" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
+                  </el-form-item>
 
-                <el-form-item label="编码:" prop="code" class="form-item-responsive">
-                  <el-input v-model="state.searchForm.code" placeholder="请输入编码" clearable @keyup.enter="handleSearch" />
-                </el-form-item>
+                  <el-form-item label="编码:" prop="code" class="form-item-responsive">
+                    <el-input v-model="state.searchForm.code" placeholder="请输入编码" clearable @keyup.enter="handleSearch" />
+                  </el-form-item>
 
-                <el-form-item label="手机号:" prop="phone" class="form-item-responsive">
-                  <el-input v-model="state.searchForm.phone" placeholder="请输入手机号" clearable @keyup.enter="handleSearch" />
-                </el-form-item>
+                  <el-form-item label="手机号:" prop="phone" class="form-item-responsive">
+                    <el-input v-model="state.searchForm.phone" placeholder="请输入手机号" clearable @keyup.enter="handleSearch" />
+                  </el-form-item>
 
-                <el-form-item label="状态:" prop="status" class="form-item-responsive">
-                  <el-select v-model="state.searchForm.status" placeholder="选择状态" clearable>
-                    <el-option v-for="option in state.userStatus" :key="option.code" :label="option.message" :value="option.code" />
-                  </el-select>
-                </el-form-item>
+                  <el-form-item label="状态:" prop="status" class="form-item-responsive">
+                    <el-select v-model="state.searchForm.status" placeholder="选择状态" clearable>
+                      <el-option v-for="option in state.userStatus" :key="option.code" :label="option.message" :value="option.code" />
+                    </el-select>
+                  </el-form-item>
 
-                <el-form-item label="性别:" prop="gender" class="form-item-responsive">
-                  <el-select v-model="state.searchForm.gender" placeholder="选择性别" clearable>
-                    <el-option v-for="option in state.userGenders" :key="option.code" :label="option.message" :value="option.code" />
-                  </el-select>
-                </el-form-item>
+                  <el-form-item label="性别:" prop="gender" class="form-item-responsive">
+                    <el-select v-model="state.searchForm.gender" placeholder="选择性别" clearable>
+                      <el-option v-for="option in state.userGenders" :key="option.code" :label="option.message" :value="option.code" />
+                    </el-select>
+                  </el-form-item>
 
-                <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
-                  <el-date-picker
-                    v-model="state.searchForm.createTimeRange"
-                    type="daterange"
-                    range-separator="至"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    value-format="x"
-                    @change="handleTimeChange('create')"
-                  />
-                </el-form-item>
+                  <el-form-item label="创建时间:" prop="createTimeRange" class="form-item-responsive form-item-date-picker">
+                    <el-date-picker
+                      v-model="state.searchForm.createTimeRange"
+                      type="daterange"
+                      range-separator="至"
+                      start-placeholder="开始日期"
+                      end-placeholder="结束日期"
+                      value-format="x"
+                      @change="handleTimeChange('create')"
+                    />
+                  </el-form-item>
 
-                <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
-                  <el-date-picker
-                    v-model="state.searchForm.updateTimeRange"
-                    type="daterange"
-                    range-separator="至"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    value-format="x"
-                    @change="handleTimeChange('update')"
-                  />
-                </el-form-item>
-              </div>
-
-              <!-- 操作按钮组 -->
-              <div class="button-group">
-                <el-form-item>
-                  <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']">
-                    <el-icon><Search /></el-icon>
-                    搜索
-                  </el-button>
-                  <el-button @click="resetSearch" v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']">
-                    <el-icon><Refresh /></el-icon>
-                    重置
-                  </el-button>
-                </el-form-item>
-              </div>
-            </el-form>
-          </el-card>
-        </transition>
-
-        <!-- 数据卡片 -->
-        <el-card class="box-card-data">
-          <div ref="operationButtonsRef" class="operation-buttons">
-            <div class="operation-buttons-left">
-              <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:AUTH:USER:CREATE']">添加</el-button>
-              <el-dropdown trigger="click" @command="handleExportCommand" v-hasPermission="['SYSTEM:AUTH:USER:EXPORT']">
-                <el-button type="primary" size="default">
-                  导出
-                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="currentList">当前列表</el-dropdown-item>
-                    <el-dropdown-item command="currentSelected" :disabled="selectedRowCount === 0">当前选中</el-dropdown-item>
-                    <el-dropdown-item command="currentCondition" divided>当前条件</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
-            <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
-          </div>
-
-          <el-table
-            ref="tableRef"
-            :data="state.tableData"
-            border
-            style="margin: 10px 0"
-            v-loading="state.loading"
-            :height="tableHeight"
-            stripe
-            highlight-current-row
-            row-key="id"
-            @selection-change="handleSelectionChange"
-          >
-            <el-table-column type="selection" width="55" align="center" :reserve-selection="true" fixed />
-            <el-table-column label="序号" align="center" type="index" width="60" fixed></el-table-column>
-            <el-table-column prop="id" label="ID" align="center" v-if="false" fixed></el-table-column>
-            <el-table-column prop="username" label="用户名" align="center" width="160" fixed></el-table-column>
-            <el-table-column prop="name" label="姓名" align="center" width="120"></el-table-column>
-            <el-table-column prop="code" label="编码" align="center" width="180"></el-table-column>
-            <el-table-column prop="status" label="状态" align="center" width="120">
-              <template #default="{ row }">
-                <el-switch
-                  v-model="row.status"
-                  :active-value="'ENABLE'"
-                  :inactive-value="'DISABLE'"
-                  active-text="启用"
-                  inactive-text="禁用"
-                  inline-prompt
-                  @change="toggleStatus(row)"
-                  v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_STATUS']"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column prop="phone" label="手机号" align="center" width="120"></el-table-column>
-            <el-table-column prop="gender" label="性别" align="center" width="120">
-              <template #default="{ row }">
-                {{ getUserGenderLabel(row.gender) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" align="center" width="180">
-              <template #default="{ row }">
-                {{ formatTimestamp(row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="updateName" label="修改人" align="center" width="160"></el-table-column>
-            <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
-              <template #default="{ row }">
-                {{ formatTimestamp(row.updateTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" align="center" width="200" fixed="right">
-              <template #default="{ row }">
-                <div class="table-actions">
-                  <el-button size="small" @click="showDetailDialog(row)">详情</el-button>
-                  <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE']">编辑</el-button>
-                  <el-dropdown trigger="click" @command="command => handleUserDropdownCommand(command, row)" placement="bottom-end">
-                    <el-button size="small" type="info">
-                      更多
-                      <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                    </el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="updatePhone" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PHONE'])">
-                          <el-icon><Phone /></el-icon>
-                          <span>修改手机号</span>
-                        </el-dropdown-item>
-                        <el-dropdown-item command="updatePermission" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PERMISSION'])">
-                          <el-icon><Key /></el-icon>
-                          <span>修改权限</span>
-                        </el-dropdown-item>
-                        <el-dropdown-item command="updatePassword" divided :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PASSWORD'])">
-                          <el-icon><Lock /></el-icon>
-                          <span>修改密码</span>
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
+                  <el-form-item label="修改时间:" prop="updateTimeRange" class="form-item-responsive form-item-date-picker">
+                    <el-date-picker
+                      v-model="state.searchForm.updateTimeRange"
+                      type="daterange"
+                      range-separator="至"
+                      start-placeholder="开始日期"
+                      end-placeholder="结束日期"
+                      value-format="x"
+                      @change="handleTimeChange('update')"
+                    />
+                  </el-form-item>
                 </div>
-              </template>
-            </el-table-column>
-          </el-table>
 
-          <el-pagination
-            ref="paginationRef"
-            v-model:current-page="state.pagination.current"
-            v-model:page-size="state.pagination.size"
-            :page-sizes="[20, 50, 100, 200, 500, 1000]"
-            :background="true"
-            layout="prev, pager, next, jumper, ->, total, sizes"
-            :total="state.pagination.total"
-            @current-change="handlePageChange"
-            @size-change="handleSizeChange"
-            v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']"
-          />
-        </el-card>
+                <!-- 操作按钮组 -->
+                <div class="button-group">
+                  <el-form-item>
+                    <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']">
+                      <el-icon><Search /></el-icon>
+                      搜索
+                    </el-button>
+                    <el-button @click="resetSearch" v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']">
+                      <el-icon><Refresh /></el-icon>
+                      重置
+                    </el-button>
+                  </el-form-item>
+                </div>
+              </el-form>
+            </el-card>
+          </transition>
+
+          <!-- 数据卡片 -->
+          <el-card ref="dataCardRef" class="box-card-data">
+            <div ref="operationButtonsRef" class="operation-buttons">
+              <div class="operation-buttons-left">
+                <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:AUTH:USER:CREATE']">添加</el-button>
+                <el-dropdown trigger="click" @command="handleExportCommand" v-hasPermission="['SYSTEM:AUTH:USER:EXPORT']">
+                  <el-button type="primary" size="default">
+                    导出
+                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="currentList">当前列表</el-dropdown-item>
+                      <el-dropdown-item command="currentSelected" :disabled="selectedRowCount === 0">当前选中</el-dropdown-item>
+                      <el-dropdown-item command="currentCondition" divided>当前条件</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+              <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
+            </div>
+
+            <!-- 表格区域：初始不显示，等高度计算完成后再显示 -->
+            <div v-show="tableHeightReady" style="flex: 1; min-height: 0">
+              <el-table
+                ref="tableRef"
+                :data="state.tableData"
+                border
+                v-loading="state.loading"
+                :height="tableHeight"
+                stripe
+                highlight-current-row
+                row-key="id"
+                @selection-change="handleSelectionChange"
+              >
+                <el-table-column type="selection" width="55" align="center" :reserve-selection="true" fixed />
+                <el-table-column label="序号" align="center" type="index" width="60" fixed></el-table-column>
+                <el-table-column prop="id" label="ID" align="center" v-if="false" fixed></el-table-column>
+                <el-table-column prop="username" label="用户名" align="center" width="160" fixed></el-table-column>
+                <el-table-column prop="name" label="姓名" align="center" width="120"></el-table-column>
+                <el-table-column prop="code" label="编码" align="center" width="180"></el-table-column>
+                <el-table-column prop="status" label="状态" align="center" width="120">
+                  <template #default="{ row }">
+                    <el-switch
+                      v-model="row.status"
+                      :active-value="'ENABLE'"
+                      :inactive-value="'DISABLE'"
+                      active-text="启用"
+                      inactive-text="禁用"
+                      inline-prompt
+                      @change="toggleStatus(row)"
+                      v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_STATUS']"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column prop="phone" label="手机号" align="center" width="120"></el-table-column>
+                <el-table-column prop="gender" label="性别" align="center" width="120">
+                  <template #default="{ row }">
+                    {{ getUserGenderLabel(row.gender) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="createTime" label="创建时间" align="center" width="180">
+                  <template #default="{ row }">
+                    {{ formatTimestamp(row.createTime) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="updateName" label="修改人" align="center" width="160"></el-table-column>
+                <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
+                  <template #default="{ row }">
+                    {{ formatTimestamp(row.updateTime) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" align="center" width="200" fixed="right">
+                  <template #default="{ row }">
+                    <div class="table-actions">
+                      <el-button size="small" @click="showDetailDialog(row)">详情</el-button>
+                      <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE']">编辑</el-button>
+                      <el-dropdown trigger="click" @command="command => handleUserDropdownCommand(command, row)" placement="bottom-end">
+                        <el-button size="small" type="info">
+                          更多
+                          <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                        </el-button>
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item command="updatePhone" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PHONE'])">
+                              <el-icon><Phone /></el-icon>
+                              <span>修改手机号</span>
+                            </el-dropdown-item>
+                            <el-dropdown-item command="updatePermission" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PERMISSION'])">
+                              <el-icon><Key /></el-icon>
+                              <span>修改权限</span>
+                            </el-dropdown-item>
+                            <el-dropdown-item command="updatePassword" divided :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PASSWORD'])">
+                              <el-icon><Lock /></el-icon>
+                              <span>修改密码</span>
+                            </el-dropdown-item>
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </div>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <el-pagination
+                ref="paginationRef"
+                v-model:current-page="state.pagination.current"
+                v-model:page-size="state.pagination.size"
+                :page-sizes="[20, 50, 100, 200, 500, 1000]"
+                :background="true"
+                layout="prev, pager, next, jumper, ->, total, sizes"
+                :total="state.pagination.total"
+                @current-change="handlePageChange"
+                @size-change="handleSizeChange"
+                v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']"
+              />
+            </div>
+
+            <!-- 骨架屏占位 -->
+            <div v-show="!tableHeightReady" class="table-placeholder">
+              <el-skeleton :rows="8" animated />
+            </div>
+          </el-card>
+        </div>
 
         <!-- 对话框组件 -->
         <IamUserAddDialog v-model="state.dialog.add" @success="handleAddSuccess" />
@@ -274,15 +295,14 @@
     name: 'SYSTEM:AUTH:USER'
   })
   import { ElTreeV2 } from 'element-plus'
-  import { onMounted, reactive, computed, ref, watch, nextTick } from 'vue'
+  import { onMounted, reactive, computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Refresh, Search, ArrowDown, Phone, Key, Lock } from '@element-plus/icons-vue'
-  import { hasPermission } from '@/modules/common/utils/Permission.util'
-  import { useWindowSize } from '@vueuse/core'
+  import { hasPermission } from '@/common/utils/Permission.util'
   import { IamUserApi } from '@/modules/iam/user/api/IamUser.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import type {
     IamUserDetailResponseVo,
     IamUserExpandPageResponse,
@@ -290,7 +310,7 @@
     IamUserQueryPageRequestVo,
     IamUserUpdateStatusRequestVo
   } from '@/modules/iam/user/type/IamUser.type'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
   import type { IamRoleSimpleListResponseVo } from '@/modules/iam/role/type/IamRole.type'
   import type { DataShopSimpleListResponseVo } from '@/modules/data/shop/type/DataShop.type'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
@@ -371,10 +391,17 @@
   })
 
   const organizationTreeRef = ref<InstanceType<typeof ElTreeV2>>()
-  const searchCardRef = ref<HTMLElement | null>(null)
+  const pageContainerRef = ref<HTMLElement | null>(null)
+  const rightContentRef = ref<HTMLElement | null>(null)
+  const treeCardRef = ref()
+  const treeBodyRef = ref<HTMLElement | null>(null)
+  const treeSearchInputRef = ref()
+  const searchCardRef = ref()
+  const dataCardRef = ref()
   const operationButtonsRef = ref<HTMLElement | null>(null)
   const paginationRef = ref<HTMLElement | null>(null)
   const tableRef = ref<InstanceType<typeof import('element-plus').ElTable>>()
+
   /** 跨页选中的用户 ID 集合，翻页后仍保留 */
   const selectedUserIdSet = ref<Set<string>>(new Set())
   /** 恢复勾选时忽略 selection-change */
@@ -382,27 +409,92 @@
   /** 待恢复的选中 ID（翻页前保存），watch tableData 后再恢复，避免被 selection-change([]) 冲掉 */
   const pendingRestoreIds = ref<Set<string> | null>(null)
 
-  // 表格高度计算
-  const { height: windowHeight } = useWindowSize()
-  const tableHeight = ref<number>(460)
+  // 表格/树高度 - 初始为0，等计算完成后再显示
+  const tableHeight = ref<number>(0)
+  const tableHeightReady = ref<boolean>(false)
+  const organizationTreeHeight = ref<number>(0)
+  const treeHeightReady = ref<boolean>(false)
+
+  let resizeObserver: ResizeObserver | null = null
+  let isFirstTableCalculation = true
+  let isFirstTreeCalculation = true
+
+  const resolveElement = (target: unknown): HTMLElement | null => {
+    if (target instanceof HTMLElement) return target
+    if (target && typeof target === 'object' && '$el' in target) {
+      const el = (target as { $el?: Element }).$el
+      return el instanceof HTMLElement ? el : null
+    }
+    return null
+  }
 
   const calculateTableHeight = async () => {
     await nextTick()
-    if (!windowHeight.value) return
-
-    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
-    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const dataCardEl = resolveElement(dataCardRef.value)
+    if (!dataCardEl) return
+    const cardBody = dataCardEl.querySelector('.el-card__body')
+    if (!(cardBody instanceof HTMLElement)) return
     const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
     const paginationHeight = paginationRef.value?.offsetHeight || 60
-    const paginationSpacing = paginationHeight > 0 ? 8 : 0
-    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
-    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
-    const availableHeight = windowHeight.value - reservedHeight
-    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
-    tableHeight.value = Math.max(400, availableHeight)
+    const contentSpacing = 16
+    const newHeight = Math.max(320, cardBody.clientHeight - operationButtonsHeight - paginationHeight - contentSpacing)
+
+    if (tableHeight.value !== newHeight) {
+      tableHeight.value = newHeight
+    }
+
+    // 首次计算完成后显示表格
+    if (isFirstTableCalculation && tableHeight.value > 0) {
+      tableHeightReady.value = true
+      isFirstTableCalculation = false
+    }
   }
 
-  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
+  const calculateTreeHeight = async () => {
+    await nextTick()
+    const treeBodyEl = treeBodyRef.value
+    if (!treeBodyEl) return
+    const inputEl = resolveElement(treeSearchInputRef.value)
+    const inputHeight = inputEl?.offsetHeight || 32
+    const spacing = 10
+    const newHeight = Math.max(260, treeBodyEl.clientHeight - inputHeight - spacing)
+
+    if (organizationTreeHeight.value !== newHeight) {
+      organizationTreeHeight.value = newHeight
+    }
+
+    // 首次计算完成后显示树组件
+    if (isFirstTreeCalculation && organizationTreeHeight.value > 0) {
+      treeHeightReady.value = true
+      isFirstTreeCalculation = false
+    }
+  }
+
+  const setupResizeObserver = () => {
+    const rightContentEl = rightContentRef.value
+    const pageContainerEl = pageContainerRef.value
+    const searchCardEl = resolveElement(searchCardRef.value)
+    const dataCardEl = resolveElement(dataCardRef.value)
+    const treeCardEl = resolveElement(treeCardRef.value)
+    if (!rightContentEl || !pageContainerEl || !searchCardEl || !dataCardEl || !treeCardEl) return
+
+    resizeObserver = new ResizeObserver(() => {
+      calculateTableHeight()
+      calculateTreeHeight()
+    })
+    resizeObserver.observe(pageContainerEl)
+    resizeObserver.observe(rightContentEl)
+    resizeObserver.observe(searchCardEl)
+    resizeObserver.observe(dataCardEl)
+    resizeObserver.observe(treeCardEl)
+  }
+
+  watch(
+    () => state.showSearchCard,
+    () => {
+      calculateTableHeight()
+    }
+  )
 
   // 计算当前组织的状态
   const currentOrganizationTreeOptions = ref<IamOrganizationSimpleTreeResponseVo[]>([])
@@ -558,14 +650,14 @@
   const selectedRoleIds = computed({
     get: () => state.selectedRoles.map(r => r.id),
     set: newIds => {
-      state.selectedRoles = newIds.map(id => state.selectedRoles.find(role => role.id === id) || { id })
+      state.selectedRoles = newIds.map(id => state.selectedRoles.find(role => role.id === id) || ({ id } as IamRoleSimpleListResponseVo))
     }
   })
 
   const selectedShopIds = computed({
     get: () => state.selectedShops.map(shop => shop.id),
     set: newIds => {
-      state.selectedShops = newIds.map(id => state.selectedShops.find(shop => shop.id === id) || { id, name: '' })
+      state.selectedShops = newIds.map(id => state.selectedShops.find(shop => shop.id === id) || ({ id, name: '' } as DataShopSimpleListResponseVo))
     }
   })
 
@@ -613,6 +705,7 @@
   const handleSearch = () => {
     state.pagination.current = 1
     fetchData()
+    calculateTableHeight()
   }
 
   // 重置搜索
@@ -783,9 +876,20 @@
     state.userGenders = userGenders
     state.organizationTypeOptions = organizationTypeOptions
 
-    state.searchForm.organizationType = organizationTypeOptions[0].code
+    if (organizationTypeOptions.length > 0) {
+      state.searchForm.organizationType = organizationTypeOptions[0].code
+    }
 
     await fetchData()
+    await nextTick()
+    setupResizeObserver()
+    await calculateTableHeight()
+    await calculateTreeHeight()
+  })
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
   })
 </script>
 
@@ -807,27 +911,62 @@
   }
 
   .user-page-div {
-    margin: 4px;
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    display: flex;
-    align-items: flex-start;
+    box-sizing: border-box;
+    :deep(.el-splitter) {
+      height: 100%;
+      min-height: 0;
+    }
+    :deep(.el-splitter-panel) {
+      min-height: 0;
+    }
 
     .box-card-tree-select {
-      margin: 4px 4px 4px 0;
+      margin: 0;
       width: 100%;
       height: 100%;
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      :deep(.el-card__body) {
+        flex: 1;
+        min-height: 0;
+        padding: 12px;
+      }
+      .tree-body {
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
       .el-select {
         margin: 0 0 0 0;
         width: 100%;
       }
     }
+
+    .tree-placeholder {
+      flex: 1;
+      padding: 10px 0;
+    }
+  }
+
+  .user-main-content {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .box-card-form {
-    margin: 4px;
+    margin: 0;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     transition: all 0.6s ease;
@@ -922,10 +1061,22 @@
   }
 
   .box-card-data {
-    margin: 4px;
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     transition: all 0.6s ease;
+
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 8px;
+    }
 
     .operation-buttons {
       display: flex;
@@ -941,6 +1092,11 @@
       .el-switch {
         margin-left: 8px;
       }
+    }
+
+    .table-placeholder {
+      flex: 1;
+      padding: 10px 0;
     }
   }
 

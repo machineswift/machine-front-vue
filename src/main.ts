@@ -9,9 +9,9 @@ import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-import { permissionDirective } from '@/modules/common/directive/Permission.directive'
+import { permissionDirective } from '@/common/directive/Permission.directive'
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate'
-import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+import { useIamUserStore } from '@/common/stores/IamUser.store'
 
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedState)

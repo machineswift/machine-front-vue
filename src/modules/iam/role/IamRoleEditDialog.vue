@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    v-model="state.dialogVisible"
+    v-model="dialogVisible"
     title="编辑角色"
     :loading="state.loading"
     :close-on-click-modal="false"
@@ -27,7 +27,7 @@
         <el-input v-model="state.formData.code" placeholder="请输入角色编码" disabled />
       </el-form-item>
 
-      <el-form-item label="数据权限" prop="type">
+      <el-form-item label="数据权限" prop="dataPermissionScope">
         <el-radio-group v-model="state.formData.dataPermissionRule.scopeCode" :disabled="state.formData.defaultRole">
           <el-radio v-for="option in state.dataPermissionScopeTypes" :key="option.code" :value="option.code">
             {{ option.message }}
@@ -52,7 +52,7 @@
             </div>
             <el-tree-v2
               :ref="el => setOrganizationTreeRef(option.code, el)"
-              :data="state.organizationTreeOptionsMap.get(option.code)"
+              :data="state.organizationTreeOptionsMap.get(option.code) || []"
               :props="state.organizationProps"
               :filter-method="organizationFilterMethod"
               @check="(node, data) => handleCheckChange(option.code, data.checkedNodes)"
@@ -69,7 +69,7 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="state.dialogVisible = false">取消</el-button>
+      <el-button @click="handleCancel">取消</el-button>
       <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['SYSTEM:AUTH:ROLE:UPDATE']">保存</el-button>
     </template>
   </el-dialog>
@@ -78,13 +78,13 @@
 <script setup lang="ts">
   import { debounce } from 'lodash-es'
   import { ElMessage, ElTreeV2 } from 'element-plus'
-  import { ref, watch, reactive, computed } from 'vue'
+  import { ref, watch, reactive, computed, nextTick } from 'vue'
   import { IamRoleApi } from '@/modules/iam/role/api/IamRole.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import type { DataPermissionRuleDto, DataPermissionRuleOrganizationNodeDto } from '@/modules/common/types/CommonIam.type'
+  import type { DataPermissionRuleDto, DataPermissionRuleOrganizationNodeDto } from '@/common/types/CommonIam.type'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
 
   // 常量定义
   const DEFAULT_FORM_DATA = {
@@ -111,37 +111,49 @@
 
   const emit = defineEmits(['update:modelValue', 'refresh'])
 
+  // 独立的 computed 用于 v-model，不放在 reactive 中
+  const dialogVisible = computed({
+    get: () => props.modelValue,
+    set: val => {
+      if (!val) {
+        handleCancel()
+      }
+      emit('update:modelValue', val)
+    }
+  })
+
   const formRef = ref()
   const organizationTreeRefMap = ref<Map<string, InstanceType<typeof ElTreeV2>>>(new Map())
+  const isInitializing = ref(false) // 防止重复初始化
 
   const state = reactive({
-    dialogVisible: computed({
-      get: () => props.modelValue,
-      set: val => emit('update:modelValue', val)
-    }),
-
     loading: false,
     submitting: false,
+
     //枚举状态
     roleTypes: [] as Array<{ code: string; message: string }>,
     dataPermissionScopeTypes: [] as Array<{ code: string; message: string }>,
+
     //组织树
     organizationTypeOptions: [] as Array<{ code: string; message: string }>,
     organizationTreeOptionsMap: new Map<string, IamOrganizationSimpleTreeResponseVo[]>(),
+
     //组织树状态
     organizationQueryMap: {} as Record<string, string>,
     organizationCascadeSelectionMap: {} as Record<string, boolean>,
     organizationDefaultCheckedKeysMap: new Map<string, string[]>(),
     organizationDefaultExpandedKeysMap: new Map<string, string[]>(),
 
-    formData: { ...DEFAULT_FORM_DATA },
+    formData: JSON.parse(JSON.stringify(DEFAULT_FORM_DATA)) as typeof DEFAULT_FORM_DATA,
+
     organizationProps: {
       value: 'id',
       label: 'name',
       children: 'children'
     },
+
     rules: {
-      type: [{ required: true, message: '请选择角色类型', trigger: 'blur' }],
+      type: [{ required: true, message: '请选择角色类型', trigger: 'change' }],
       name: [
         { required: true, message: '请输入角色名称', trigger: 'blur' },
         { min: 2, max: 32, message: '长度在2到32个字符', trigger: 'blur' }
@@ -151,14 +163,44 @@
     }
   })
 
+  // 创建深拷贝函数，处理 Map 对象
+  const deepCloneFormData = (data: typeof DEFAULT_FORM_DATA) => {
+    const cloned = JSON.parse(JSON.stringify(data))
+    // 重新创建 Map 对象
+    cloned.dataPermissionRule.organizationNodeMap = new Map<string, DataPermissionRuleOrganizationNodeDto>()
+
+    if (data.dataPermissionRule.organizationNodeMap) {
+      data.dataPermissionRule.organizationNodeMap.forEach((value, key) => {
+        cloned.dataPermissionRule.organizationNodeMap.set(key, JSON.parse(JSON.stringify(value)))
+      })
+    }
+
+    return cloned
+  }
+
   // 组织树相关方法
-  const setOrganizationTreeRef = (code: string, el: InstanceType<typeof ElTreeV2>) => {
+  const setOrganizationTreeRef = (code: string, el: InstanceType<typeof ElTreeV2> | null) => {
     if (!el) return
 
     organizationTreeRefMap.value.set(code, el)
-    if (state.organizationDefaultExpandedKeysMap.has(code)) {
-      el.setExpandedKeys(state.organizationDefaultExpandedKeysMap.get(code)!)
-    }
+
+    nextTick(() => {
+      // 设置展开的节点
+      if (state.organizationDefaultExpandedKeysMap.has(code)) {
+        const expandedKeys = state.organizationDefaultExpandedKeysMap.get(code)
+        if (expandedKeys && expandedKeys.length > 0) {
+          el.setExpandedKeys(expandedKeys)
+        }
+      }
+
+      // 设置选中的节点
+      if (state.organizationDefaultCheckedKeysMap.has(code)) {
+        const checkedKeys = state.organizationDefaultCheckedKeysMap.get(code)
+        if (checkedKeys && checkedKeys.length > 0) {
+          el.setCheckedKeys(checkedKeys)
+        }
+      }
+    })
   }
 
   const handleCascadeSelectionChange = (orgType: string, val: boolean) => {
@@ -172,13 +214,17 @@
     if (treeRef) {
       treeRef.filter(query)
       if (query.trim() === '') {
-        treeRef.setExpandedKeys(state.organizationDefaultExpandedKeysMap.get(orgType) || [])
+        const expandedKeys = state.organizationDefaultExpandedKeysMap.get(orgType) || []
+        if (expandedKeys.length > 0) {
+          treeRef.setExpandedKeys(expandedKeys)
+        }
       }
     }
   }, 300)
 
   const organizationFilterMethod = (query: string, node: IamOrganizationSimpleTreeResponseVo) => {
-    return !query || node.name?.toLowerCase().includes(query.toLowerCase()) || false
+    if (!query) return true
+    return node.name?.toLowerCase().includes(query.toLowerCase()) || false
   }
 
   const handleCheckChange = (_orgType: string, _checkedNodes: IamOrganizationSimpleTreeResponseVo[]) => {
@@ -187,31 +233,39 @@
 
   // 设置已选中的组织节点
   const setCheckedOrganizationNodes = async () => {
-    if (!state.formData.dataPermissionRule.organizationNodeMap) {
+    const organizationNodeMap = state.formData.dataPermissionRule.organizationNodeMap
+
+    if (!organizationNodeMap || organizationNodeMap.size === 0) {
       return
     }
 
-    const organizationNodeMap: Map<string, string[]> = state.detailData.dataPermissionRule.organizationNodeMap
-    state.organizationDefaultCheckedKeysMap = new Map()
+    // 等待所有组织树数据加载完成
+    await nextTick()
 
-    Object.entries(organizationNodeMap).forEach(([orgType, nodeDto]) => {
-      //父子联动模式
+    organizationNodeMap.forEach((nodeDto, orgType) => {
+      // 父子联动模式
       state.organizationCascadeSelectionMap[orgType] = nodeDto.selectType === 'SELF_AND_SUB'
 
       if (nodeDto.organizationIdSet?.length) {
-        //设置选中节点
         const treeData = state.organizationTreeOptionsMap.get(orgType)
+        if (!treeData || treeData.length === 0) return
+
+        let checkedKeys: string[] = []
+
         if (nodeDto.selectType === 'SELF_AND_SUB') {
-          const allChildrenIds = TreeDataUtil.getAllChildrenIdsIncludingSelf(treeData, nodeDto.organizationIdSet)
-          state.organizationDefaultCheckedKeysMap.set(orgType, allChildrenIds)
+          // 获取所有子节点ID（包括自身）
+          checkedKeys = TreeDataUtil.getAllChildrenIdsIncludingSelf(treeData, nodeDto.organizationIdSet)
         } else {
-          state.organizationDefaultCheckedKeysMap.set(orgType, nodeDto.organizationIdSet)
+          checkedKeys = [...nodeDto.organizationIdSet]
         }
 
-        //设置展开的节点
+        state.organizationDefaultCheckedKeysMap.set(orgType, checkedKeys)
+
+        // 设置展开的节点
         const rootNodeIds = treeData.map(root => root.id)
         const allParentNodes = TreeDataUtil.getAllParentNodes(treeData, nodeDto.organizationIdSet)
         const expandedKeys = allParentNodes.filter(node => rootNodeIds.includes(node.id) || !nodeDto.organizationIdSet.includes(node.id)).map(node => node.id)
+
         state.organizationDefaultExpandedKeysMap.set(orgType, expandedKeys)
       }
     })
@@ -219,7 +273,7 @@
 
   const handleDialogClosed = () => {
     // 重置表单数据
-    state.formData = { ...DEFAULT_FORM_DATA }
+    state.formData = deepCloneFormData(DEFAULT_FORM_DATA)
 
     // 清理组织树相关状态
     state.organizationTreeOptionsMap.clear()
@@ -232,18 +286,39 @@
     organizationTreeRefMap.value.clear()
 
     // 重置表单验证状态
-    formRef.value?.resetFields()
+    if (formRef.value) {
+      formRef.value.resetFields()
+    }
+
+    state.loading = false
+    state.submitting = false
+  }
+
+  /**
+   * 关闭对话框
+   */
+  const closeDialog = () => {
+    emit('update:modelValue', false)
+  }
+
+  /**
+   * 取消操作
+   */
+  const handleCancel = () => {
+    closeDialog()
   }
 
   // 表单提交
   const submitForm = async () => {
+    if (state.submitting) return // 防止重复提交
+
     try {
       await formRef.value?.validate()
       state.submitting = true
 
       // 处理数据权限规则
       if (state.formData.dataPermissionRule.scopeCode === 'CUSTOM') {
-        // 清空之前的选中数据
+        // 创建新的 Map
         state.formData.dataPermissionRule.organizationNodeMap = new Map()
 
         // 处理每个组织类型的选中数据
@@ -262,11 +337,11 @@
           // 根据是否父子联动处理选中节点
           if (organizationNodeDto.selectType === 'SELF_AND_SUB') {
             const treeData = state.organizationTreeOptionsMap.get(orgType.code)
-            if (treeData) {
+            if (treeData && treeData.length > 0) {
               organizationNodeDto.organizationIdSet = TreeDataUtil.getRootNodesFromSelected(treeData, checkedKeys).map(node => node.id)
             }
           } else {
-            organizationNodeDto.organizationIdSet = checkedKeys
+            organizationNodeDto.organizationIdSet = [...checkedKeys]
           }
 
           // 只保存有选中数据的组织类型
@@ -288,12 +363,61 @@
 
       ElMessage.success('修改成功')
       emit('refresh')
-      state.dialogVisible = false
-    } catch (error) {
+      closeDialog()
+    } catch (error: unknown) {
+      const msg = (error as { message?: string })?.message
+      if (msg) {
+        ElMessage.error(msg)
+      }
       console.error('修改角色失败', error)
     } finally {
       state.submitting = false
     }
+  }
+
+  // 加载组织树数据
+  const loadOrganizationTreeData = async () => {
+    if (state.organizationTypeOptions.length === 0) return
+
+    const loadPromises = state.organizationTypeOptions.map(async option => {
+      if (state.organizationTreeOptionsMap.has(option.code)) return
+
+      try {
+        const organizationTreeRes = await IamOrganizationApi.treeSimple({ type: option.code })
+        state.organizationTreeOptionsMap.set(option.code, [organizationTreeRes])
+
+        // 设置默认展开的节点
+        const treeData = state.organizationTreeOptionsMap.get(option.code)
+        if (treeData && treeData.length > 0) {
+          state.organizationDefaultExpandedKeysMap.set(
+            option.code,
+            treeData.map(root => root.id)
+          )
+        }
+      } catch (error) {
+        console.error(`加载组织树数据失败: ${option.code}`, error)
+      }
+    })
+
+    await Promise.all(loadPromises)
+  }
+
+  // 初始化枚举数据
+  const initEnumData = async () => {
+    const [roleTypes, organizationTypeOptions, dataPermissionScopeTypes] = await Promise.all([
+      enumStore.getEnumDataAsync('IamRoleTypeEnum'),
+      enumStore.getEnumDataAsync('IamOrganizationTypeEnum'),
+      enumStore.getEnumDataAsync('IamDataPermissionScopeTypeEnum')
+    ])
+
+    state.roleTypes = roleTypes || []
+    state.organizationTypeOptions = organizationTypeOptions || []
+    state.dataPermissionScopeTypes = dataPermissionScopeTypes || []
+
+    // 设置默认父子联动
+    state.organizationTypeOptions.forEach(option => {
+      state.organizationCascadeSelectionMap[option.code] = true
+    })
   }
 
   // 获取角色详情
@@ -302,7 +426,7 @@
       state.loading = true
       const res = await IamRoleApi.detail({ id: props.roleId })
 
-      // 转换organizationNodeMap为Map格式
+      // 转换 organizationNodeMap 为 Map 格式
       const organizationNodeMap = new Map<string, DataPermissionRuleOrganizationNodeDto>()
       if (res.dataPermissionRule?.organizationNodeMap) {
         Object.entries(res.dataPermissionRule.organizationNodeMap).forEach(([key, value]) => {
@@ -310,8 +434,8 @@
         })
       }
 
-      //初始化状态数据
-      Object.assign(state.formData, {
+      // 更新表单数据
+      state.formData = {
         id: res.id,
         type: res.type,
         name: res.name,
@@ -323,58 +447,62 @@
           scopeCode: res.dataPermissionRule?.scopeCode || 'ORG_AND_SUB',
           organizationNodeMap: organizationNodeMap
         }
-      })
+      }
 
-      // 如果是自定义数据权限，加载组织树数据
+      // 如果是自定义数据权限，需要加载组织树数据并设置选中状态
       if (state.formData.dataPermissionRule.scopeCode === 'CUSTOM') {
+        // 先确保组织树数据已加载
+        await loadOrganizationTreeData()
+        // 等待 DOM 更新
+        await nextTick()
         // 设置已选中的组织节点
         await setCheckedOrganizationNodes()
       }
     } catch (error) {
       console.error('获取角色详情失败', error)
+      ElMessage.error('获取角色详情失败')
     } finally {
       state.loading = false
     }
   }
 
+  // 初始化对话框
+  const initDialog = async () => {
+    if (isInitializing.value) return // 防止重复初始化
+
+    isInitializing.value = true
+
+    try {
+      // 先加载枚举数据
+      await initEnumData()
+      // 加载组织树数据
+      await loadOrganizationTreeData()
+      // 获取角色详情
+      await fetchData()
+    } catch (error) {
+      console.error('初始化对话框失败', error)
+    } finally {
+      isInitializing.value = false
+    }
+  }
+
   // 监听对话框显示状态
   watch(
-    [() => props.modelValue, () => props.roleId],
-    async ([modelValue, roleId]) => {
-      if (modelValue && roleId) {
-        //初始化状态数据
-        const [roleTypes, organizationTypeOptions, dataPermissionScopeTypes] = await Promise.all([
-          enumStore.getEnumDataAsync('IamRoleTypeEnum'),
-          enumStore.getEnumDataAsync('IamOrganizationTypeEnum'),
-          enumStore.getEnumDataAsync('IamDataPermissionScopeTypeEnum')
-        ])
-        state.roleTypes = roleTypes
-        state.organizationTypeOptions = organizationTypeOptions
-        state.dataPermissionScopeTypes = dataPermissionScopeTypes
+    () => props.modelValue,
+    async newVal => {
+      if (newVal && props.roleId) {
+        // 重置状态
+        state.formData = deepCloneFormData(DEFAULT_FORM_DATA)
+        state.organizationTreeOptionsMap.clear()
+        state.organizationQueryMap = {}
+        state.organizationCascadeSelectionMap = {}
+        state.organizationDefaultCheckedKeysMap.clear()
+        state.organizationDefaultExpandedKeysMap.clear()
+        organizationTreeRefMap.value.clear()
 
-        //初始化组织树树数据
-        await Promise.all(
-          state.organizationTypeOptions.map(async option => {
-            const organizationTreeRes = await IamOrganizationApi.treeSimple({ type: option.code })
-            state.organizationTreeOptionsMap.set(option.code, [organizationTreeRes])
-          })
-        )
-
-        // 设置默认父子联动
-        state.organizationTypeOptions.forEach(option => {
-          state.organizationCascadeSelectionMap[option.code] = true
-        })
-
-        // 设置默认展开的节点
-        state.organizationTypeOptions.forEach(option => {
-          const treeData = state.organizationTreeOptionsMap.get(option.code)
-          state.organizationDefaultExpandedKeysMap.set(
-            option.code,
-            treeData.map(root => root.id)
-          )
-        })
-
-        await fetchData()
+        // 初始化对话框
+        await nextTick()
+        await initDialog()
       }
     },
     { immediate: false }
@@ -388,6 +516,7 @@
     .tab-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       margin-bottom: 10px;
 
       .search-input {

@@ -13,46 +13,82 @@
     <el-tabs type="border-card" v-loading="state.loading" class="el-tabs-card">
       <!-- 基本信息标签页 -->
       <el-tab-pane label="基本信息" class="el-main-tab-pane">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="用户ID">
-            {{ state.detailData.id }}
-          </el-descriptions-item>
-          <el-descriptions-item label="用户名">
-            {{ state.detailData.username || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="姓名">
-            {{ state.detailData.name || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="编码">
-            {{ state.detailData.code || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="state.detailData.status === 'ENABLE' ? 'success' : 'danger'">
-              {{ getUserStatusLabel(state.detailData.status) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="手机号">
-            {{ state.detailData.phone || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="性别">
-            {{ getUserGenderLabel(state.detailData.gender) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="创建人">
-            {{ state.detailData.createName || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="更新人">
-            {{ state.detailData.updateName || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="创建时间">
-            {{ formatTimestamp(state.detailData.createTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="更新时间">
-            {{ formatTimestamp(state.detailData.updateTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="描述">
-            {{ state.detailData.description || '无' }}
-          </el-descriptions-item>
-        </el-descriptions>
+        <el-form :model="state.detailData" label-width="100px">
+          <el-divider content-position="left">基本信息</el-divider>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="用户名">
+                <el-input :model-value="state.detailData.username || '无'" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="姓名">
+                <el-input :model-value="state.detailData.name || '无'" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="编码">
+                <el-input :model-value="state.detailData.code || '无'" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="手机号">
+                <el-input :model-value="state.detailData.phone || '无'" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="状态">
+                <el-tag :type="state.detailData.status === 'ENABLE' ? 'success' : 'danger'">
+                  {{ getUserStatusLabel(state.detailData.status) }}
+                </el-tag>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="性别">
+                <el-input :model-value="getUserGenderLabel(state.detailData.gender)" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-form-item label="描述" v-if="state.detailData.description">
+            <el-input :model-value="state.detailData.description" type="textarea" :rows="3" disabled />
+          </el-form-item>
+
+          <el-divider content-position="left">操作信息</el-divider>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="创建人">
+                <el-input :model-value="state.detailData.createName || '无'" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="更新人">
+                <el-input :model-value="state.detailData.updateName || '无'" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="创建时间">
+                <el-input :model-value="formatTimestamp(state.detailData.createTime)" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="更新时间">
+                <el-input :model-value="formatTimestamp(state.detailData.updateTime)" disabled />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
       </el-tab-pane>
 
       <!-- 组织关系标签页 -->
@@ -132,8 +168,8 @@
   import { reactive, watch, computed } from 'vue'
   import { IamUserApi } from '@/modules/iam/user/api/IamUser.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
   import type { IamUserDetailResponseVo, IamUserRoleInfoResponse } from '@/modules/iam/user/type/IamUser.type'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
   import { ElMessage } from 'element-plus'
@@ -348,6 +384,10 @@
     .custom-role-tabs {
       height: 100%;
     }
+
+    .el-row {
+      width: 100%;
+    }
   }
 
   .tab-header {
@@ -370,14 +410,6 @@
 
     .checked-badge {
       margin-left: 10px;
-    }
-  }
-
-  .el-descriptions {
-    margin: 10px;
-
-    :deep(.el-descriptions__cell) {
-      padding: 12px 10px;
     }
   }
 

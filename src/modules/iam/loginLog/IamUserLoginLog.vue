@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div ref="pageContainerRef" class="login-log-page">
     <!-- 搜索卡片 -->
     <transition name="slide-fade">
       <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
@@ -80,83 +80,90 @@
     </transition>
 
     <!-- 数据卡片 -->
-    <el-card class="box-card-data">
+    <el-card ref="dataCardRef" class="box-card-data">
       <div ref="operationButtonsRef" class="operation-buttons">
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
-      <!-- 数据表格 -->
-      <el-table :data="state.tableData" border style="margin: 10px 0" v-loading="state.isLoading" :height="tableHeight" stripe highlight-current-row>
-        <el-table-column label="序号" align="center" type="index" width="60" fixed />
-        <el-table-column prop="username" label="用户名" align="center" width="120" fixed />
-        <el-table-column prop="name" label="姓名" align="center" width="100" />
-        <el-table-column prop="phone" label="手机号" align="center" width="120" />
+      <!-- 表格区域：初始不显示，等高度计算完成后再显示 -->
+      <div v-show="tableHeightReady" style="flex: 1; min-height: 0">
+        <el-table :data="state.tableData" border v-loading="state.isLoading" :height="tableHeight" stripe highlight-current-row>
+          <el-table-column label="序号" align="center" type="index" width="60" fixed />
+          <el-table-column prop="username" label="用户名" align="center" width="120" fixed />
+          <el-table-column prop="name" label="姓名" align="center" width="100" />
+          <el-table-column prop="phone" label="手机号" align="center" width="120" />
 
-        <el-table-column prop="authAction" label="认证动作" align="center" width="120">
-          <template #default="{ row }">
-            <el-tag>{{ formatEnumDisplay('IamAuthActionEnum', row.authAction) }}</el-tag>
-          </template>
-        </el-table-column>
+          <el-table-column prop="authAction" label="认证动作" align="center" width="120">
+            <template #default="{ row }">
+              <el-tag>{{ formatEnumDisplay('IamAuthActionEnum', row.authAction) }}</el-tag>
+            </template>
+          </el-table-column>
 
-        <el-table-column prop="authMethod" label="认证方式" align="center" width="140">
-          <template #default="{ row }">
-            <el-tag>{{ formatEnumDisplay('IamAuthMethodEnum', row.authMethod) }}</el-tag>
-          </template>
-        </el-table-column>
+          <el-table-column prop="authMethod" label="认证方式" align="center" width="140">
+            <template #default="{ row }">
+              <el-tag>{{ formatEnumDisplay('IamAuthMethodEnum', row.authMethod) }}</el-tag>
+            </template>
+          </el-table-column>
 
-        <el-table-column prop="authResult" label="认证结果" align="center" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.authResult === 'SUCCESS' ? 'success' : 'danger'">
-              {{ formatEnumDisplay('IamAuthResultEnum', row.authResult) }}
-            </el-tag>
-          </template>
-        </el-table-column>
+          <el-table-column prop="authResult" label="认证结果" align="center" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.authResult === 'SUCCESS' ? 'success' : 'danger'">
+                {{ formatEnumDisplay('IamAuthResultEnum', row.authResult) }}
+              </el-tag>
+            </template>
+          </el-table-column>
 
-        <el-table-column prop="ipAddress" label="IP地址" align="center" width="140" />
-        <el-table-column prop="platform" label="平台" align="center" width="120">
-          <template #default="{ row }">
-            <el-tooltip v-if="row.platform" :content="row.platform" placement="top" :append-to-body="true">
-              <span class="text-ellipsis">{{ row.platform }}</span>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="failReason" label="失败原因" align="center" width="300" min-width="240">
-          <template #default="{ row }">
-            <el-tooltip v-if="row.failReason" :content="row.failReason" placement="top" :append-to-body="true" :show-after="200">
-              <span class="text-ellipsis">{{ row.failReason }}</span>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="updateName" label="操作人" align="center" width="120" />
+          <el-table-column prop="ipAddress" label="IP地址" align="center" width="140" />
+          <el-table-column prop="platform" label="平台" align="center" width="120">
+            <template #default="{ row }">
+              <el-tooltip v-if="row.platform" :content="row.platform" placement="top" :append-to-body="true">
+                <span class="text-ellipsis">{{ row.platform }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="failReason" label="失败原因" align="center" width="300" min-width="240">
+            <template #default="{ row }">
+              <el-tooltip v-if="row.failReason" :content="row.failReason" placement="top" :append-to-body="true" :show-after="200">
+                <span class="text-ellipsis">{{ row.failReason }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="updateName" label="操作人" align="center" width="120" />
 
-        <el-table-column prop="createTime" label="登录时间" align="center" width="180">
-          <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
-        </el-table-column>
+          <el-table-column prop="createTime" label="登录时间" align="center" width="180">
+            <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
+          </el-table-column>
 
-        <el-table-column label="操作" align="center" width="120" fixed="right">
-          <template #default="{ row }">
-            <div class="table-actions">
-              <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:DETAIL']">详情</el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table-column label="操作" align="center" width="120" fixed="right">
+            <template #default="{ row }">
+              <div class="table-actions">
+                <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:DETAIL']">详情</el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
 
-      <!-- 分页 -->
-      <el-pagination
-        ref="paginationRef"
-        v-model:current-page="state.pagination.current"
-        v-model:page-size="state.pagination.size"
-        :page-sizes="[20, 50, 100, 200, 500, 1000]"
-        :background="true"
-        layout="prev, pager, next, jumper, ->, total, sizes"
-        :total="state.pagination.total"
-        @current-change="handlePageChange"
-        @size-change="handlePageSizeChange"
-        v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:PAGE_EXPAND']"
-      />
+        <!-- 分页 -->
+        <el-pagination
+          ref="paginationRef"
+          v-model:current-page="state.pagination.current"
+          v-model:page-size="state.pagination.size"
+          :page-sizes="[20, 50, 100, 200, 500, 1000]"
+          :background="true"
+          layout="prev, pager, next, jumper, ->, total, sizes"
+          :total="state.pagination.total"
+          @current-change="handlePageChange"
+          @size-change="handlePageSizeChange"
+          v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:PAGE_EXPAND']"
+        />
+      </div>
+
+      <!-- 骨架屏占位 -->
+      <div v-show="!tableHeightReady" class="table-placeholder">
+        <el-skeleton :rows="8" animated />
+      </div>
     </el-card>
 
     <!-- 详情对话框 -->
@@ -177,13 +184,12 @@
   defineOptions({
     name: 'SYSTEM:AUTH:LOGIN_LOG'
   })
-  import { onMounted, reactive, ref, computed, watch, nextTick } from 'vue'
+  import { onMounted, reactive, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import type { FormInstance } from 'element-plus'
   import { Refresh, Search } from '@element-plus/icons-vue'
   import IamUserLoginLogDetail from '@/modules/iam/loginLog/IamUserLoginLogDetail.vue'
   import { IamUserLoginLogApi } from '@/modules/iam/loginLog/api/IamUserLoginLog.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { useWindowSize } from '@vueuse/core'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
   import type { IamUserLoginLogExpandListResponseVo, IamUserLoginLogExpandPageResponse, IamUserLoginLogQueryPageRequestVo } from '@/modules/iam/types'
   import IamUserQuickSelectDialog from '@/modules/iam/user/IamUserQuickSelectDialog.vue'
@@ -225,37 +231,76 @@
   })
 
   const searchFormRef = ref<FormInstance>()
-  const searchCardRef = ref<HTMLElement | null>(null)
+  const pageContainerRef = ref<HTMLElement | null>(null)
+  const searchCardRef = ref()
+  const dataCardRef = ref()
   const operationButtonsRef = ref<HTMLElement | null>(null)
   const paginationRef = ref<HTMLElement | null>(null)
 
-  // 表格高度计算
-  const { height: windowHeight } = useWindowSize()
-  const tableHeight = ref<number>(560)
+  // 表格高度 - 初始为0，等计算完成后再显示
+  const tableHeight = ref<number>(0)
+  const tableHeightReady = ref<boolean>(false)
+  let resizeObserver: ResizeObserver | null = null
+  let isFirstCalculation = true
+
+  const resolveElement = (target: unknown): HTMLElement | null => {
+    if (target instanceof HTMLElement) return target
+    if (target && typeof target === 'object' && '$el' in target) {
+      const el = (target as { $el?: Element }).$el
+      return el instanceof HTMLElement ? el : null
+    }
+    return null
+  }
 
   const calculateTableHeight = async () => {
     await nextTick()
-    if (!windowHeight.value) return
-
-    const searchCardHeight = state.showSearchCard && searchCardRef.value ? searchCardRef.value.offsetHeight : 0
-    const searchCardSpacing = searchCardHeight > 0 ? 8 : 0
+    const dataCardEl = resolveElement(dataCardRef.value)
+    if (!dataCardEl) return
+    const cardBody = dataCardEl.querySelector('.el-card__body')
+    if (!(cardBody instanceof HTMLElement)) return
     const operationButtonsHeight = operationButtonsRef.value?.offsetHeight || 50
     const paginationHeight = paginationRef.value?.offsetHeight || 60
-    const paginationSpacing = paginationHeight > 0 ? 8 : 0
-    // 顶部导航90px + 页面边距20px(上下各10px) + 卡片边距20px(上下各10px)
-    const reservedHeight = 90 + 20 + 20 + searchCardHeight + searchCardSpacing + operationButtonsHeight + paginationHeight + paginationSpacing
-    const availableHeight = windowHeight.value - reservedHeight
-    // 最小高度设为400px，确保在小屏幕上也有良好的显示效果
-    tableHeight.value = Math.max(400, availableHeight)
+    const contentSpacing = 16
+    const newHeight = Math.max(320, cardBody.clientHeight - operationButtonsHeight - paginationHeight - contentSpacing)
+
+    if (tableHeight.value !== newHeight) {
+      tableHeight.value = newHeight
+    }
+
+    // 首次计算完成后显示表格
+    if (isFirstCalculation && tableHeight.value > 0) {
+      tableHeightReady.value = true
+      isFirstCalculation = false
+    }
   }
 
-  watch([windowHeight, () => state.showSearchCard, searchCardRef, operationButtonsRef, paginationRef], calculateTableHeight, { immediate: true })
+  const setupResizeObserver = () => {
+    const pageContainerEl = pageContainerRef.value
+    const searchCardEl = resolveElement(searchCardRef.value)
+    const dataCardEl = resolveElement(dataCardRef.value)
+    if (!pageContainerEl || !searchCardEl || !dataCardEl) return
+
+    resizeObserver = new ResizeObserver(() => {
+      calculateTableHeight()
+    })
+
+    resizeObserver.observe(pageContainerEl)
+    resizeObserver.observe(searchCardEl)
+    resizeObserver.observe(dataCardEl)
+  }
+
+  watch(
+    () => state.showSearchCard,
+    () => {
+      calculateTableHeight()
+    }
+  )
 
   // 计算属性 - 操作人ID集合
   const selectedOperatorIds = computed({
     get: () => state.selectedOperators.map(u => u.id),
     set: newIds => {
-      state.selectedOperators = newIds.map(id => state.selectedOperators.find(user => user.id === id) || { id })
+      state.selectedOperators = newIds.map(id => state.selectedOperators.find(user => user.id === id) || ({ id } as IamUserSimpleListResponseVo))
     }
   })
 
@@ -293,6 +338,7 @@
   const handleSearch = (): void => {
     state.pagination.current = 1
     fetchData()
+    calculateTableHeight()
   }
 
   const handleResetSearch = (): void => {
@@ -350,6 +396,14 @@
     state.authMethodOptions = await enumStore.getEnumDataAsync('IamAuthMethodEnum')
     state.authResultOptions = await enumStore.getEnumDataAsync('IamAuthResultEnum')
     await fetchData()
+    await nextTick()
+    setupResizeObserver()
+    await calculateTableHeight()
+  })
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
   })
 </script>
 
@@ -371,8 +425,19 @@
     padding-bottom: 0;
   }
 
+  .login-log-page {
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
   .box-card-form {
-    margin: 4px;
+    margin: 0;
+    flex-shrink: 0;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     transition: all 0.6s ease;
@@ -412,12 +477,12 @@
 
           // 登录时间字段特殊宽度
           &.form-item-date-picker {
-            flex: 1 1 320px;
-            max-width: 320px;
+            flex: 1 1 440px;
+            max-width: 440px;
 
             :deep(.el-date-editor) {
               width: 100%;
-              max-width: 320px;
+              max-width: 440px;
             }
           }
         }
@@ -450,20 +515,36 @@
   }
 
   .box-card-data {
-    margin: 4px;
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     transition: all 0.6s ease;
+
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 8px;
+    }
 
     .operation-buttons {
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      margin-bottom: 10px;
 
       .el-switch {
         margin-left: 8px;
       }
+    }
+
+    .table-placeholder {
+      flex: 1;
+      padding: 10px 0;
     }
   }
 

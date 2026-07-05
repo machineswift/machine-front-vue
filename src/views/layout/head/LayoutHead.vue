@@ -39,7 +39,7 @@
   import LayoutHeadLeft from '@/views/layout/head/LayoutHeadLeft.vue'
   import LayoutHeadRight from '@/views/layout/head/LayoutHeadRight.vue'
   import LayoutTabs from '@/views/layout/head/LayoutTabs.vue'
-  import { useTabStore } from '@/modules/common/stores/LayoutTab.store'
+  import { useTabStore } from '@/common/stores/LayoutTab.store'
 
   const router = useRouter()
   const tabStore = useTabStore()

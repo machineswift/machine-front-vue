@@ -33,14 +33,15 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
-  import { useSettingStore } from '@/modules/common/stores/SystemSetting.store'
-  import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+  import { useSettingStore } from '@/common/stores/SystemSetting.store'
+  import { useIamUserStore } from '@/common/stores/IamUser.store'
   import { ArrowDown } from '@element-plus/icons-vue'
 
   const userStore = useIamUserStore()
   const settingStore = useSettingStore()
-  const dark = ref(false)
+  const dark = ref(true)
   const currentUser = ref(userStore.currentUser)
+  document.documentElement.className = 'dark'
 
   //刷新按钮
   const refresh = () => {

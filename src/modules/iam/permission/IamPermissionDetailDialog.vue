@@ -7,75 +7,84 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="80%"
+    width="50%"
     top="5vh"
   >
-    <el-skeleton :loading="state.loading" animated>
-      <template #template>
-        <el-skeleton-item variant="text" style="width: 50%" />
-        <el-skeleton-item variant="text" />
-        <el-skeleton-item variant="text" style="width: 50%" />
-        <el-skeleton-item variant="text" />
-        <el-skeleton-item variant="text" style="width: 50%" />
-        <el-skeleton-item variant="text" />
-      </template>
-      <template #default>
-        <div class="detail-container">
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="权限名称" :span="2">
-              {{ state.detailData.name }}
-            </el-descriptions-item>
+    <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
+      <el-divider content-position="left">基本信息</el-divider>
 
-            <el-descriptions-item label="权限编码">
-              {{ state.detailData.code }}
-            </el-descriptions-item>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="权限名称">
+            <el-input :model-value="state.detailData.name || '-'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="权限编码">
+            <el-input :model-value="state.detailData.code || '-'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
 
-            <el-descriptions-item label="权限类型">
-              <el-tag :type="getResourceTypeTag(state.detailData.resourceType)">
-                {{ enumStore.getEnumItemByCodeSync('IamPermissionResourceTypeEnum', state.detailData.resourceType)?.message || '-' }}
-              </el-tag>
-            </el-descriptions-item>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="权限类型">
+            <el-tag :type="getResourceTypeTag(state.detailData.resourceType)">
+              {{ enumStore.getEnumItemByCodeSync('IamPermissionResourceTypeEnum', state.detailData.resourceType)?.message || '-' }}
+            </el-tag>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="图标">
+            <el-input :model-value="state.detailData.icon || '-'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
 
-            <el-descriptions-item label="图标">
-              {{ state.detailData.icon || '-' }}
-            </el-descriptions-item>
+      <el-form-item label="排序">
+        <el-input :model-value="state.detailData.sort ?? '-'" disabled style="width: 200px" />
+      </el-form-item>
 
-            <el-descriptions-item label="排序">
-              {{ state.detailData.sort || '-' }}
-            </el-descriptions-item>
+      <el-form-item label="备注" v-if="state.detailData.description">
+        <el-input :model-value="state.detailData.description" type="textarea" :rows="3" disabled />
+      </el-form-item>
 
-            <el-descriptions-item label="创建人">
-              {{ state.detailData.createName }}
-            </el-descriptions-item>
+      <!-- 数据权限 -->
+      <el-form-item label="数据权限" v-if="state.detailData.resourceType === 'MENU' && state.detailData.dataPermissionMetaList?.length">
+        <IamPermissionDataPermissionScope v-model="state.detailData.dataPermissionMetaList" :disabled="true" />
+      </el-form-item>
 
-            <el-descriptions-item label="修改人">
-              {{ state.detailData.updateName }}
-            </el-descriptions-item>
+      <el-divider content-position="left">操作信息</el-divider>
 
-            <el-descriptions-item label="创建时间">
-              {{ formatTime(state.detailData.createTime) }}
-            </el-descriptions-item>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建人">
+            <el-input :model-value="state.detailData.createName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="修改人">
+            <el-input :model-value="state.detailData.updateName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
 
-            <el-descriptions-item label="更新时间">
-              {{ formatTime(state.detailData.updateTime) }}
-            </el-descriptions-item>
-
-            <el-descriptions-item label="备注" :span="2">
-              {{ state.detailData.description || '-' }}
-            </el-descriptions-item>
-          </el-descriptions>
-
-          <!-- 数据权限部分 -->
-          <div v-if="state.detailData.resourceType === 'MENU' && state.detailData.dataPermissionMetaList?.length" class="data-permission-section">
-            <h3>数据权限</h3>
-            <IamPermissionDataPermissionScope v-model="state.detailData.dataPermissionMetaList" :disabled="true" />
-          </div>
-        </div>
-      </template>
-    </el-skeleton>
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建时间">
+            <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新时间">
+            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
 
     <template #footer>
-      <el-button @click="state.visible = false">关闭</el-button>
+      <el-button type="primary" @click="state.visible = false">关闭</el-button>
     </template>
   </el-dialog>
 </template>
@@ -83,7 +92,7 @@
 <script setup lang="ts">
   import { reactive, watch, computed } from 'vue'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
   import type { IamPermissionDetailResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
   import IamPermissionDataPermissionScope from '@/modules/iam/permission/IamPermissionDataPermissionScope.vue'
 
@@ -154,28 +163,8 @@
   )
 </script>
 
-<style scoped lang="scss">
-  .detail-container {
-    .el-descriptions {
-      margin-bottom: 20px;
-
-      :deep(.el-descriptions__body) {
-        background-color: #fafafa;
-      }
-    }
-
-    .data-permission-section {
-      margin-top: 20px;
-      padding: 15px;
-      border: 1px solid #ebeef5;
-      border-radius: 4px;
-      background-color: #fafafa;
-
-      h3 {
-        margin-top: 0;
-        margin-bottom: 15px;
-        color: #606266;
-      }
-    }
+<style lang="scss" scoped>
+  .el-row {
+    width: 100%;
   }
 </style>

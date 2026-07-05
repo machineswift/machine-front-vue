@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div ref="pageContainerRef" class="area-page">
     <!-- 搜索表单区域 -->
-    <el-card class="box-card-form">
+    <el-card ref="searchCardRef" class="box-card-form">
       <el-form :model="currentTabState.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
         <div class="form-items-group">
           <el-form-item label="名称:" prop="name">
@@ -44,7 +44,7 @@
             :columns="tableColumns"
             :data="currentTabState.displayData"
             :width="tableWidth"
-            :height="680"
+            :height="tableHeight"
             :expand-column-key="expandColumnKey"
             fixed
             row-key="id"
@@ -71,10 +71,10 @@
   import Fuse from 'fuse.js'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useElementSize } from '@vueuse/core'
-  import { ref, reactive, computed, onMounted, watch, h, nextTick } from 'vue'
+  import { ref, reactive, computed, onMounted, watch, h, nextTick, onBeforeUnmount } from 'vue'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
-  import { useDictionaryEnumStore } from '@/modules/common/stores/DictionaryEnum.store'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
   import TableActions from '@/modules/data/area/DataAreaTableActions'
   import type { DataAreaExpandTreeResponseVo, IamDictionaryEnumInfoResponse } from '@/modules/data/types'
   import DataAreaCreateDialog from '@/modules/data/area/DataAreaCreateDialog.vue'
@@ -181,8 +181,12 @@
   // 状态管理
   const shouldRenderTable = ref(true)
   const enumStore = useDictionaryEnumStore()
+  const pageContainerRef = ref<HTMLElement | null>(null)
+  const searchCardRef = ref()
   const boxCardData = ref<HTMLElement | null>(null)
   const { width: containerWidth } = useElementSize(boxCardData)
+  const tableHeight = ref<number>(680)
+  let resizeObserver: ResizeObserver | null = null
 
   // 全局状态
   const state = reactive({
@@ -209,6 +213,44 @@
   const updateParentDialog = ref<InstanceType<typeof DataAreaUpdateParentDialog>>()
   const expandColumnKey = ref('name')
   const tableWidth = computed(() => Math.max(containerWidth.value - 24, 800))
+
+  const resolveElement = (target: unknown): HTMLElement | null => {
+    if (target instanceof HTMLElement) return target
+    if (target && typeof target === 'object' && '$el' in target) {
+      const el = (target as { $el?: Element }).$el
+      return el instanceof HTMLElement ? el : null
+    }
+    return null
+  }
+
+  const calculateTableHeight = async () => {
+    await nextTick()
+    const dataCardEl = resolveElement(boxCardData.value)
+    if (!dataCardEl) return
+    const cardBody = dataCardEl.querySelector('.el-card__body')
+    if (!(cardBody instanceof HTMLElement)) return
+
+    const tabsHeaderHeight = (cardBody.querySelector('.el-tabs__header') as HTMLElement | null)?.offsetHeight || 40
+    const operationButtonsHeight = (cardBody.querySelector('.operation-buttons') as HTMLElement | null)?.offsetHeight || 36
+    const searchNoticeHeight = (cardBody.querySelector('.search-notice') as HTMLElement | null)?.offsetHeight || 0
+    const contentSpacing = 24
+    tableHeight.value = Math.max(320, cardBody.clientHeight - tabsHeaderHeight - operationButtonsHeight - searchNoticeHeight - contentSpacing)
+  }
+
+  const setupResizeObserver = () => {
+    const pageContainerEl = pageContainerRef.value
+    const searchCardEl = resolveElement(searchCardRef.value)
+    const dataCardEl = resolveElement(boxCardData.value)
+    if (!pageContainerEl || !searchCardEl || !dataCardEl) return
+
+    resizeObserver = new ResizeObserver(() => {
+      calculateTableHeight()
+    })
+
+    resizeObserver.observe(pageContainerEl)
+    resizeObserver.observe(searchCardEl)
+    resizeObserver.observe(dataCardEl)
+  }
 
   // 创建默认的tab状态
   const createDefaultTabState = (): TabState => ({
@@ -409,6 +451,7 @@
       return
     }
     performSearch()
+    calculateTableHeight()
   }
 
   const resetSearch = () => {
@@ -421,6 +464,7 @@
     tabState.showSearchNotice = false
     tabState.displayData = tabState.allData
     tabState.expandedRowKeys = []
+    calculateTableHeight()
   }
 
   const handleCountryChange = async (countryCode: string) => {
@@ -436,6 +480,7 @@
       shouldRenderTable.value = true
     })
     handleSearch()
+    calculateTableHeight()
   }
 
   const handleDetail = (row: DataAreaExpandTreeResponseVo) => {
@@ -494,6 +539,7 @@
       tabState.dialogVisible[key as keyof typeof tabState.dialogVisible] = false
     })
     fetchAreaTree()
+    calculateTableHeight()
   }
 
   // 监听器
@@ -507,18 +553,44 @@
     { deep: true }
   )
 
+  watch(
+    () => currentTabState.value.showSearchNotice,
+    () => {
+      calculateTableHeight()
+    }
+  )
+
   // 初始化
   onMounted(async () => {
     await fetchCountryOptions()
     if (state.activeCountry) {
       await fetchAreaTree()
     }
+    await nextTick()
+    setupResizeObserver()
+    calculateTableHeight()
+  })
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
   })
 </script>
 
 <style scoped lang="scss">
+  .area-page {
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
   .box-card-form {
-    margin: 4px;
+    margin: 0;
+    flex-shrink: 0;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 
@@ -551,9 +623,21 @@
   }
 
   .box-card-data {
-    margin: 4px;
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 8px;
+    }
 
     .operation-buttons {
       margin-bottom: 10px;

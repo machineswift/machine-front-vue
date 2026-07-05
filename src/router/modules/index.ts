@@ -1,9 +1,10 @@
-import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
+import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
 import { scmRoutes } from './scm'
 import { crmRoutes } from './crm'
 import { biRoutes } from './bi'
-import { systemRoutes } from './system'
 import { pceRoutes } from './pce'
+import { aiRoutes } from './ai'
+import { systemRoutes } from './system'
 
 export const asyncRoute: ExtendedRouteRecordRaw[] = [
   // 财务管理模块（预留）
@@ -38,6 +39,8 @@ export const asyncRoute: ExtendedRouteRecordRaw[] = [
   ...biRoutes,
   // 流程中心模块
   ...pceRoutes,
+  // 智能中心模块
+  ...aiRoutes,
   // 系统管理模块
   ...systemRoutes
 ]

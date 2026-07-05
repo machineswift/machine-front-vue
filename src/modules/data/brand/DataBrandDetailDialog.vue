@@ -6,45 +6,68 @@
     :close-on-press-escape="false"
     :show-close="false"
     :destroy-on-close="true"
-    @close="handleDialogClosed"
-    width="80%"
-    top="5vh"
+    @closed="handleDialogClosed"
+    width="50%"
+    top="8vh"
   >
-    <el-descriptions :column="2" border>
-      <el-descriptions-item label="品牌ID" v-if="false">
-        {{ state.detailData.id }}
-      </el-descriptions-item>
-      <el-descriptions-item label="品牌编码">
-        {{ state.detailData.code || '无' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="品牌名称">
-        {{ state.detailData.name }}
-      </el-descriptions-item>
-      <el-descriptions-item label="状态">
+    <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
+      <el-divider content-position="left">基本信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="品牌编码">
+            <el-input :model-value="state.detailData.code || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="品牌名称">
+            <el-input :model-value="state.detailData.name || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="状态">
         <el-tag :type="state.detailData.status === 'ENABLE' ? 'success' : 'danger'">
           {{ state.detailData.status === 'ENABLE' ? '启用' : '禁用' }}
         </el-tag>
-      </el-descriptions-item>
-      <el-descriptions-item label="创建人">
-        {{ state.detailData.createName || '无' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="更新人">
-        {{ state.detailData.updateName || '无' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="创建时间">
-        {{ formatTime(state.detailData.createTime) }}
-      </el-descriptions-item>
-      <el-descriptions-item label="更新时间">
-        {{ formatTime(state.detailData.updateTime) }}
-      </el-descriptions-item>
-      <el-descriptions-item></el-descriptions-item>
-      <el-descriptions-item label="品牌LOGO" span="2">
+      </el-form-item>
+
+      <el-form-item label="品牌LOGO">
         <DataBrandLogoPreview :url="state.detailData.logoUrl" />
-      </el-descriptions-item>
-      <el-descriptions-item label="品牌描述" span="2">
-        {{ state.detailData.description || '无' }}
-      </el-descriptions-item>
-    </el-descriptions>
+      </el-form-item>
+
+      <el-form-item label="品牌描述" v-if="state.detailData.description">
+        <el-input :model-value="state.detailData.description" type="textarea" :rows="3" disabled />
+      </el-form-item>
+
+      <el-divider content-position="left">操作信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建人">
+            <el-input :model-value="state.detailData.createName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新人">
+            <el-input :model-value="state.detailData.updateName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建时间">
+            <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新时间">
+            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
 
     <template #footer>
       <el-button type="primary" @click="state.dialogVisible = false">关闭</el-button>
@@ -141,3 +164,9 @@
     { immediate: false }
   )
 </script>
+
+<style lang="scss" scoped>
+  .el-row {
+    width: 100%;
+  }
+</style>

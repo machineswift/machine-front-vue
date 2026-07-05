@@ -6,45 +6,83 @@
     :close-on-press-escape="false"
     :show-close="false"
     :destroy-on-close="true"
-    @close="handleDialogClosed"
-    width="80%"
+    @closed="handleDialogClosed"
+    width="50%"
+    top="8vh"
   >
-    <el-skeleton :loading="state.loading" animated>
-      <template #template>
-        <el-skeleton-item variant="text" style="width: 50%" />
-        <el-skeleton-item variant="text" />
-        <el-skeleton-item variant="text" style="width: 50%" />
-        <el-skeleton-item variant="text" />
-      </template>
-      <template #default>
-        <el-descriptions :column="2" border label-width="80">
-          <el-descriptions-item label="组织名称">{{ state.detailData.name || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="组织编码">{{ state.detailData.code || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="组织数">{{ state.detailData.organizationNumber || 0 }}</el-descriptions-item>
-          <el-descriptions-item label="门店数">{{ state.detailData.shopNumber || 0 }}</el-descriptions-item>
-          <el-descriptions-item label="用户数">{{ state.detailData.userNumber || 0 }}</el-descriptions-item>
-          <el-descriptions-item label="排序">{{ state.detailData.sort || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="创建人">
-            {{ state.detailData.createName }}
-          </el-descriptions-item>
-          <el-descriptions-item label="修改人">
-            {{ state.detailData.updateName }}
-          </el-descriptions-item>
-          <el-descriptions-item label="创建时间">
-            {{ formatTime(state.detailData.createTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="更新时间">
-            {{ formatTime(state.detailData.updateTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="备注">
-            {{ state.detailData.description || '-' }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </template>
-    </el-skeleton>
+    <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
+      <el-divider content-position="left">基本信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="组织名称">
+            <el-input :model-value="state.detailData.name || '-'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="组织编码">
+            <el-input :model-value="state.detailData.code || '-'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="8">
+          <el-form-item label="组织数">
+            <el-input :model-value="state.detailData.organizationNumber ?? 0" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="门店数">
+            <el-input :model-value="state.detailData.shopNumber ?? 0" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="用户数">
+            <el-input :model-value="state.detailData.userNumber ?? 0" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="排序">
+        <el-input :model-value="state.detailData.sort ?? '-'" disabled style="width: 200px" />
+      </el-form-item>
+
+      <el-form-item label="备注" v-if="state.detailData.description">
+        <el-input :model-value="state.detailData.description" type="textarea" :rows="3" disabled />
+      </el-form-item>
+
+      <el-divider content-position="left">操作信息</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建人">
+            <el-input :model-value="state.detailData.createName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="修改人">
+            <el-input :model-value="state.detailData.updateName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="创建时间">
+            <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="更新时间">
+            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
 
     <template #footer>
-      <el-button @click="state.visible = false">关闭</el-button>
+      <el-button type="primary" @click="state.visible = false">关闭</el-button>
     </template>
   </el-dialog>
 </template>
@@ -111,3 +149,9 @@
     { immediate: false }
   )
 </script>
+
+<style lang="scss" scoped>
+  .el-row {
+    width: 100%;
+  }
+</style>

@@ -1,4 +1,4 @@
-import type { ExtendedRouteRecordRaw } from '@/modules/common/types/Router.type'
+import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
 
 /**
  * 静态路由配置

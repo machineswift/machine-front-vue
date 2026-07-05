@@ -60,10 +60,10 @@
 <script setup lang="ts">
   import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { useTabStore, type TabItem } from '@/modules/common/stores/LayoutTab.store'
+  import { useTabStore, type TabItem } from '@/common/stores/LayoutTab.store'
   import { Close, Lock, Unlock } from '@element-plus/icons-vue'
   import draggable from 'vuedraggable'
-  import SvgIcon from '@/modules/common/components/svgIcon/SvgIcon.vue'
+  import SvgIcon from '@/common/components/svgIcon/SvgIcon.vue'
 
   const router = useRouter()
   const route = useRoute()

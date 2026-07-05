@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { useIamUserStore } from '@/modules/common/stores/IamUser.store'
+import { useIamUserStore } from '@/common/stores/IamUser.store'
 
 export interface BaseResponse<T = unknown> {
   code: string
@@ -24,35 +24,25 @@ export interface CustomRequestConfig extends AxiosRequestConfig {
 type RequestParams = Record<string, unknown> | URLSearchParams
 type RequestData = Record<string, unknown> | FormData
 
+export const getBaseUrl = (): string => {
+  const serverHost = import.meta.env.MODE === 'development' ? import.meta.env.VITE_SERVER_DEV : import.meta.env.VITE_SERVER_PROD
+  return serverHost + import.meta.env.VITE_API_BASE_URL
+}
+
 class RequestUtil {
   private instance: AxiosInstance
   private cancelTokenMap = new Map<string, AbortController>()
   private isRefreshing = false
-  private requestsQueue: Array<(token: string) => void> = []
+  private requestsQueue: Array<{ callback: (token: string) => void; reject: (reason: unknown) => void }> = []
 
   private get router() {
     return useRouter()
   }
 
   constructor(options: CustomRequestConfig = {}) {
-    let baseUrl
-    switch (import.meta.env.MODE) {
-      case 'development':
-        baseUrl = import.meta.env.VITE_SERVER_DEV + import.meta.env.VITE_API_BASE_URL
-        break
-      case 'test':
-        baseUrl = import.meta.env.VITE_SERVER_TEST + import.meta.env.VITE_API_BASE_URL
-        break
-      case 'production':
-        baseUrl = import.meta.env.VITE_SERVER_PROD + import.meta.env.VITE_API_BASE_URL
-        break
-      default:
-        throw new Error(`不支持的环境模式: ${import.meta.env.MODE}，请检查环境配置。`)
-    }
-
     this.instance = axios.create({
-      baseURL: baseUrl,
-      timeout: 10000,
+      baseURL: getBaseUrl(),
+      timeout: 30000,
       headers: {
         'Content-Type': 'application/json;charset=UTF-8'
       },
@@ -139,13 +129,18 @@ class RequestUtil {
               originalRequest.headers.Authorization = `Bearer ${newToken}`
 
               // 执行队列中的请求
-              this.requestsQueue.forEach(callback => callback(newToken))
+              this.requestsQueue.forEach(item => item.callback(newToken))
               this.requestsQueue = []
 
               return this.instance(originalRequest)
             }
           } catch (refreshError) {
-            // 刷新失败，清除认证信息并跳转登录
+            // 刷新失败，拒绝队列中所有等待的请求
+            const queue = this.requestsQueue.slice()
+            this.requestsQueue = []
+            queue.forEach(item => item.reject(refreshError))
+
+            // 清除认证信息并跳转登录
             console.error('Token刷新失败:', refreshError)
             userStore.clearAuthInfo()
             ElMessage.error('登录状态已过期，请重新登录')
@@ -165,13 +160,16 @@ class RequestUtil {
 
         // 如果正在刷新token，将请求加入队列
         return new Promise((resolve, reject) => {
-          this.requestsQueue.push((token: string) => {
-            if (originalRequest) {
-              originalRequest._retry = true
-              originalRequest.headers = originalRequest.headers || {}
-              originalRequest.headers.Authorization = `Bearer ${token}`
-              this.instance(originalRequest).then(resolve).catch(reject)
-            }
+          this.requestsQueue.push({
+            callback: (token: string) => {
+              if (originalRequest) {
+                originalRequest._retry = true
+                originalRequest.headers = originalRequest.headers || {}
+                originalRequest.headers.Authorization = `Bearer ${token}`
+                this.instance(originalRequest).then(resolve).catch(reject)
+              }
+            },
+            reject
           })
         })
       }

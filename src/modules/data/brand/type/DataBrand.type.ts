@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/modules/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/common/types/Common.type'
 
 export interface DataBrandCreateRequestVo {
   name: string

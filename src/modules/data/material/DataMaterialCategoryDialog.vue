@@ -25,7 +25,7 @@
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import type { DataMaterialCategorySimpleTreeResponseVo } from '@/modules/data/material/type/DataMaterialCategory.type'
-  import { TreeDataUtil } from '@/modules/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/common/utils/TreeData.util'
 
   /** 未分类虚拟节点 id，与后端一致，该节点不可选为分类 */
   const DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID = 'data_material_category_virtual_node'
