@@ -99,7 +99,7 @@
   import { ElTree } from 'element-plus'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
   import { ScmBackCategoryApi } from '@/modules/scm/category/api/ScmBackCategory.api'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { ScmFrontCategoryDetailResponseVo } from '@/modules/scm/category/type/ScmFrontCategory.type'
   import type { ScmBackCategoryTreeSimpleResponseVo } from '@/modules/scm/category/type/ScmBackCategory.type'
 

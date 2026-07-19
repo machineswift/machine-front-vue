@@ -141,8 +141,8 @@
   import { reactive, watch, computed, ref } from 'vue'
   import { IamUserApi } from '@/modules/iam/user/api/IamUser.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { IamUserQueryPageRequestVo, IamUserSimpleListResponseVo, IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/user/type/IamUser.type'
 
   const props = defineProps({

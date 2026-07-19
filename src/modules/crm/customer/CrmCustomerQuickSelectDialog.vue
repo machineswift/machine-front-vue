@@ -116,7 +116,7 @@
   import { ElMessage, ElTable } from 'element-plus'
   import { reactive, watch, computed, ref } from 'vue'
   import { CrmCustomerApi } from '@/modules/crm/customer/api/CrmCustomer.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { CrmCustomerQueryPageRequestVo, CrmCustomerSimpleListResponseVo } from '@/modules/crm/customer/type/CrmCustomer.type'
 
   const props = defineProps({

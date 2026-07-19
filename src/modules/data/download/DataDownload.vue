@@ -189,7 +189,7 @@
   import { ref, reactive, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh } from '@element-plus/icons-vue'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
   import type { DataDownloadListResponseVo } from '@/modules/data/download/type/DataDownload.type'
   import { DATA_FILE_TYPE_LABEL_MAP } from '@/modules/data/download/type/DataDownload.type'

@@ -189,7 +189,7 @@
   import { Refresh, Search } from '@element-plus/icons-vue'
   import IamUserLoginLogDetail from '@/modules/iam/loginLog/IamUserLoginLogDetail.vue'
   import { IamUserLoginLogApi } from '@/modules/iam/loginLog/api/IamUserLoginLog.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
   import type { IamUserLoginLogExpandListResponseVo, IamUserLoginLogExpandPageResponse, IamUserLoginLogQueryPageRequestVo } from '@/modules/iam/types'
   import IamUserQuickSelectDialog from '@/modules/iam/user/IamUserQuickSelectDialog.vue'

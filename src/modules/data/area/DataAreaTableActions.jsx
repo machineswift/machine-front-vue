@@ -1,7 +1,7 @@
 import { ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus'
 import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
 import { defineComponent, h } from 'vue'
-import { hasPermission } from '@/common/utils/Permission.util'
+import { hasPermission } from '@/shared/utils/Permission.util'
 
 export default defineComponent({
   name: 'TableActions',

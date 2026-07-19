@@ -134,7 +134,7 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="delete" divided>
+                      <el-dropdown-item command="delete" divided :disabled="!hasPermission(['AI:RESOURCE_CENTER:MODEL:DELETE'])">
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
                       </el-dropdown-item>
@@ -180,7 +180,8 @@
   import { reactive, onMounted, ref, nextTick, watch, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh, ArrowDown, Delete } from '@element-plus/icons-vue'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import { AiResourceModelApi } from '@/modules/ai/resource/model/api/AiResourceModel.api'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
   import AiResourceModelAddDialog from '@/modules/ai/resource/model/AiResourceModelAddDialog.vue'

@@ -65,7 +65,7 @@
   import { FolderOpened } from '@element-plus/icons-vue'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
   import { ScmBackCategoryApi } from '@/modules/scm/category/api/ScmBackCategory.api'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { ScmFrontCategoryTreeSimpleResponseVo, ScmFrontCategoryCreateRequestVo } from '@/modules/scm/category/type/ScmFrontCategory.type'
   import type { ScmBackCategoryTreeSimpleResponseVo } from '@/modules/scm/category/type/ScmBackCategory.type'
 

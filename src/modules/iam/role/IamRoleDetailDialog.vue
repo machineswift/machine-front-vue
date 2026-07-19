@@ -193,12 +193,12 @@
   import { IamRoleApi } from '@/modules/iam/role/api/IamRole.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
   import type { IamPermissionTreeExpandResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
   import IamRoleEditPermissionDrawer from '@/modules/iam/role/IamRoleEditPermissionDrawer.vue'
-  import type { DataPermissionRuleDto } from '@/common/types/CommonIam.type'
+  import type { DataPermissionRuleDto } from '@/shared/types/CommonIam.type'
   import { ElMessage } from 'element-plus'
 
   const props = defineProps({

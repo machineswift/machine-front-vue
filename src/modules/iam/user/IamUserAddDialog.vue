@@ -45,7 +45,7 @@
   import { reactive, computed, onMounted, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormItemRule } from 'element-plus'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { IamUserApi } from '@/modules/iam/user/api/IamUser.api'
   import type { IamUserCreateRequestVo } from '@/modules/iam/types'
 

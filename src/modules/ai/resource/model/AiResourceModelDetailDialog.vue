@@ -129,7 +129,7 @@
   import { computed, watch, reactive } from 'vue'
   import { AiResourceModelApi } from '@/modules/ai/resource/model/api/AiResourceModel.api'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { AiResourceModelDetailResponseVo } from '@/modules/ai/resource/model/type/AiResourceModel.type'
   import type { AiResourceProviderListResponseVo } from '@/modules/ai/resource/provider/type/AiResourceProvider.type'
 

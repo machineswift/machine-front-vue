@@ -1,4 +1,4 @@
-import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
+import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
 import { scmRoutes } from './scm'
 import { crmRoutes } from './crm'
 import { biRoutes } from './bi'

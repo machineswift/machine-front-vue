@@ -76,7 +76,7 @@
   import { cloneDeep } from 'lodash-es'
   import { reactive, ref, computed, nextTick, watch } from 'vue'
   import { type ElTreeV2 } from 'element-plus'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { IamPermissionTreeExpandResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
 

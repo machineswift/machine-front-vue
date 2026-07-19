@@ -70,7 +70,7 @@
   import { reactive, watch, computed, ref, onMounted } from 'vue'
   import { ElMessage } from 'element-plus'
   import { ScmPropertyApi } from '@/modules/scm/category/api/ScmProperty.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { ScmPropertyCreateRequestVo } from '@/modules/scm/category/type/ScmProperty.type'
   import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
 

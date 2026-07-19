@@ -1,6 +1,6 @@
-import request from '@/common/utils/Request.util'
-import { MANAGE_API_BASE_URL } from '@/common/constant/Common.constant'
-import type { IdRequest, IdResponse } from '@/common/types/Common.type'
+import request from '@/shared/utils/Request.util'
+import { ADMIN_API_BASE_URL } from '@/shared/constants/Common.constant'
+import type { IdRequest, IdResponse } from '@/shared/types/Common.type'
 import type {
   AiResourceProviderCreateRequestVo,
   AiResourceProviderUpdateRequestVo,
@@ -11,7 +11,7 @@ import type {
   AiResourceProviderListResponseVo
 } from '../type/AiResourceProvider.type'
 
-const BASE_URL = MANAGE_API_BASE_URL + 'manage/ai/resource_center/provider/'
+const BASE_URL = ADMIN_API_BASE_URL + 'admin/ai/resource_center/provider/'
 
 // 创建厂商
 const create = async (params: AiResourceProviderCreateRequestVo): Promise<IdResponse> => {

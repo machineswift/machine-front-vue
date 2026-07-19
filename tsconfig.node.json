@@ -1,9 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
-    // 不生成输出文件
-    "noEmit": false,
-
     // 指定TypeScript编译器生成的tsbuildinfo文件的路径
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2022",

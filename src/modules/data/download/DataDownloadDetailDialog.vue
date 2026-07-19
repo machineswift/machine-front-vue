@@ -99,7 +99,7 @@
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
   import type { QueryDownloadDetailResponseVo } from '@/modules/data/download/type/DataDownload.type'
   import { DATA_FILE_TYPE_LABEL_MAP } from '@/modules/data/download/type/DataDownload.type'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
 
   // 组合式函数
   const enumStore = useDictionaryEnumStore()

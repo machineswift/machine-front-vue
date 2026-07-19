@@ -1,5 +1,5 @@
-import type { PageRequest, PageResponse } from '@/common/types/Common.type'
-import type { AddressInfoDto } from '@/common/types/CommonData.type'
+import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
+import type { AddressInfoDto } from '@/shared/types/CommonData.type'
 import type { IamOrganizationDto } from '@/modules/iam/organization/type/IamOrganization.type'
 import type { LabelOptionDto } from '@/modules/data/label/type/DataLabelOption.type'
 

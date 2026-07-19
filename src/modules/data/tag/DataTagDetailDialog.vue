@@ -88,7 +88,7 @@
 <script setup lang="ts">
   import { reactive, watch, computed } from 'vue'
   import { DataTagApi } from '@/modules/data/tag/api/DataTag.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { DataTagDetailResponseVo } from '@/modules/data/tag/type/DataTag.type'
   import { ElMessage } from 'element-plus'
 

@@ -149,7 +149,7 @@
   import { ref, reactive, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { ScmPropertyApi } from '@/modules/scm/category/api/ScmProperty.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { ScmPropertyQueryPageRequestVo, ScmPropertyListResponseVo } from '@/modules/scm/category/type/ScmProperty.type'
   import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
   import ScmPropertyCreateDialog from '@/modules/scm/category/ScmPropertyCreateDialog.vue'

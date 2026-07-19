@@ -92,7 +92,7 @@
 <script setup lang="ts">
   import { reactive, watch, computed } from 'vue'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { IamPermissionDetailResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
   import IamPermissionDataPermissionScope from '@/modules/iam/permission/IamPermissionDataPermissionScope.vue'
 

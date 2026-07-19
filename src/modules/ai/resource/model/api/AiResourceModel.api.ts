@@ -1,6 +1,6 @@
-import request from '@/common/utils/Request.util'
-import { MANAGE_API_BASE_URL } from '@/common/constant/Common.constant'
-import type { IdRequest, IdResponse } from '@/common/types/Common.type'
+import request from '@/shared/utils/Request.util'
+import { ADMIN_API_BASE_URL } from '@/shared/constants/Common.constant'
+import type { IdRequest, IdResponse } from '@/shared/types/Common.type'
 import type {
   AiResourceModelCreateRequestVo,
   AiResourceModelUpdateRequestVo,
@@ -11,7 +11,7 @@ import type {
   AiResourceModelExpandPageResponse
 } from '../type/AiResourceModel.type'
 
-const BASE_URL = MANAGE_API_BASE_URL + 'manage/ai/resource_center/model/'
+const BASE_URL = ADMIN_API_BASE_URL + 'admin/ai/resource_center/model/'
 
 // 创建模型
 const create = async (params: AiResourceModelCreateRequestVo): Promise<IdResponse> => {

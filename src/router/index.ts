@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteLocationNormalized, RouteLocationNormalizedLoaded } from 'vue-router'
-import { constantRoute } from './constant'
+import { constantRoute } from '@/shared/constants/Route.constant'
 import { checkAuth, handleRedirects, setRouteTransition } from './guards'
 import setting from '@/setting'
 import nprogress from 'nprogress'

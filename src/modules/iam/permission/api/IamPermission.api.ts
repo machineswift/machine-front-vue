@@ -1,6 +1,6 @@
-import request from '@/common/utils/Request.util'
-import { IAM_API_BASE_URL } from '@/common/constant/Common.constant'
-import type { IdRequest, IdResponse } from '@/common/types/Common.type'
+import request from '@/shared/utils/Request.util'
+import { IAM_API_BASE_URL } from '@/shared/constants/Common.constant'
+import type { IdRequest, IdResponse } from '@/shared/types/Common.type'
 import type {
   IamPermissionCreateRequestVo,
   IamPermissionUpdateRequestVo,

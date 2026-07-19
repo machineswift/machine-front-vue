@@ -1,2 +1,1 @@
-npm run lint:format
-git add .
+npx --yes lint-staged

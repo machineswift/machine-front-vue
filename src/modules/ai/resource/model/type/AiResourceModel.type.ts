@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
 // 扩展特性-能力枚举
 export type AiModelCapabilityEnum = 'CHAT' | 'VISION' | 'ASR' | 'IMAGE' | 'TTS' | 'VIDEO' | 'EMBEDDING'

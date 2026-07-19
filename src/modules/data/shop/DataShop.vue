@@ -295,8 +295,8 @@
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
-  import type { AddressInfoDto } from '@/common/types/CommonData.type'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import type { AddressInfoDto } from '@/shared/types/CommonData.type'
   import type {
     DataShopExpandPageResponse,
     DataShopQueryPageRequestVo,
@@ -310,8 +310,8 @@
   import DataShopLabelDialog from '@/modules/data/shop/DataShopLabelDialog.vue'
   import type { DataAreaSimpleTreeResponseVo, DataAreaTreeSimpleResponseVo } from '@/modules/data/area/type/DataArea.type'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
-  import { hasPermission } from '@/common/utils/Permission.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
+  import { hasPermission } from '@/shared/utils/Permission.util'
 
   const router = useRouter()
   const enumStore = useDictionaryEnumStore()

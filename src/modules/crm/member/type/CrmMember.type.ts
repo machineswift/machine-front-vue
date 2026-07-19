@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
 // 创建会员请求参数
 export interface CrmMemberCreateRequestVo {

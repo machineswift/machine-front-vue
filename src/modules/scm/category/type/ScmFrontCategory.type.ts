@@ -1,4 +1,4 @@
-import type { TreeNode } from '@/common/types/Common.type'
+import type { TreeNode } from '@/shared/types/Common.type'
 
 export interface ScmFrontCategoryCreateRequestVo {
   parentId: string

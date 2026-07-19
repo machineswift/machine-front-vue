@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
 /** 文件类型（与后端 DataFileTypeEnum 一致，传字符串） */
 export type DataFileTypeEnum = string

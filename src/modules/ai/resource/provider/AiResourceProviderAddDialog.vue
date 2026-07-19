@@ -41,7 +41,7 @@
   import { ref, computed, reactive, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
 
   const DEFAULT_FORM_DATA = {
     provider: '',

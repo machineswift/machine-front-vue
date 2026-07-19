@@ -370,8 +370,8 @@
   import { Refresh, Search, Plus, Edit, View, Sort, Connection, Delete, MoreFilled, ArrowDown, EditPen, Setting } from '@element-plus/icons-vue'
   import { DataTagApi } from '@/modules/data/tag/api/DataTag.api'
   import { DataTagCategoryApi } from '@/modules/data/tag/api/DataTagCategory.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
-  import { hasPermission } from '@/common/utils/Permission.util'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import type { DataTagExpandListResponseVo, DataTagQueryPageRequestVo } from '@/modules/data/tag/type/DataTag.type'
   import type { DataTagCategoryTreeSimpleOutputDto } from '@/modules/data/tag/type/DataTagCategory.type'
   import DataTagAddDialog from '@/modules/data/tag/DataTagAddDialog.vue'
@@ -765,7 +765,6 @@
       })
 
       await DataTagApi.updateStatus({ id: row.id, status: row.status })
-      ElMessage.success('操作成功')
     } catch (error) {
       if (error !== 'cancel') {
         console.error('修改标签状态失败', error)

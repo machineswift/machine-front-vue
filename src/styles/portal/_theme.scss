@@ -1,0 +1,47 @@
+// ======================================================
+// Portal (官网) 主题 CSS 变量 & SCSS 变量
+// 控制台页面不使用此文件，通过主题按钮切换深色/亮色
+// ======================================================
+
+// --- CSS 自定义属性（运行时主题切换） ---
+// :root 默认深色模式，.portal-light 亮色模式
+
+:root {
+    --portal-bg: #0f0f11;
+    --portal-bc: rgb(255 255 255 / 3%);
+    --portal-bd: rgb(255 255 255 / 6%);
+    --portal-bd-hover: rgb(255 255 255 / 10%);
+    --portal-t1: rgb(255 255 255 / 87%);
+    --portal-t2: rgb(255 255 255 / 60%);
+    --portal-t3: rgb(255 255 255 / 38%);
+    --portal-header-bg: rgb(15 15 17 / 80%);
+}
+
+html.portal-light {
+    --portal-bg: #f5f5f7;
+    --portal-bc: rgb(0 0 0 / 2%);
+    --portal-bd: rgb(0 0 0 / 6%);
+    --portal-bd-hover: rgb(0 0 0 / 10%);
+    --portal-t1: rgb(0 0 0 / 87%);
+    --portal-t2: rgb(0 0 0 / 60%);
+    --portal-t3: rgb(0 0 0 / 38%);
+    --portal-header-bg: rgb(245 245 247 / 85%);
+}
+
+// --- SCSS 变量（供 portal 组件 @use 引用） ---
+// 每个 portal 组件在 <style scoped lang="scss"> 顶部引用：
+//   @use '@/styles/portal/theme' as portal;
+//   然后使用 portal.$bg, portal.$t1 等
+
+$bg: var(--portal-bg);
+$bc: var(--portal-bc);
+$bd: var(--portal-bd);
+$bd-hover: var(--portal-bd-hover);
+$t1: var(--portal-t1);
+$t2: var(--portal-t2);
+$t3: var(--portal-t3);
+$header-bg: var(--portal-header-bg);
+
+// 主题色（不随深浅变化）
+$a: #667eea;
+$ag: linear-gradient(135deg, #667eea, #764ba2);

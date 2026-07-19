@@ -1,14 +1,8 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
-    "composite": true,
-    // 不生成输出文件
-    "noEmit": false,
-
     // 指定 TypeScript 编译信息的存储文件路径
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-
-    "outDir": "./dist",
 
     // Linting
     "strict": true,
@@ -27,10 +21,7 @@
 
     "noImplicitReturns": true,
     "noImplicitOverride": true,
-    "noUncheckedIndexedAccess": true,
-
-    "jsx": "preserve",
-    "resolveJsonModule": true
+    "noUncheckedIndexedAccess": true
   },
   "include": [
     "src/**/*.ts",

@@ -37,7 +37,7 @@
   import { reactive, computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormItemRule } from 'element-plus'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { CrmCustomerApi } from '@/modules/crm/customer/api/CrmCustomer.api'
   import type { CrmCustomerCreateRequestVo } from '@/modules/crm/customer/type/CrmCustomer.type'
 

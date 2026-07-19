@@ -1,4 +1,4 @@
-import type { ExtendedRouteRecordRaw } from '@/common/types/Router.type'
+import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
 
 /**
  * 智能中心模块路由配置

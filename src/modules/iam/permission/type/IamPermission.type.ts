@@ -1,5 +1,5 @@
-import type { TreeNode } from '@/common/types/Common.type'
-import type { DataPermissionMetaDto } from '@/common/types/CommonIam.type'
+import type { TreeNode } from '@/shared/types/Common.type'
+import type { DataPermissionMetaDto } from '@/shared/types/CommonIam.type'
 
 export interface IamPermissionCreateRequestVo {
   parentId: string

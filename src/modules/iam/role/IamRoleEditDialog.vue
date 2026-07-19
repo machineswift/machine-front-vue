@@ -80,11 +80,11 @@
   import { ElMessage, ElTreeV2 } from 'element-plus'
   import { ref, watch, reactive, computed, nextTick } from 'vue'
   import { IamRoleApi } from '@/modules/iam/role/api/IamRole.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import type { DataPermissionRuleDto, DataPermissionRuleOrganizationNodeDto } from '@/common/types/CommonIam.type'
+  import type { DataPermissionRuleDto, DataPermissionRuleOrganizationNodeDto } from '@/shared/types/CommonIam.type'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
 
   // 常量定义
   const DEFAULT_FORM_DATA = {

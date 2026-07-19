@@ -49,7 +49,7 @@
 <script setup lang="ts">
   import { reactive, watch, computed } from 'vue'
   import { CrmCustomerApi } from '@/modules/crm/customer/api/CrmCustomer.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { CrmCustomerDetailResponseVo } from '@/modules/crm/customer/type/CrmCustomer.type'
   import { ElMessage } from 'element-plus'
 

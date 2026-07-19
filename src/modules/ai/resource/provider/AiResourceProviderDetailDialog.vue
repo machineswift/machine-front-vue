@@ -73,7 +73,7 @@
 <script setup lang="ts">
   import { computed, watch, reactive } from 'vue'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { AiResourceProviderDetailResponseVo } from '@/modules/ai/resource/provider/type/AiResourceProvider.type'
 
   const enumStore = useDictionaryEnumStore()

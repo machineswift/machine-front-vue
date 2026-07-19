@@ -75,10 +75,10 @@
 
 <script setup lang="ts">
   import { ref, watch } from 'vue'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
   import type { DataShopDetailResponseVo } from '@/modules/data/shop/type/DataShop.type'
-  import type { AddressInfoDto } from '@/common/types/CommonData.type'
+  import type { AddressInfoDto } from '@/shared/types/CommonData.type'
 
   // 组合式函数
   const enumStore = useDictionaryEnumStore()

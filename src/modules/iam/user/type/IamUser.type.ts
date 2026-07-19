@@ -1,4 +1,4 @@
-import type { BusinessDto, PageRequest, PageResponse } from '@/common/types/Common.type'
+import type { BusinessDto, PageRequest, PageResponse } from '@/shared/types/Common.type'
 
 export interface IamUserCreateRequestVo {
   username: string

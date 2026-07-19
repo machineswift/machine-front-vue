@@ -122,7 +122,7 @@
   import { reactive, watch, computed } from 'vue'
   import { IamUserLoginLogApi } from '@/modules/iam/loginLog/api/IamUserLoginLog.api'
   import type { IamUserLoginLogDetailResponseVo } from '@/modules/iam/loginLog/type/IamUserLoginLog.type'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
 
   const enumStore = useDictionaryEnumStore()
 

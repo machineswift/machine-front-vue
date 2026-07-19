@@ -1,29 +1,29 @@
-import request, { getBaseUrl } from '@/common/utils/Request.util'
-import { MANAGE_API_BASE_URL } from '@/common/constant/Common.constant'
-import { useIamUserStore } from '@/common/stores/IamUser.store'
-import type { IdRequest, IdResponse } from '@/common/types/Common.type'
+import request, { getBaseUrl } from '@/shared/utils/Request.util'
+import { ADMIN_API_BASE_URL } from '@/shared/constants/Common.constant'
+import { useIamUserStore } from '@/shared/stores/IamUser.store'
+import type { IdRequest, IdResponse } from '@/shared/types/Common.type'
 import type { QueryDownloadDetailResponseVo, DataDownloadPageRequestVo, DataDataDownloadPageResponse } from '@/modules/data/download/type/DataDownload.type'
 
 // 创建
 const retry = async (params: IdResponse): Promise<void> => {
-  return request.post<void>(MANAGE_API_BASE_URL + 'manage/data/file_center/download/retry', params)
+  return request.post<void>(ADMIN_API_BASE_URL + 'admin/data/file_center/download/retry', params)
 }
 
 // 详情
 const detail = async (params: IdRequest): Promise<QueryDownloadDetailResponseVo> => {
-  return request.post<QueryDownloadDetailResponseVo>(MANAGE_API_BASE_URL + 'manage/data/file_center/download/detail', params)
+  return request.post<QueryDownloadDetailResponseVo>(ADMIN_API_BASE_URL + 'admin/data/file_center/download/detail', params)
 }
 
 // 分页查询(应用于角色管理菜单)
 const pageExpand = async (params: DataDownloadPageRequestVo): Promise<DataDataDownloadPageResponse> => {
-  return request.post<DataDataDownloadPageResponse>(MANAGE_API_BASE_URL + 'manage/data/file_center/download/page_expand', params)
+  return request.post<DataDataDownloadPageResponse>(ADMIN_API_BASE_URL + 'admin/data/file_center/download/page_expand', params)
 }
 
 // 下载文件 — 后端直连 MinIO 返回文件流，前端用 fetch + Blob 下载，避免页面闪烁
 const downloadFile = async (params: IdRequest, fileName: string): Promise<void> => {
   const userStore = useIamUserStore()
   const token = await userStore.getValidToken()
-  const fullUrl = `${getBaseUrl()}${MANAGE_API_BASE_URL}manage/data/file_center/download/download_file`
+  const fullUrl = `${getBaseUrl()}${ADMIN_API_BASE_URL}manage/data/file_center/download/download_file`
 
   const response = await fetch(fullUrl, {
     method: 'POST',

@@ -135,7 +135,7 @@
   import { ref, reactive, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
-  import { hasPermission } from '@/common/utils/Permission.util'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import { ScmBackCategoryApi } from '@/modules/scm/category/api/ScmBackCategory.api'
   import type { ScmBackCategoryTreeExpandResponseVo } from '@/modules/scm/category/type/ScmBackCategory.type'
   import ScmBackCategoryCreateDialog from '@/modules/scm/category/ScmBackCategoryCreateDialog.vue'

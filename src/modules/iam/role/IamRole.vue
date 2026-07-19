@@ -309,13 +309,13 @@
   import { reactive, onMounted, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh, ArrowDown, Key, Delete } from '@element-plus/icons-vue'
-  import { hasPermission } from '@/common/utils/Permission.util'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import { IamRoleApi } from '@/modules/iam/role/api/IamRole.api'
   import IamRoleAddDialog from '@/modules/iam/role/IamRoleAddDialog.vue'
   import IamRoleDetailDialog from '@/modules/iam/role/IamRoleDetailDialog.vue'
   import IamRoleEditDialog from '@/modules/iam/role/IamRoleEditDialog.vue'
   import IamRoleEditPermissionDialog from '@/modules/iam/role/IamRoleEditPermissionDialog.vue'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type {
     IamRoleExpandPageResponse,
     IamRoleDetailResponseVo,
@@ -599,7 +599,6 @@
       }
 
       await IamRoleApi.updateStatus(params)
-      ElMessage.success('操作成功')
     } catch (error) {
       console.error('修改角色状态失败:', error)
       // 操作取消或失败时，恢复原来的状态

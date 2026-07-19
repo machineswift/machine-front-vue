@@ -64,13 +64,13 @@
   import { reactive, watch, computed, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormItemRule } from 'element-plus'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
   import type { DataShopUpdateRequestVo } from '@/modules/data/shop/type/DataShop.type'
-  import type { AddressInfoDto } from '@/common/types/CommonData.type'
+  import type { AddressInfoDto } from '@/shared/types/CommonData.type'
   import type { DataAreaSimpleTreeResponseVo, DataAreaTreeSimpleResponseVo } from '@/modules/data/area/type/DataArea.type'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },

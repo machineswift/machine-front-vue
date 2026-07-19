@@ -72,8 +72,8 @@
   import { reactive, watch, computed, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
-  import type { DataPermissionMetaDto } from '@/common/types/CommonIam.type'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import type { DataPermissionMetaDto } from '@/shared/types/CommonIam.type'
   import IamPermissionDataPermissionScope from '@/modules/iam/permission/IamPermissionDataPermissionScope.vue'
 
   const props = defineProps({

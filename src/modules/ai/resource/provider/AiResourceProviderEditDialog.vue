@@ -42,7 +42,7 @@
   import { ElMessage } from 'element-plus'
   import { ref, watch, reactive, computed, nextTick } from 'vue'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
 
   const DEFAULT_FORM_DATA = {
     id: '',

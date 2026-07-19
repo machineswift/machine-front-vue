@@ -297,12 +297,12 @@
   import { ElTreeV2 } from 'element-plus'
   import { onMounted, reactive, computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessageBox } from 'element-plus'
   import { Refresh, Search, ArrowDown, Phone, Key, Lock } from '@element-plus/icons-vue'
-  import { hasPermission } from '@/common/utils/Permission.util'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import { IamUserApi } from '@/modules/iam/user/api/IamUser.api'
   import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type {
     IamUserDetailResponseVo,
     IamUserExpandPageResponse,
@@ -310,7 +310,7 @@
     IamUserQueryPageRequestVo,
     IamUserUpdateStatusRequestVo
   } from '@/modules/iam/user/type/IamUser.type'
-  import { TreeDataUtil } from '@/common/utils/TreeData.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { IamRoleSimpleListResponseVo } from '@/modules/iam/role/type/IamRole.type'
   import type { DataShopSimpleListResponseVo } from '@/modules/data/shop/type/DataShop.type'
   import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
@@ -808,7 +808,6 @@
       }
 
       await IamUserApi.updateStatus(params)
-      ElMessage.success('操作成功')
     } catch (error) {
       console.error('修改用户状态失败', error)
       // 操作取消或失败时，恢复原来的状态

@@ -57,7 +57,7 @@
   import { ElMessage } from 'element-plus'
   import type { FormItemRule } from 'element-plus'
   import { reactive, watch, computed, ref } from 'vue'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { CrmMemberApi } from '@/modules/crm/member/api/CrmMember.api'
   import type { CrmMemberUpdateRequestVo } from '@/modules/crm/member/type/CrmMember.type'
 

@@ -1,0 +1,15 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index abc123..def456 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1623,7 +1623,7 @@
+ 			ctx.server.ws.send({
+ 				type: "custom",
+ 				event: "file-changed",
+ 				data: { file: normalizePath(ctx.file) }
+ 			});
+-			if (options.value.compiler.invalidateTypeCache) options.value.compiler.invalidateTypeCache(ctx.file);
++			if (options.value.compiler?.invalidateTypeCache) options.value.compiler.invalidateTypeCache(ctx.file);
+ 			let typeDepModules;
+ 			const matchesFilter = filter.value(ctx.file);
+ 			if (typeDepToSFCMap.has(ctx.file)) {

@@ -123,7 +123,7 @@
 <script setup lang="ts">
   import { ref, watch, computed } from 'vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { DataMaterialDetailResponseVo } from '@/modules/data/material/type/DataMaterial.type'
 
   const props = defineProps({

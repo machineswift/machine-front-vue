@@ -56,7 +56,7 @@
 <script setup lang="ts">
   import { reactive, watch, computed } from 'vue'
   import { CrmMemberApi } from '@/modules/crm/member/api/CrmMember.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { CrmMemberDetailResponseVo } from '@/modules/crm/member/type/CrmMember.type'
   import { ElMessage } from 'element-plus'
 

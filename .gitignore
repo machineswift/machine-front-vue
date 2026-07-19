@@ -27,4 +27,13 @@ dist-ssr
 *.sw?
 *.tar
 
+# Vite 预构建缓存
+.vite/
+
+.tsupgrader/
+
+# TypeScript 增量编译缓存
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
 

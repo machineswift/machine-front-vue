@@ -144,7 +144,7 @@
   import type { UploadFile, UploadFiles } from 'element-plus'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
   import type { DataShopCertificateResponseVo, DataShopUpdateCertificateRequestVo } from '@/modules/data/shop/type/DataShop.type'
-  import type { AddressInfoDto } from '@/common/types/CommonData.type'
+  import type { AddressInfoDto } from '@/shared/types/CommonData.type'
 
   const props = defineProps<{
     modelValue: boolean

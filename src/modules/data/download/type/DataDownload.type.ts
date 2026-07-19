@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
 /** 文件类型枚举中文（与后端 DataFileTypeEnum 一致，用于展示） */
 export const DATA_FILE_TYPE_LABEL_MAP: Record<string, string> = {

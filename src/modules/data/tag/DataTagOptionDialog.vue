@@ -97,7 +97,7 @@
   import { ArrowDown, EditPen, Sort, Delete } from '@element-plus/icons-vue'
   import { DataTagOptionApi } from '@/modules/data/tag/api/DataTagOption.api'
   import type { DataTagOptionExpandListResponseVo } from '@/modules/data/tag/type/DataTagOption.type'
-  import { hasPermission } from '@/common/utils/Permission.util'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import DataTagOptionAddDialog from '@/modules/data/tag/DataTagOptionAddDialog.vue'
   import DataTagOptionEditDialog from '@/modules/data/tag/DataTagOptionEditDialog.vue'
   import DataTagOptionDetailDialog from '@/modules/data/tag/DataTagOptionDetailDialog.vue'
@@ -188,7 +188,6 @@
     const oldStatus = row.status
     try {
       await DataTagOptionApi.updateStatus({ id: row.id, status: newStatus })
-      ElMessage.success('操作成功')
     } catch (error) {
       console.error('修改选项状态失败', error)
       row.status = oldStatus

@@ -1,5 +1,5 @@
 // 创建智能标签分类请求参数
-import type { TreeNode } from '@/common/types/Common.type'
+import type { TreeNode } from '@/shared/types/Common.type'
 
 export interface DataTagCategoryCreateRequestVo {
   parentId: string

@@ -1,4 +1,4 @@
-import type { PageRequest, PageResponse } from '@/common/types/Common.type'
+import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
 // 登录日志分页查询接口请求参数
 export interface IamUserLoginLogQueryPageRequestVo extends PageRequest {

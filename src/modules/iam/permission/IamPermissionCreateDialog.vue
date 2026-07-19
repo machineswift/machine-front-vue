@@ -64,8 +64,8 @@
   import { reactive, watch, computed, ref, nextTick } from 'vue'
   import { ElMessage, type FormInstance } from 'element-plus'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
-  import type { DataPermissionMetaDto } from '@/common/types/CommonIam.type'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import type { DataPermissionMetaDto } from '@/shared/types/CommonIam.type'
   import IamPermissionDataPermissionScope from '@/modules/iam/permission/IamPermissionDataPermissionScope.vue'
   import type { IamPermissionCreateRequestVo, IamPermissionTreeExpandResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
 

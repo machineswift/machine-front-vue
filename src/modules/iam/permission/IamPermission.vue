@@ -148,15 +148,15 @@
   import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
-  import { hasPermission } from '@/common/utils/Permission.util'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
   import type { IamPermissionTreeExpandResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
   import IamPermissionCreateDialog from '@/modules/iam/permission/IamPermissionCreateDialog.vue'
   import IamPermissionEditDialog from '@/modules/iam/permission/IamPermissionEditDialog.vue'
   import IamPermissionUpdateParentDialog from '@/modules/iam/permission/IamPermissionUpdateParentDialog.vue'
   import IamPermissionDetailDialog from '@/modules/iam/permission/IamPermissionDetailDialog.vue'
-  import SvgIcon from '@/common/components/svgIcon/SvgIcon.vue'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import SvgIcon from '@/shared/components/SvgIcon.vue'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
 
   // 常量定义
   const RESOURCE_TYPE_TAG_MAP: Record<string, string> = {

@@ -85,7 +85,7 @@
   import { ElMessage } from 'element-plus'
   import { Link } from '@element-plus/icons-vue'
   import { ScmPropertyApi } from '@/modules/scm/category/api/ScmProperty.api'
-  import { useDictionaryEnumStore } from '@/common/stores/DictionaryEnum.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import type { ScmPropertyUpdateRequestVo } from '@/modules/scm/category/type/ScmProperty.type'
   import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
 
