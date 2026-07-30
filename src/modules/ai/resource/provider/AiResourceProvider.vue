@@ -20,11 +20,11 @@
 
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['AI:RESOURCE_CENTER:PROVIDER:LIST_EXPAND']">
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER:LIST_EXPAND']">
                 <el-icon><Search /></el-icon>
                 搜索
               </el-button>
-              <el-button @click="resetSearchForm" v-hasPermission="['AI:RESOURCE_CENTER:PROVIDER:LIST_EXPAND']">
+              <el-button @click="resetSearchForm" v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER:LIST_EXPAND']">
                 <el-icon><Refresh /></el-icon>
                 重置
               </el-button>
@@ -37,7 +37,7 @@
     <!-- 数据卡片 -->
     <el-card ref="dataCardRef" class="box-card-data">
       <div ref="operationButtonsRef" class="operation-buttons">
-        <el-button type="primary" size="default" @click="openAddDialog" v-hasPermission="['AI:RESOURCE_CENTER:PROVIDER:CREATE']">添加</el-button>
+        <el-button type="primary" size="default" @click="openAddDialog" v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER:CREATE']">添加</el-button>
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
@@ -72,7 +72,7 @@
                 inactive-text="禁用"
                 inline-prompt
                 @change="toggleProviderStatus(row)"
-                v-hasPermission="['AI:RESOURCE_CENTER:PROVIDER:UPDATE_STATUS']"
+                v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER:UPDATE_STATUS']"
               />
             </template>
           </el-table-column>
@@ -92,8 +92,10 @@
           <el-table-column label="操作" width="200" align="center" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click="openDetailDialog(row)" v-hasPermission="['AI:RESOURCE_CENTER:PROVIDER:DETAIL']">详情</el-button>
-                <el-button size="small" type="primary" @click="openEditDialog(row)" v-hasPermission="['AI:RESOURCE_CENTER:PROVIDER:UPDATE']">编辑</el-button>
+                <el-button size="small" @click="openDetailDialog(row)" v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER:DETAIL']">详情</el-button>
+                <el-button size="small" type="primary" @click="openEditDialog(row)" v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER:UPDATE']">
+                  编辑
+                </el-button>
                 <el-dropdown trigger="click" @command="onDropdownCommand($event, row)" placement="bottom-end">
                   <el-button size="small" type="info">
                     更多
@@ -128,7 +130,7 @@
 
 <script setup lang="ts">
   defineOptions({
-    name: 'AI:RESOURCE_CENTER:PROVIDER'
+    name: 'MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER'
   })
 
   import { reactive, onMounted, ref, nextTick, watch, onBeforeUnmount } from 'vue'

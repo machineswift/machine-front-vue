@@ -19,23 +19,21 @@ const router = createRouter({
   }
 })
 
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to, _from) => {
   nprogress.start()
   document.title = `${setting.title}-${to.meta.title || ''}`
 
   // 认证检查
   const authResult = await checkAuth(to)
   if (!authResult.allow) {
-    return next(authResult.redirect)
+    return authResult.redirect
   }
 
   // 处理重定向
   const redirectPath = handleRedirects(to)
   if (redirectPath) {
-    return next(authResult.replace ? { path: redirectPath, replace: true } : redirectPath)
+    return authResult.replace ? { path: redirectPath, replace: true } : redirectPath
   }
-
-  next()
 })
 
 router.afterEach((to: RouteLocationNormalized, from: RouteLocationNormalizedLoaded) => {

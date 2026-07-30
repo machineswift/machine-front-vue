@@ -41,7 +41,7 @@
     <el-card ref="dataCardRef" class="box-card-data">
       <!-- 操作按钮 -->
       <div class="operation-buttons">
-        <el-button type="primary" @click="showCreateDialog" v-hasPermission="['SYSTEM:SCM:PROPERTY:CREATE']">新增</el-button>
+        <el-button type="primary" @click="showCreateDialog" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:PROPERTY:CREATE']">新增</el-button>
       </div>
 
       <!-- 表格区域 -->
@@ -104,9 +104,13 @@
           <el-table-column label="操作" width="220" align="center" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click.stop="showDetailDialog(row.id)" v-hasPermission="['SYSTEM:SCM:PROPERTY:DETAIL']">详情</el-button>
-                <el-button size="small" type="primary" @click.stop="showEditDialog(row)" v-hasPermission="['SYSTEM:SCM:PROPERTY:UPDATE']">编辑</el-button>
-                <el-button size="small" type="danger" @click.stop="handleDelete(row)" v-hasPermission="['SYSTEM:SCM:PROPERTY:DELETE']">删除</el-button>
+                <el-button size="small" @click.stop="showDetailDialog(row.id)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:PROPERTY:DETAIL']">详情</el-button>
+                <el-button size="small" type="primary" @click.stop="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:PROPERTY:UPDATE']">
+                  编辑
+                </el-button>
+                <el-button size="small" type="danger" @click.stop="handleDelete(row)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:PROPERTY:DELETE']">
+                  删除
+                </el-button>
               </div>
             </template>
           </el-table-column>
@@ -143,7 +147,7 @@
 
 <script setup lang="ts">
   defineOptions({
-    name: 'SCM:CATEGORY:PROPERTY'
+    name: 'MANAGE_APP:SCM:CATEGORY:PROPERTY'
   })
 
   import { ref, reactive, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'

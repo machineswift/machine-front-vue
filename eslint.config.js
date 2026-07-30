@@ -52,13 +52,4 @@ export default defineConfig([
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     }
   },
-  {
-    settings: {
-      'import/resolver': {
-        typescript: {
-          project: './tsconfig.json'
-        }
-      }
-    }
-  }
 ])

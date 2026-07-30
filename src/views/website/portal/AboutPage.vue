@@ -87,7 +87,6 @@
   const router = useRouter()
   const showLogin = ref(false)
 
-  // ========== 导航（与 AppLanding 一致） ==========
   const activeSection = ref('')
   const navItems: Array<{ key: string; href: string; label: string }> = []
 
@@ -100,7 +99,7 @@
 
   const advantages = [
     { icon: 'el-icon-SetUp', color: '#667eea', title: '双形态架构', desc: '微服务 + 单体同源共建，一套代码两种部署形态，兼顾分布式能力与单机轻量交付' },
-    { icon: 'el-icon-Security', color: '#43e97b', title: '全面安全体系', desc: 'RBAC 细粒度权限、OAuth2 授权服务器、JWT 无状态鉴权、操作审计日志全覆盖' },
+    { icon: 'el-icon-Lock', color: '#43e97b', title: '全面安全体系', desc: 'RBAC 细粒度权限、OAuth2 授权服务器、JWT 无状态鉴权、操作审计日志全覆盖' },
     {
       icon: 'el-icon-Connection',
       color: '#f093fb',

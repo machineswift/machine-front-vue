@@ -23,7 +23,7 @@
                     type="primary"
                     plain
                     @click.stop="showOperatorSelectorDialog"
-                    v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                    v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
                     style="margin-right: 8px; height: 24px"
                   >
                     选择
@@ -61,13 +61,13 @@
           <!-- 操作按钮组 -->
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:PAGE_EXPAND']">
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG:PAGE_EXPAND']">
                 <el-icon>
                   <Search />
                 </el-icon>
                 搜索
               </el-button>
-              <el-button @click="handleResetSearch" v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:PAGE_EXPAND']">
+              <el-button @click="handleResetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG:PAGE_EXPAND']">
                 <el-icon>
                   <Refresh />
                 </el-icon>
@@ -139,7 +139,7 @@
           <el-table-column label="操作" align="center" width="120" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:DETAIL']">详情</el-button>
+                <el-button size="small" @click="showDetail(row)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG:DETAIL']">详情</el-button>
               </div>
             </template>
           </el-table-column>
@@ -156,7 +156,7 @@
           :total="state.pagination.total"
           @current-change="handlePageChange"
           @size-change="handlePageSizeChange"
-          v-hasPermission="['SYSTEM:AUTH:LOGIN_LOG:PAGE_EXPAND']"
+          v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG:PAGE_EXPAND']"
         />
       </div>
 
@@ -182,7 +182,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:AUTH:LOGIN_LOG'
+    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG'
   })
   import { onMounted, reactive, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import type { FormInstance } from 'element-plus'

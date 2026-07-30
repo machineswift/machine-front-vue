@@ -37,7 +37,7 @@
                     type="primary"
                     plain
                     @click.stop="showCreateUserSelectorDialog"
-                    v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                    v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
                     style="margin-right: 8px; height: 24px"
                   >
                     选择
@@ -64,7 +64,7 @@
                     type="primary"
                     plain
                     @click.stop="showUpdateUserSelectorDialog"
-                    v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                    v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
                     style="margin-right: 8px; height: 24px"
                   >
                     选择
@@ -101,11 +101,11 @@
           <!-- 操作按钮组 -->
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:PAGE_EXPAND']">
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:PAGE_EXPAND']">
                 <el-icon><Search /></el-icon>
                 搜索
               </el-button>
-              <el-button @click="resetSearch" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:PAGE_EXPAND']">
+              <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:PAGE_EXPAND']">
                 <el-icon><Refresh /></el-icon>
                 重置
               </el-button>
@@ -118,7 +118,7 @@
     <!-- 数据卡片 -->
     <el-card ref="dataCardRef" class="box-card-data">
       <div ref="operationButtonsRef" class="operation-buttons">
-        <el-button type="primary" @click="showAddDialog" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:CREATE']">添加</el-button>
+        <el-button type="primary" @click="showAddDialog" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:CREATE']">添加</el-button>
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
@@ -163,7 +163,7 @@
                 inactive-text="禁用"
                 inline-prompt
                 @change="toggleStatus(row)"
-                v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE_STATUS']"
+                v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:UPDATE_STATUS']"
               />
             </template>
           </el-table-column>
@@ -207,8 +207,8 @@
           <el-table-column label="操作" width="200" align="center" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click="showDetail(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:DETAIL']">详情</el-button>
-                <el-button size="small" type="primary" @click="showEdit(row)" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:UPDATE']">编辑</el-button>
+                <el-button size="small" @click="showDetail(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:DETAIL']">详情</el-button>
+                <el-button size="small" type="primary" @click="showEdit(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:UPDATE']">编辑</el-button>
                 <el-dropdown trigger="click" @command="onBrandDropdownCommand($event, row)" placement="bottom-end">
                   <el-button size="small" type="info">
                     更多
@@ -216,7 +216,7 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="delete" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:BRAND:DELETE'])">
+                      <el-dropdown-item command="delete" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:DELETE'])">
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
                       </el-dropdown-item>
@@ -270,7 +270,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:BASIC_DATA:BRAND'
+    name: 'MANAGE_APP:SYSTEM:BASIC_DATA:BRAND'
   })
   import { ref, reactive, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'

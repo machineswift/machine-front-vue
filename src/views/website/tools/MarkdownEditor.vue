@@ -627,7 +627,7 @@ Content-Type: application/json
       )
     }
 
-    let highlighted = token.text
+    let highlighted
     if (language && hljs.getLanguage(language)) {
       try {
         highlighted = hljs.highlight(token.text, { language }).value

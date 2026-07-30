@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-17T23:32:32.900Z",
+  "generatedAt": "2026-07-21T02:08:36.996Z",
   "rendererAssetManifests": [
     {
       "rendererId": "model",
@@ -417,7 +417,7 @@
   ],
   "validation": {
     "valid": true,
-    "checkedAt": "2026-07-17T23:32:32.900Z",
+    "checkedAt": "2026-07-21T02:08:36.996Z",
     "assets": [
       {
         "id": "model-occt-worker",
@@ -784,7 +784,7 @@
     "missingOptional": []
   },
   "generatedBy": "@file-viewer/vite-plugin",
-  "copiedAt": "2026-07-18T13:50:26.960Z",
+  "copiedAt": "2026-07-29T16:07:35.564Z",
   "rendererIds": [
     "pdf",
     "ofd",
@@ -820,7 +820,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "model",
@@ -829,7 +829,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "model",
@@ -838,7 +838,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "model",
@@ -847,7 +847,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "model",
@@ -856,7 +856,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "drawing",
@@ -865,7 +865,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "drawing",
@@ -874,7 +874,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "pdf",
@@ -883,7 +883,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "pdf",
@@ -892,7 +892,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "pdf",
@@ -901,7 +901,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "pdf",
@@ -910,7 +910,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "pdf",
@@ -919,7 +919,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "archive",
@@ -928,7 +928,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "archive",
@@ -937,7 +937,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "cad",
@@ -946,7 +946,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "cad",
@@ -955,7 +955,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "cad",
@@ -964,7 +964,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "cad",
@@ -973,7 +973,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "cad",
@@ -982,7 +982,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-word-openxml",
@@ -991,7 +991,7 @@
       "copied": true,
       "required": false,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-word-openxml",
@@ -1000,7 +1000,7 @@
       "copied": true,
       "required": false,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1009,7 +1009,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1018,7 +1018,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1027,7 +1027,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1036,7 +1036,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1045,7 +1045,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1054,7 +1054,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1063,7 +1063,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1072,7 +1072,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation-binary",
@@ -1081,7 +1081,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "office-presentation",
@@ -1090,7 +1090,7 @@
       "copied": true,
       "required": false,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "spreadsheet-openxml",
@@ -1099,7 +1099,7 @@
       "copied": true,
       "required": false,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "typst",
@@ -1108,7 +1108,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "typst",
@@ -1117,7 +1117,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "typst",
@@ -1126,7 +1126,7 @@
       "copied": true,
       "required": true,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     },
     {
       "rendererId": "data-asset",
@@ -1135,7 +1135,7 @@
       "copied": true,
       "required": false,
       "sourcePackage": "file-viewer-copy-assets",
-      "sourceVersion": "2.2.2"
+      "sourceVersion": "2.2.3"
     }
   ]
 }

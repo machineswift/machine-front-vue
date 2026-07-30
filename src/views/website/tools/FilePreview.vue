@@ -235,6 +235,7 @@
   // @file-viewer/vue3-full 已内置 preset-all，无需额外传入 preset
   import { FileViewer, type ViewerOptions } from '@file-viewer/vue3-full'
   import { usePortalTheme } from '@/views/website/composables/usePortalTheme'
+  import { isTextFile, convertToUtf8Blob, fetchAsArrayBuffer, fileToArrayBuffer } from '@/shared/utils/EncodingDetector.util'
 
   const { isDark } = usePortalTheme()
 
@@ -304,7 +305,7 @@
     fileInputRef.value?.click()
   }
 
-  function onFileSelected(event: Event) {
+  async function onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement
     const file = input.files?.[0]
     if (!file) return
@@ -312,13 +313,26 @@
     error.value = ''
     loading.value = true
     loadingText.value = `正在准备文件 ${file.name}...`
-    currentFile.value = { name: file.name, file }
+
+    if (isTextFile(file.name)) {
+      try {
+        const buffer = await fileToArrayBuffer(file)
+        const utf8Blob = convertToUtf8Blob(buffer, file.name)
+        currentFile.value = { name: file.name, file: new File([utf8Blob], file.name, { type: 'text/plain;charset=utf-8' }) }
+      } catch (e) {
+        console.warn('编码检测失败，使用原始文件:', e)
+        currentFile.value = { name: file.name, file }
+      }
+    } else {
+      currentFile.value = { name: file.name, file }
+    }
+
     viewerKey.value++
     addToRecent(file.name)
     input.value = ''
   }
 
-  function loadFromUrl() {
+  async function loadFromUrl() {
     const url = urlInput.value.trim()
     if (!url) return
 
@@ -326,7 +340,20 @@
     loading.value = true
     loadingText.value = '正在下载文件资源...'
     const name = url.split('/').pop() || 'document'
-    currentFile.value = { name, url }
+
+    if (isTextFile(name)) {
+      try {
+        const buffer = await fetchAsArrayBuffer(url)
+        const utf8Blob = convertToUtf8Blob(buffer, name)
+        currentFile.value = { name, file: new File([utf8Blob], name, { type: 'text/plain;charset=utf-8' }) }
+      } catch (e) {
+        console.warn('编码检测/转码失败，使用原始 URL:', e)
+        currentFile.value = { name, url }
+      }
+    } else {
+      currentFile.value = { name, url }
+    }
+
     viewerKey.value++
     addToRecent(name)
     showUrlInput.value = false
@@ -346,11 +373,32 @@
     recentFiles.value.splice(idx, 1)
   }
 
-  function openRecent(item: FileItem) {
+  async function openRecent(item: FileItem) {
     error.value = ''
     loading.value = true
     loadingText.value = item.file ? `正在准备文件 ${item.name}...` : '正在加载文件...'
-    currentFile.value = { name: item.name, url: item.url, file: item.file }
+
+    if (isTextFile(item.name)) {
+      try {
+        if (item.file) {
+          const buffer = await fileToArrayBuffer(item.file)
+          const utf8Blob = convertToUtf8Blob(buffer, item.name)
+          currentFile.value = { name: item.name, file: new File([utf8Blob], item.name, { type: 'text/plain;charset=utf-8' }) }
+        } else if (item.url) {
+          const buffer = await fetchAsArrayBuffer(item.url)
+          const utf8Blob = convertToUtf8Blob(buffer, item.name)
+          currentFile.value = { name: item.name, file: new File([utf8Blob], item.name, { type: 'text/plain;charset=utf-8' }) }
+        } else {
+          currentFile.value = { name: item.name }
+        }
+      } catch (e) {
+        console.warn('编码检测失败，使用原始文件:', e)
+        currentFile.value = { name: item.name, url: item.url, file: item.file }
+      }
+    } else {
+      currentFile.value = { name: item.name, url: item.url, file: item.file }
+    }
+
     viewerKey.value++
   }
 

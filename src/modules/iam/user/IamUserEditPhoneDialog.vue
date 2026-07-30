@@ -18,7 +18,9 @@
 
     <template #footer>
       <el-button @click="state.visible = false">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_PHONE']">确定</el-button>
+      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:UPDATE_PHONE']">
+        确定
+      </el-button>
     </template>
   </el-dialog>
 </template>

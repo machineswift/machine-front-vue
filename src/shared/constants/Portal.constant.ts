@@ -237,7 +237,7 @@ export const features = [
     code: 'IAM',
     title: '权限与安全 IAM',
     desc: 'RBAC 权限模型、OAuth2 认证、按钮级细粒度权限、操作审计日志全覆盖。',
-    icon: 'el-icon-Shield',
+    icon: 'el-icon-Lock',
     gradient: 'linear-gradient(135deg, #c471ed, #f64f59)',
     category: 'manage',
     services: ['iam-service', 'iam-app', 'security-starter']

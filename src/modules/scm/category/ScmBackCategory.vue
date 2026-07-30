@@ -25,7 +25,7 @@
     <el-card ref="dataCardRef" class="box-card-data">
       <!-- 操作按钮 -->
       <div class="operation-buttons">
-        <el-button type="primary" @click="showCreateDialog(null)" v-hasPermission="['SYSTEM:SCM:BACK_CATEGORY:CREATE']">新增</el-button>
+        <el-button type="primary" @click="showCreateDialog(null)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:CREATE']">新增</el-button>
       </div>
 
       <!-- 表格区域 -->
@@ -77,8 +77,10 @@
           <el-table-column label="操作" width="260" align="center" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click.stop="showDetailDialog(row.id)" v-hasPermission="['SYSTEM:SCM:BACK_CATEGORY:DETAIL']">详情</el-button>
-                <el-button size="small" type="primary" @click.stop="showEditDialog(row)" v-hasPermission="['SYSTEM:SCM:BACK_CATEGORY:UPDATE']">编辑</el-button>
+                <el-button size="small" @click.stop="showDetailDialog(row.id)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:DETAIL']">详情</el-button>
+                <el-button size="small" type="primary" @click.stop="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:UPDATE']">
+                  编辑
+                </el-button>
                 <el-dropdown trigger="click" @command="onDropdownCommand($event, row)" placement="bottom-end">
                   <el-button size="small" type="info" @click.stop>
                     更多
@@ -86,15 +88,15 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="create" :disabled="!hasPermission(['SYSTEM:SCM:BACK_CATEGORY:CREATE'])">
+                      <el-dropdown-item command="create" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:CREATE'])">
                         <el-icon><Plus /></el-icon>
                         <span>新增子类目</span>
                       </el-dropdown-item>
-                      <el-dropdown-item command="updateParent" :disabled="!hasPermission(['SYSTEM:SCM:BACK_CATEGORY:UPDATE_PARENT'])">
+                      <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:UPDATE_PARENT'])">
                         <el-icon><Connection /></el-icon>
                         <span>移动类目</span>
                       </el-dropdown-item>
-                      <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:SCM:BACK_CATEGORY:DELETE'])">
+                      <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:DELETE'])">
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
                       </el-dropdown-item>
@@ -129,7 +131,7 @@
 
 <script setup lang="ts">
   defineOptions({
-    name: 'SCM:CATEGORY:BACK'
+    name: 'MANAGE_APP:SCM:CATEGORY:BACK'
   })
 
   import { ref, reactive, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'

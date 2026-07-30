@@ -31,7 +31,7 @@ export default defineComponent({
       <div class="table-actions">
         {h(ElButton, {
           size: 'small',
-          disabled: !hasPermission(['SYSTEM:BASIC_DATA:AREA:DETAIL']),
+          disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:DETAIL']),
           onClick: () => props.onDetail?.(props.rowData),
           directives: [
             {
@@ -44,7 +44,7 @@ export default defineComponent({
         {h(ElButton, {
           size: 'small',
           type: 'primary',
-          disabled: !hasPermission(['SYSTEM:BASIC_DATA:AREA:UPDATE']),
+          disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:UPDATE']),
           onClick: () => props.onEdit?.(props.rowData),
           directives: [
             {
@@ -68,7 +68,7 @@ export default defineComponent({
               <ElDropdownMenu>
                 {h(ElDropdownItem, {
                   command: 'add',
-                  disabled: !hasPermission(['SYSTEM:BASIC_DATA:AREA:CREATE']),
+                  disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:CREATE']),
                   directives: [
                     {
                       name: 'hasPermission',
@@ -81,7 +81,7 @@ export default defineComponent({
                 ])}
                 {h(ElDropdownItem, {
                   command: 'changeParent',
-                  disabled: !hasPermission(['SYSTEM:BASIC_DATA:AREA:UPDATE_PARENT']),
+                  disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:UPDATE_PARENT']),
                   directives: [
                     {
                       name: 'hasPermission',
@@ -95,7 +95,7 @@ export default defineComponent({
                 {h(ElDropdownItem, {
                   command: 'delete',
                   divided: true,
-                  disabled: !hasPermission(['SYSTEM:BASIC_DATA:AREA:DELETE']),
+                  disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:DELETE']),
                   directives: [
                     {
                       name: 'hasPermission',

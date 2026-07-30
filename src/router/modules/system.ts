@@ -5,21 +5,21 @@ import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
  */
 export const systemRoutes: ExtendedRouteRecordRaw[] = [
   {
-    path: '/system',
-    name: 'SYSTEM',
+    path: '/admin/system',
+    name: 'MANAGE_APP:SYSTEM',
     meta: {
-      code: 'SYSTEM',
+      code: 'MANAGE_APP:SYSTEM',
       title: '系统管理',
-      icon: 'el-icon-Setting',
+      icon: 'el-icon-Tools',
       hidden: false,
       isDynamic: true
     },
     children: [
       {
-        path: '/system/basic_data',
-        name: 'SYSTEM:BASIC_DATA',
+        path: '/admin/system/basic_data',
+        name: 'MANAGE_APP:SYSTEM:BASIC_DATA',
         meta: {
-          code: 'SYSTEM:BASIC_DATA',
+          code: 'MANAGE_APP:SYSTEM:BASIC_DATA',
           title: '基础数据',
           icon: 'el-icon-Collection',
           hidden: false,
@@ -27,11 +27,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         },
         children: [
           {
-            path: '/system/basic_data/brand',
+            path: '/admin/system/basic_data/brand',
             component: () => import('@/modules/data/brand/DataBrand.vue'),
-            name: 'SYSTEM:BASIC_DATA:BRAND',
+            name: 'MANAGE_APP:SYSTEM:BASIC_DATA:BRAND',
             meta: {
-              code: 'SYSTEM:BASIC_DATA:BRAND',
+              code: 'MANAGE_APP:SYSTEM:BASIC_DATA:BRAND',
               title: '品牌管理',
               icon: 'el-icon-Trophy',
               hidden: false,
@@ -39,11 +39,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/basic_data/shop',
+            path: '/admin/system/basic_data/shop',
             component: () => import('@/modules/data/shop/DataShop.vue'),
-            name: 'SYSTEM:BASIC_DATA:SHOP',
+            name: 'MANAGE_APP::BASIC_DATA:SHOP',
             meta: {
-              code: 'SYSTEM:BASIC_DATA:SHOP',
+              code: 'MANAGE_APP:SYSTEM:BASIC_DATA:SHOP',
               title: '门店管理',
               icon: 'el-icon-Shop',
               hidden: false,
@@ -51,11 +51,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/basic_data/area',
+            path: '/admin/system/basic_data/area',
             component: () => import('@/modules/data/area/DataArea.vue'),
-            name: 'SYSTEM:BASIC_DATA:AREA',
+            name: 'MANAGE_APP:SYSTEM:BASIC_DATA:AREA',
             meta: {
-              code: 'SYSTEM:BASIC_DATA:AREA',
+              code: 'MANAGE_APP:SYSTEM:BASIC_DATA:AREA',
               title: '区域管理',
               icon: 'el-icon-LocationInformation',
               hidden: false,
@@ -63,11 +63,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/basic_data/material',
+            path: '/admin/system/basic_data/material',
             component: () => import('@/modules/data/material/DataMaterial.vue'),
-            name: 'SYSTEM:BASIC_DATA:MATERIAL',
+            name: 'MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL',
             meta: {
-              code: 'SYSTEM:BASIC_DATA:MATERIAL',
+              code: 'MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL',
               title: '素材管理',
               icon: 'el-icon-Picture',
               hidden: false,
@@ -75,11 +75,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/basic_data/tag',
+            path: '/admin/system/basic_data/tag',
             component: () => import('@/modules/data/tag/DataTag.vue'),
-            name: 'SYSTEM:BASIC_DATA:TAG',
+            name: 'MANAGE_APP:SYSTEM:BASIC_DATA:TAG',
             meta: {
-              code: 'SYSTEM:BASIC_DATA:TAG',
+              code: 'MANAGE_APP:SYSTEM:BASIC_DATA:TAG',
               title: '标签管理',
               icon: 'el-icon-CollectionTag',
               hidden: false,
@@ -89,10 +89,10 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         ]
       },
       {
-        path: '/system/auth',
-        name: 'SYSTEM:AUTH',
+        path: '/admin/system/access_control',
+        name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL',
         meta: {
-          code: 'SYSTEM:AUTH',
+          code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL',
           title: '权限管理',
           icon: 'el-icon-Lock',
           hidden: false,
@@ -100,11 +100,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         },
         children: [
           {
-            path: '/system/auth/user',
+            path: '/admin/system/access_control/user',
             component: () => import('@/modules/iam/user/IamUser.vue'),
-            name: 'SYSTEM:AUTH:USER',
+            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER',
             meta: {
-              code: 'SYSTEM:AUTH:USER',
+              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER',
               title: '用户管理',
               icon: 'el-icon-User',
               hidden: false,
@@ -112,11 +112,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/auth/role',
+            path: '/admin/system/access_control/role',
             component: () => import('@/modules/iam/role/IamRole.vue'),
-            name: 'SYSTEM:AUTH:ROLE',
+            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE',
             meta: {
-              code: 'SYSTEM:AUTH:ROLE',
+              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE',
               title: '角色管理',
               icon: 'el-icon-Avatar',
               hidden: false,
@@ -124,23 +124,23 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/auth/permission',
+            path: '/admin/system/access_control/permission',
             component: () => import('@/modules/iam/permission/IamPermission.vue'),
-            name: 'SYSTEM:AUTH:permission',
+            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION',
             meta: {
-              code: 'SYSTEM:AUTH:PERMISSION',
+              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION',
               title: '菜单管理',
-              icon: 'el-icon-LayoutMenu',
+              icon: 'el-icon-Menu',
               hidden: false,
               isDynamic: true
             }
           },
           {
-            path: '/system/auth/organization',
+            path: '/admin/system/access_control/organization',
             component: () => import('@/modules/iam/organization/IamOrganization.vue'),
-            name: 'SYSTEM:AUTH:ORGANIZATION',
+            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION',
             meta: {
-              code: 'SYSTEM:AUTH:ORGANIZATION',
+              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION',
               title: '组织管理',
               icon: 'el-icon-OfficeBuilding',
               hidden: false,
@@ -148,11 +148,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/auth/operation_log',
+            path: '/admin/system/access_control/operation_log',
             component: () => import('@/modules/iam/operationLog/IamOperationLog.vue'),
-            name: 'SYSTEM:AUTH:OPERATION_LOG',
+            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:OPERATION_LOG',
             meta: {
-              code: 'SYSTEM:AUTH:OPERATION_LOG',
+              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:OPERATION_LOG',
               title: '操作日志',
               icon: 'el-icon-Document',
               hidden: false,
@@ -160,11 +160,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/system/auth/login_log',
+            path: '/admin/system/access_control/login_log',
             component: () => import('@/modules/iam/loginLog/IamUserLoginLog.vue'),
-            name: 'SYSTEM:AUTH:LOGIN_LOG',
+            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG',
             meta: {
-              code: 'SYSTEM:AUTH:LOGIN_LOG',
+              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG',
               title: '登录日志',
               icon: 'el-icon-Notebook',
               hidden: false,
@@ -174,10 +174,35 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         ]
       },
       {
-        path: '/system/workspace',
-        name: 'SYSTEM:WORKSPACE',
+        path: '/admin/system/identity_center',
+        name: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER',
         meta: {
-          code: 'SYSTEM:WORKSPACE',
+          code: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER',
+          title: '认证中心',
+          icon: 'el-icon-Key',
+          hidden: false,
+          isDynamic: true
+        },
+        children: [
+          {
+            path: '/admin/system/identity_center/auth2_registered_client',
+            component: () => import('@/modules/iam/auth2RegisteredClient/IamAuth2RegisteredClient.vue'),
+            name: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER:AUTH2_REGISTERED_CLIENT',
+            meta: {
+              code: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER:AUTH2_REGISTERED_CLIENT',
+              title: '客户端管理',
+              icon: 'el-icon-Monitor',
+              hidden: false,
+              isDynamic: true
+            }
+          }
+        ]
+      },
+      {
+        path: '/admin/system/workspace',
+        name: 'MANAGE_APP:SYSTEM:WORKSPACE',
+        meta: {
+          code: 'MANAGE_APP:SYSTEM:WORKSPACE',
           title: '工作台',
           icon: 'el-icon-Monitor',
           hidden: false,
@@ -185,11 +210,11 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         },
         children: [
           {
-            path: '/system/workspace/download',
-            component: () => import('@/modules/data/Download/DataDownload.vue'),
-            name: 'SYSTEM:WORKSPACE:DOWNLOAD',
+            path: '/admin/system/workspace/download',
+            component: () => import('@/modules/data/download/DataDownload.vue'),
+            name: 'MANAGE_APP:SYSTEM:WORKSPACE:DOWNLOAD',
             meta: {
-              code: 'SYSTEM:WORKSPACE:DOWNLOAD',
+              code: 'MANAGE_APP:SYSTEM:WORKSPACE:DOWNLOAD',
               title: '下载中心',
               icon: 'el-icon-Download',
               hidden: false,

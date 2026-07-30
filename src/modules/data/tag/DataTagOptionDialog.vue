@@ -12,7 +12,7 @@
   >
     <div class="option-dialog-content">
       <div class="operation-buttons">
-        <el-button type="primary" @click="openDialog('add')" v-hasPermission="['SYSTEM:BASIC_DATA:TAG_OPTION:CREATE']">添加选项</el-button>
+        <el-button type="primary" @click="openDialog('add')" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:CREATE']">添加选项</el-button>
       </div>
 
       <el-table :data="state.tableData" border style="margin: 10px 0" v-loading="state.loading" max-height="800" stripe highlight-current-row>
@@ -30,7 +30,7 @@
               inactive-text="禁用"
               inline-prompt
               @change="val => toggleStatus(row, val)"
-              v-hasPermission="['SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_STATUS']"
+              v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_STATUS']"
             />
           </template>
         </el-table-column>
@@ -48,8 +48,10 @@
         <el-table-column label="操作" align="center" width="200" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" @click="showDetailDialog(row)" v-hasPermission="['SYSTEM:BASIC_DATA:TAG_OPTION:DETAIL']">详情</el-button>
-              <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE']">编辑</el-button>
+              <el-button size="small" @click="showDetailDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:DETAIL']">详情</el-button>
+              <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE']">
+                编辑
+              </el-button>
               <el-dropdown trigger="click" @command="command => handleMoreCommand(command, row)" placement="bottom-end">
                 <el-button size="small" type="info">
                   更多
@@ -57,15 +59,15 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="updateCode" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_CODE'])">
+                    <el-dropdown-item command="updateCode" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_CODE'])">
                       <el-icon><EditPen /></el-icon>
                       <span>修改编码</span>
                     </el-dropdown-item>
-                    <el-dropdown-item command="updateSort" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_SORT'])">
+                    <el-dropdown-item command="updateSort" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_SORT'])">
                       <el-icon><Sort /></el-icon>
                       <span>修改排序</span>
                     </el-dropdown-item>
-                    <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_OPTION:DELETE'])">
+                    <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:DELETE'])">
                       <el-icon><Delete /></el-icon>
                       <span>删除</span>
                     </el-dropdown-item>

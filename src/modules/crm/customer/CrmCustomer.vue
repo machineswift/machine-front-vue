@@ -29,11 +29,11 @@
           <!-- 操作按钮组 -->
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['CRM:CUSTOMER:CUSTOMER:PAGE_EXPAND']">
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:PAGE_EXPAND']">
                 <el-icon><Search /></el-icon>
                 搜索
               </el-button>
-              <el-button @click="resetSearch" v-hasPermission="['CRM:CUSTOMER:CUSTOMER:PAGE_EXPAND']">
+              <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:PAGE_EXPAND']">
                 <el-icon><Refresh /></el-icon>
                 重置
               </el-button>
@@ -75,9 +75,9 @@
         </el-table-column>
         <el-table-column label="操作" align="center" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="showDetailDialog(row)" v-hasPermission="['CRM:CUSTOMER:CUSTOMER:DETAIL']">详情</el-button>
-            <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['CRM:CUSTOMER:CUSTOMER:UPDATE']">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row)" v-hasPermission="['CRM:CUSTOMER:CUSTOMER:DELETE']">删除</el-button>
+            <el-button size="small" @click="showDetailDialog(row)" v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:DETAIL']">详情</el-button>
+            <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:UPDATE']">编辑</el-button>
+            <el-button size="small" type="danger" @click="handleDelete(row)" v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:DELETE']">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -91,7 +91,7 @@
         :total="state.pagination.total"
         @current-change="handlePageChange"
         @size-change="handleSizeChange"
-        v-hasPermission="['CRM:CUSTOMER:CUSTOMER:PAGE_EXPAND']"
+        v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:PAGE_EXPAND']"
       />
     </el-card>
 
@@ -105,7 +105,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'CRM:CUSTOMER:CUSTOMER'
+    name: 'MANAGE_APP:CRM:CUSTOMER:CUSTOMER'
   })
   import { onMounted, reactive, ref } from 'vue'
   import { ElMessageBox } from 'element-plus'

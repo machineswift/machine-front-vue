@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { cloneDeep } from 'lodash'
+import { cloneDeep } from 'lodash-es'
 import router from '@/router'
 import { PermissionUtil } from '@/shared/utils/Permission.util'
 import { constantRoute } from '@/shared/constants/Route.constant'

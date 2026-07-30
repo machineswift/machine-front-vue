@@ -62,7 +62,7 @@
   import { useRouter, useRoute } from 'vue-router'
   import { useTabStore, type TabItem } from '@/shared/stores/LayoutTab.store'
   import { Close, Lock, Unlock } from '@element-plus/icons-vue'
-  import draggable from 'vuedraggable'
+  import { VueDraggable as Draggable } from 'vue-draggable-plus'
   import SvgIcon from '@/shared/components/SvgIcon.vue'
 
   const router = useRouter()

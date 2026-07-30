@@ -12,7 +12,7 @@ interface PermissionDirectiveElement extends HTMLElement {
  *
  * 使用示例：
  * 1. 基本用法：<button v-hasPermission="'user:create'">创建用户</button>
- * 2. 多权限检查：<button v-hasPermission="['user:create', 'user:edit']">创建/编辑用户</button>
+ * 2. 多权限检查：<button v-hasPermission="['MANAGE_APP:user:create', 'user:edit']">创建/编辑用户</button>
  *
  * 注意：没有权限时，元素会显示但被禁用，不会隐藏
  */

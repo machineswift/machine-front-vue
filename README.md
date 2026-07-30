@@ -226,13 +226,13 @@ export const appSetting = {
 ```vue
 <template>
   <!-- 单个权限 -->
-  <button v-hasPermission="'user:create'">创建用户</button>
+  <button v-hasPermission="'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:CREATE'">创建用户</button>
 
   <!-- 多权限满足其一 -->
-  <button v-hasPermission="['user:create', 'user:edit']">创建/编辑</button>
+  <button v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:CREATE', 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:update']">创建/编辑</button>
 
   <!-- 无权限时的自定义提示 -->
-  <button v-hasPermission:删除="'user:delete'">删除用户</button>
+  <button v-hasPermission:导出用户="'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:EXPORT'">导出用户</button>
 </template>
 ```
 

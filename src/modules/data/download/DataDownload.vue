@@ -30,13 +30,13 @@
           <!-- 操作按钮组 -->
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:DATA:DOWNLOAD:PAGE_EXPAND']">
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:DATA:DOWNLOAD:PAGE_EXPAND']">
                 <el-icon>
                   <Search />
                 </el-icon>
                 搜索
               </el-button>
-              <el-button @click="resetSearch" v-hasPermission="['SYSTEM:DATA:DOWNLOAD:PAGE_EXPAND']">
+              <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:DATA:DOWNLOAD:PAGE_EXPAND']">
                 <el-icon>
                   <Refresh />
                 </el-icon>
@@ -130,13 +130,13 @@
           <el-table-column label="操作" align="center" width="120" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" v-hasPermission="['SYSTEM:DATA:DOWNLOAD:DETAIL']" @click="showDetail(row)">详情</el-button>
+                <el-button size="small" v-hasPermission="['MANAGE_APP:SYSTEM:DATA:DOWNLOAD:DETAIL']" @click="showDetail(row)">详情</el-button>
                 <el-button
                   size="small"
                   type="primary"
                   @click="handleRetry(row)"
                   v-if="row.status === 'FAIL' || row.status === 'DEAD'"
-                  v-hasPermission="['SYSTEM:DATA:DOWNLOAD:RETRY']"
+                  v-hasPermission="['MANAGE_APP:SYSTEM:DATA:DOWNLOAD:RETRY']"
                 >
                   重试
                 </el-button>
@@ -148,7 +148,7 @@
                   type="success"
                   @click="handleDownload(row)"
                   v-else-if="row.status === 'FINISH' && row.attachmentId"
-                  v-hasPermission="['SYSTEM:DATA:DOWNLOAD:DOWNLOAD_FILE']"
+                  v-hasPermission="['MANAGE_APP:SYSTEM:DATA:DOWNLOAD:DOWNLOAD_FILE']"
                 >
                   下载
                 </el-button>
@@ -184,7 +184,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:WORKSPACE:DOWNLOAD'
+    name: 'MANAGE_APP:SYSTEM:WORKSPACE:DOWNLOAD'
   })
   import { ref, reactive, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'

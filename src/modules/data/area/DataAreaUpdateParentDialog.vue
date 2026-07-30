@@ -57,7 +57,9 @@
 
     <template #footer>
       <el-button @click="uiState.visible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="uiState.loading" v-hasPermission="['SYSTEM:BASIC_DATA:AREA:UPDATE_PARENT']">确定</el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="uiState.loading" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:UPDATE_PARENT']">
+        确定
+      </el-button>
     </template>
   </el-dialog>
 </template>

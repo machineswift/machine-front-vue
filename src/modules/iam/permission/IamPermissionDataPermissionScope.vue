@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-  import draggable from 'vuedraggable'
+  import { VueDraggable as Draggable } from 'vue-draggable-plus'
   import { Menu, Delete } from '@element-plus/icons-vue'
   import { ref, nextTick, reactive, watch } from 'vue'
   import { type TabPaneName, type FormInstance } from 'element-plus'

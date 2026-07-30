@@ -62,7 +62,7 @@
         @click="handleSubmit"
         :loading="state.loading"
         :disabled="!state.form.parentId"
-        v-hasPermission="['SYSTEM:SCM:BACK_CATEGORY:UPDATE_PARENT']"
+        v-hasPermission="['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:UPDATE_PARENT']"
       >
         确定
       </el-button>

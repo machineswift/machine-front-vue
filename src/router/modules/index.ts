@@ -9,10 +9,10 @@ import { systemRoutes } from './system'
 export const asyncRoute: ExtendedRouteRecordRaw[] = [
   // 财务管理模块（预留）
   {
-    path: '/fm',
-    name: 'FM',
+    path: '/admin/fm',
+    name: 'MANAGE_APP:FM',
     meta: {
-      code: 'FM',
+      code: 'MANAGE_APP:FM',
       title: '财务管理',
       icon: 'el-icon-Money',
       hidden: false,
@@ -21,10 +21,10 @@ export const asyncRoute: ExtendedRouteRecordRaw[] = [
   },
   // 人力资源模块（预留）
   {
-    path: '/hrm',
-    name: 'HRM',
+    path: '/admin/hrm',
+    name: 'MANAGE_APP:HRM',
     meta: {
-      code: 'HRM',
+      code: 'MANAGE_APP:HRM',
       title: '人力资源',
       icon: 'el-icon-UserFilled',
       hidden: false,

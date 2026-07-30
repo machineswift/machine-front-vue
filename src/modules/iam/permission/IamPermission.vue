@@ -17,8 +17,8 @@
 
         <div class="button-group">
           <el-form-item>
-            <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:AUTH:PERMISSION:TREE_EXPAND']">搜索</el-button>
-            <el-button @click="resetSearch" v-hasPermission="['SYSTEM:AUTH:PERMISSION:TREE_EXPAND']">重置</el-button>
+            <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:TREE_EXPAND']">搜索</el-button>
+            <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:TREE_EXPAND']">重置</el-button>
           </el-form-item>
         </div>
       </el-form>
@@ -96,8 +96,12 @@
           <el-table-column label="操作" width="200" align="center" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click="showDetailDialog(row.id)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:DETAIL']">详情</el-button>
-                <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:PERMISSION:UPDATE']">编辑</el-button>
+                <el-button size="small" @click="showDetailDialog(row.id)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:DETAIL']">
+                  详情
+                </el-button>
+                <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE']">
+                  编辑
+                </el-button>
                 <el-dropdown trigger="click" @command="onPermissionDropdownCommand($event, row)" placement="bottom-end">
                   <el-button size="small" type="info">
                     更多
@@ -105,15 +109,15 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="create" :disabled="!hasPermission(['SYSTEM:AUTH:PERMISSION:CREATE'])">
+                      <el-dropdown-item command="create" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:CREATE'])">
                         <el-icon><Plus /></el-icon>
                         <span>新增</span>
                       </el-dropdown-item>
-                      <el-dropdown-item command="updateParent" :disabled="!hasPermission(['SYSTEM:AUTH:PERMISSION:UPDATE_PARENT'])">
+                      <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE_PARENT'])">
                         <el-icon><Connection /></el-icon>
                         <span>修改父节点</span>
                       </el-dropdown-item>
-                      <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:AUTH:PERMISSION:DELETE'])">
+                      <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:DELETE'])">
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
                       </el-dropdown-item>
@@ -143,7 +147,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:AUTH:permission'
+    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:permission'
   })
   import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
   import { ElMessageBox } from 'element-plus'

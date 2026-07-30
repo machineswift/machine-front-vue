@@ -32,7 +32,9 @@
 
     <template #footer>
       <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['AI:RESOURCE_CENTER:PROVIDER:CREATE']">确定</el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER:CREATE']">
+        确定
+      </el-button>
     </template>
   </el-dialog>
 </template>

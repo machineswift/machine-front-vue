@@ -15,7 +15,7 @@
         <el-input v-model="state.formData.name" placeholder="请输入品牌名称" />
       </el-form-item>
 
-      <el-form-item label="品牌LOGO" prop="logoMaterialId" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:CREATE']">
+      <el-form-item label="品牌LOGO" prop="logoMaterialId" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:CREATE']">
         <DataBrandLogoUpload v-model:modelMaterialId="state.formData.logoMaterialId" v-model:modelImageUrl="state.formData.logoUrl" />
       </el-form-item>
 
@@ -26,7 +26,7 @@
 
     <template #footer>
       <el-button @click="state.dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['SYSTEM:BASIC_DATA:BRAND:CREATE']">确定</el-button>
+      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:CREATE']">确定</el-button>
     </template>
   </el-dialog>
 </template>

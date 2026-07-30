@@ -63,7 +63,9 @@
 
     <template #footer>
       <el-button @click="state.visible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['SYSTEM:AUTH:PERMISSION:UPDATE']">确认</el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE']">
+        确认
+      </el-button>
     </template>
   </el-dialog>
 </template>

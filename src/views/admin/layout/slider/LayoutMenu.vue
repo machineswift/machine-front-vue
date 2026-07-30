@@ -31,7 +31,6 @@
 </template>
 
 <script setup lang="ts">
-  import { defineProps } from 'vue'
   import { useRouter } from 'vue-router'
   import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
   import SvgIcon from '@/shared/components/SvgIcon.vue'

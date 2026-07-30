@@ -36,8 +36,8 @@
           <!-- 操作按钮组 -->
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['CRM:CUSTOMER:CUSTOMER:PAGE_SIMPLE']">搜索</el-button>
-              <el-button @click="resetSearch" v-hasPermission="['CRM:CUSTOMER:CUSTOMER:PAGE_SIMPLE']">重置</el-button>
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:PAGE_SIMPLE']">搜索</el-button>
+              <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:PAGE_SIMPLE']">重置</el-button>
             </el-form-item>
           </div>
         </el-form>
@@ -93,7 +93,7 @@
         layout="prev, pager, next, jumper, ->, total, sizes"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        v-hasPermission="['CRM:CUSTOMER:CUSTOMER:PAGE_SIMPLE']"
+        v-hasPermission="['MANAGE_APP:CRM:CUSTOMER:CUSTOMER:PAGE_SIMPLE']"
       />
     </div>
 

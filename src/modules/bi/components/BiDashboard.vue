@@ -5,7 +5,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'BI:DASHBOARD'
+    name: 'MANAGE_APP:BI:DASHBOARD'
   })
 </script>
 

@@ -109,7 +109,7 @@
         </div>
         <div class="footer-buttons">
           <el-button @click="state.dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfirm" v-hasPermission="['SYSTEM:AUTH:ROLE:PAGE_SIMPLE']">确定</el-button>
+          <el-button type="primary" @click="handleConfirm" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:PAGE_SIMPLE']">确定</el-button>
         </div>
       </div>
     </template>

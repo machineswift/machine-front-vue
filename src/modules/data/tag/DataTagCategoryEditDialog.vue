@@ -30,7 +30,9 @@
 
     <template #footer>
       <el-button @click="state.dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE']">保存</el-button>
+      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE']">
+        保存
+      </el-button>
     </template>
   </el-dialog>
 </template>

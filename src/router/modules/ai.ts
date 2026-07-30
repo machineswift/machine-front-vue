@@ -5,10 +5,10 @@ import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
  */
 export const aiRoutes: ExtendedRouteRecordRaw[] = [
   {
-    path: '/ai',
-    name: 'AI',
+    path: '/admin/ai',
+    name: 'MANAGE_APP:AI',
     meta: {
-      code: 'AI',
+      code: 'MANAGE_APP:AI',
       title: '智能中心',
       icon: 'el-icon-Cpu',
       hidden: false,
@@ -16,10 +16,10 @@ export const aiRoutes: ExtendedRouteRecordRaw[] = [
     },
     children: [
       {
-        path: '/ai/application_center',
-        name: 'AI:APPLICATION_CENTER',
+        path: '/admin/ai/application_center',
+        name: 'MANAGE_APP:AI:APPLICATION_CENTER',
         meta: {
-          code: 'AI:APPLICATION_CENTER',
+          code: 'MANAGE_APP:AI:APPLICATION_CENTER',
           title: '应用中心',
           icon: 'el-icon-Grid',
           hidden: false,
@@ -27,10 +27,10 @@ export const aiRoutes: ExtendedRouteRecordRaw[] = [
         }
       },
       {
-        path: '/ai/development_center',
-        name: 'AI:DEVELOPMENT_CENTER',
+        path: '/admin/ai/development_center',
+        name: 'MANAGE_APP:AI:DEVELOPMENT_CENTER',
         meta: {
-          code: 'AI:DEVELOPMENT_CENTER',
+          code: 'MANAGE_APP:AI:DEVELOPMENT_CENTER',
           title: '开发中心',
           icon: 'el-icon-SetUp',
           hidden: false,
@@ -38,10 +38,10 @@ export const aiRoutes: ExtendedRouteRecordRaw[] = [
         }
       },
       {
-        path: '/ai/resource_center',
-        name: 'AI:RESOURCE_CENTER',
+        path: '/admin/ai/resource_center',
+        name: 'MANAGE_APP:AI:RESOURCE_CENTER',
         meta: {
-          code: 'AI:RESOURCE_CENTER',
+          code: 'MANAGE_APP:AI:RESOURCE_CENTER',
           title: '资源中心',
           icon: 'el-icon-FolderOpened',
           hidden: false,
@@ -49,11 +49,11 @@ export const aiRoutes: ExtendedRouteRecordRaw[] = [
         },
         children: [
           {
-            path: '/ai/resource_center/provider',
+            path: '/admin/ai/resource_center/provider',
             component: () => import('@/modules/ai/resource/provider/AiResourceProvider.vue'),
-            name: 'AI:RESOURCE_CENTER:PROVIDER',
+            name: 'MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER',
             meta: {
-              code: 'AI:RESOURCE_CENTER:PROVIDER',
+              code: 'MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER',
               title: '厂商管理',
               icon: 'el-icon-OfficeBuilding',
               hidden: false,
@@ -61,11 +61,11 @@ export const aiRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/ai/resource_center/model',
+            path: '/admin/ai/resource_center/model',
             component: () => import('@/modules/ai/resource/model/AiResourceModel.vue'),
-            name: 'AI:RESOURCE_CENTER:MODEL',
+            name: 'MANAGE_APP:AI:RESOURCE_CENTER:MODEL',
             meta: {
-              code: 'AI:RESOURCE_CENTER:MODEL',
+              code: 'MANAGE_APP:AI:RESOURCE_CENTER:MODEL',
               title: '模型管理',
               icon: 'el-icon-Key',
               hidden: false,
@@ -75,10 +75,10 @@ export const aiRoutes: ExtendedRouteRecordRaw[] = [
         ]
       },
       {
-        path: '/ai/operations_center',
-        name: 'AI:OPERATIONS_CENTER',
+        path: '/admin/ai/operations_center',
+        name: 'MANAGE_APP:AI:OPERATIONS_CENTER',
         meta: {
-          code: 'AI:OPERATIONS_CENTER',
+          code: 'MANAGE_APP:AI:OPERATIONS_CENTER',
           title: '运维中心',
           icon: 'el-icon-Monitor',
           hidden: false,
@@ -86,10 +86,10 @@ export const aiRoutes: ExtendedRouteRecordRaw[] = [
         }
       },
       {
-        path: '/ai/platform_governance',
-        name: 'AI:PLATFORM_GOVERNANCE',
+        path: '/admin/ai/platform_governance',
+        name: 'MANAGE_APP:AI:PLATFORM_GOVERNANCE',
         meta: {
-          code: 'AI:PLATFORM_GOVERNANCE',
+          code: 'MANAGE_APP:AI:PLATFORM_GOVERNANCE',
           title: '平台治理',
           icon: 'el-icon-Platform',
           hidden: false,

@@ -5,21 +5,21 @@ import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
  */
 export const crmRoutes: ExtendedRouteRecordRaw[] = [
   {
-    path: '/crm',
-    name: 'CRM',
+    path: '/admin/crm',
+    name: 'MANAGE_APP:CRM',
     meta: {
       title: '客户关系',
-      code: 'CRM',
+      code: 'MANAGE_APP:CRM',
       icon: 'el-icon-Connection',
       hidden: false,
       isDynamic: true
     },
     children: [
       {
-        path: '/crm/customer',
-        name: 'CRM:CUSTOMER',
+        path: '/admin/crm/customer',
+        name: 'MANAGE_APP:CRM:CUSTOMER',
         meta: {
-          code: 'CRM:CUSTOMER',
+          code: 'MANAGE_APP:CRM:CUSTOMER',
           title: '客户',
           icon: 'el-icon-Folder',
           hidden: false,
@@ -27,11 +27,11 @@ export const crmRoutes: ExtendedRouteRecordRaw[] = [
         },
         children: [
           {
-            path: '/crm/customer/customer',
+            path: '/admin/crm/customer/customer',
             component: () => import('@/modules/crm/customer/CrmCustomer.vue'),
-            name: 'CRM:CUSTOMER:CUSTOMER',
+            name: 'MANAGE_APP:CRM:CUSTOMER:CUSTOMER',
             meta: {
-              code: 'CRM:CUSTOMER:CUSTOMER',
+              code: 'MANAGE_APP:CRM:CUSTOMER:CUSTOMER',
               title: '客户管理',
               icon: 'el-icon-User',
               hidden: false,
@@ -39,11 +39,11 @@ export const crmRoutes: ExtendedRouteRecordRaw[] = [
             }
           },
           {
-            path: '/crm/customer/member',
+            path: '/admin/crm/customer/member',
             component: () => import('@/modules/crm/member/CrmMember.vue'),
-            name: 'CRM:CUSTOMER:MEMBER',
+            name: 'MANAGE_APP:CRM:CUSTOMER:MEMBER',
             meta: {
-              code: 'CRM:CUSTOMER:MEMBER',
+              code: 'MANAGE_APP:CRM:CUSTOMER:MEMBER',
               title: '会员管理',
               icon: 'el-icon-Star',
               hidden: false,

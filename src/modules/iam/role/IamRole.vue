@@ -44,7 +44,7 @@
                     type="primary"
                     plain
                     @click.stop="showCreateUserSelectorDialog"
-                    v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                    v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
                     style="margin-right: 8px; height: 24px"
                   >
                     选择
@@ -71,7 +71,7 @@
                     type="primary"
                     plain
                     @click.stop="showUpdateUserSelectorDialog"
-                    v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                    v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
                     style="margin-right: 8px; height: 24px"
                   >
                     选择
@@ -107,13 +107,13 @@
           <!-- 操作按钮组 -->
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:AUTH:ROLE:PAGE_EXPAND']">
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:PAGE_EXPAND']">
                 <el-icon>
                   <Search />
                 </el-icon>
                 搜索
               </el-button>
-              <el-button @click="resetSearchForm" v-hasPermission="['SYSTEM:AUTH:ROLE:PAGE_EXPAND']">
+              <el-button @click="resetSearchForm" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:PAGE_EXPAND']">
                 <el-icon>
                   <Refresh />
                 </el-icon>
@@ -129,7 +129,7 @@
     <el-card ref="dataCardRef" class="box-card-data">
       <!-- 操作按钮 -->
       <div ref="operationButtonsRef" class="operation-buttons">
-        <el-button type="primary" size="default" @click="openAddDialog" v-hasPermission="['SYSTEM:AUTH:ROLE:CREATE']">添加</el-button>
+        <el-button type="primary" size="default" @click="openAddDialog" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:CREATE']">添加</el-button>
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
@@ -182,7 +182,7 @@
                 inactive-text="禁用"
                 inline-prompt
                 @change="toggleRoleStatus(row)"
-                v-hasPermission="['SYSTEM:AUTH:ROLE:UPDATE_STATUS']"
+                v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:UPDATE_STATUS']"
               />
               <el-tooltip v-if="row.defaultRole" content="默认角色不可操作" placement="top">
                 <el-switch
@@ -193,7 +193,7 @@
                   inactive-text="禁用"
                   inline-prompt
                   :disabled="row.defaultRole"
-                  v-hasPermission="['SYSTEM:AUTH:ROLE:UPDATE_STATUS']"
+                  v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:UPDATE_STATUS']"
                 />
               </el-tooltip>
             </template>
@@ -231,8 +231,10 @@
           <el-table-column label="操作" width="200" align="center" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click="openDetailDialog(row)" v-hasPermission="['SYSTEM:AUTH:ROLE:DETAIL']">详情</el-button>
-                <el-button size="small" type="primary" @click="openEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:ROLE:UPDATE']">编辑</el-button>
+                <el-button size="small" @click="openDetailDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:DETAIL']">详情</el-button>
+                <el-button size="small" type="primary" @click="openEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:UPDATE']">
+                  编辑
+                </el-button>
                 <el-dropdown trigger="click" @command="onRoleDropdownCommand($event, row)" placement="bottom-end">
                   <el-button size="small" type="info">
                     更多
@@ -240,11 +242,16 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="updatePermission" :disabled="!hasPermission(['SYSTEM:AUTH:ROLE:UPDATE_PERMISSION'])">
+                      <el-dropdown-item command="updatePermission" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:UPDATE_PERMISSION'])">
                         <el-icon><Key /></el-icon>
                         <span>修改权限</span>
                       </el-dropdown-item>
-                      <el-dropdown-item v-if="!row.defaultRole" command="delete" divided :disabled="!hasPermission(['SYSTEM:AUTH:ROLE:DELETE'])">
+                      <el-dropdown-item
+                        v-if="!row.defaultRole"
+                        command="delete"
+                        divided
+                        :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:DELETE'])"
+                      >
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
                       </el-dropdown-item>
@@ -271,7 +278,7 @@
           :total="pagination.total"
           @current-change="handlePageChange"
           @size-change="handlePageSizeChange"
-          v-hasPermission="['SYSTEM:AUTH:ROLE:PAGE_EXPAND']"
+          v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:PAGE_EXPAND']"
         />
       </div>
 
@@ -304,7 +311,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:AUTH:ROLE'
+    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE'
   })
   import { reactive, onMounted, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'

@@ -76,12 +76,12 @@ export default defineComponent({
         <div class="table-actions">
           {h(ElButton, {
             size: 'small',
-            disabled: !hasPermission(['SYSTEM:AUTH:ORGANIZATION:DETAIL']),
+            disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DETAIL']),
             onClick: () => props.onDetail?.(props.rowData),
             directives: [
               {
                 name: 'hasPermission',
-                value: ['SYSTEM:AUTH:ORGANIZATION:DETAIL']
+                value: ['SYSTEM:ACCESS_CONTROL:ORGANIZATION:DETAIL']
               }
             ]
           }, () => '详情')}
@@ -89,12 +89,12 @@ export default defineComponent({
           {h(ElButton, {
             size: 'small',
             type: 'primary',
-            disabled: !hasPermission(['SYSTEM:AUTH:ORGANIZATION:UPDATE']),
+            disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE']),
             onClick: () => props.onEdit?.(props.rowData),
             directives: [
               {
                 name: 'hasPermission',
-                value: ['SYSTEM:AUTH:ORGANIZATION:UPDATE']
+                value: ['SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE']
               }
             ]
           }, () => '编辑')}
@@ -113,11 +113,11 @@ export default defineComponent({
                 <ElDropdownMenu>
                   {h(ElDropdownItem, {
                     command: 'add',
-                    disabled: !hasPermission(['SYSTEM:AUTH:ORGANIZATION:CREATE']),
+                    disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE']),
                     directives: [
                       {
                         name: 'hasPermission',
-                        value: ['SYSTEM:AUTH:ORGANIZATION:CREATE']
+                        value: ['SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE']
                       }
                     ]
                   }, () => [
@@ -126,11 +126,11 @@ export default defineComponent({
                   ])}
                   {h(ElDropdownItem, {
                     command: 'changeParent',
-                    disabled: !hasPermission(['SYSTEM:AUTH:ORGANIZATION:UPDATE_PARENT']),
+                    disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE_PARENT']),
                     directives: [
                       {
                         name: 'hasPermission',
-                        value: ['SYSTEM:AUTH:ORGANIZATION:UPDATE_PARENT']
+                        value: ['SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE_PARENT']
                       }
                     ]
                   }, () => [
@@ -140,11 +140,11 @@ export default defineComponent({
                   {h(ElDropdownItem, {
                     command: 'delete',
                     divided: true,
-                    disabled: !hasPermission(['SYSTEM:AUTH:ORGANIZATION:DELETE']),
+                    disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DELETE']),
                     directives: [
                       {
                         name: 'hasPermission',
-                        value: ['SYSTEM:AUTH:ORGANIZATION:DELETE']
+                        value: ['SYSTEM:ACCESS_CONTROL:ORGANIZATION:DELETE']
                       }
                     ]
                   }, () => [

@@ -8,7 +8,7 @@
               <el-select v-model="state.searchForm.type" @change="handleTypeChange">
                 <el-option v-for="option in state.typeOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
-              <el-button type="primary" size="small" @click="showAddCategoryDialog()" v-hasPermission="['SYSTEM:BASIC_DATA:TAG_CATEGORY:CREATE']">
+              <el-button type="primary" size="small" @click="showAddCategoryDialog()" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:CREATE']">
                 添加分类
               </el-button>
             </div>
@@ -34,27 +34,27 @@
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu>
-                          <el-dropdown-item command="add" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_CATEGORY:CREATE'])">
+                          <el-dropdown-item command="add" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:CREATE'])">
                             <el-icon><Plus /></el-icon>
                             <span>添加子分类</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="edit" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE'])">
+                          <el-dropdown-item command="edit" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE'])">
                             <el-icon><Edit /></el-icon>
                             <span>修改</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="detail" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_CATEGORY:DETAIL'])">
+                          <el-dropdown-item command="detail" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:DETAIL'])">
                             <el-icon><View /></el-icon>
                             <span>详情</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="updateSort" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE_SORT'])">
+                          <el-dropdown-item command="updateSort" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE_SORT'])">
                             <el-icon><Sort /></el-icon>
                             <span>修改排序</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="updateParent" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE_PARENT'])">
+                          <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE_PARENT'])">
                             <el-icon><Connection /></el-icon>
                             <span>修改父分类</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_CATEGORY:DELETE'])">
+                          <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:DELETE'])">
                             <el-icon><Delete /></el-icon>
                             <span>删除</span>
                           </el-dropdown-item>
@@ -110,7 +110,7 @@
                           type="primary"
                           plain
                           @click.stop="showCreateUserSelectorDialog"
-                          v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                          v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
                           style="margin-right: 8px; height: 24px"
                         >
                           选择
@@ -137,7 +137,7 @@
                           type="primary"
                           plain
                           @click.stop="showUpdateUserSelectorDialog"
-                          v-hasPermission="['SYSTEM:AUTH:USER:PAGE_SIMPLE']"
+                          v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
                           style="margin-right: 8px; height: 24px"
                         >
                           选择
@@ -150,11 +150,11 @@
                 <!-- 操作按钮组 -->
                 <div class="button-group">
                   <el-form-item>
-                    <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:BASIC_DATA:TAG:PAGE_EXPAND']">
+                    <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:PAGE_EXPAND']">
                       <el-icon><Search /></el-icon>
                       搜索
                     </el-button>
-                    <el-button @click="resetSearch" v-hasPermission="['SYSTEM:BASIC_DATA:TAG:PAGE_EXPAND']">
+                    <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:PAGE_EXPAND']">
                       <el-icon><Refresh /></el-icon>
                       重置
                     </el-button>
@@ -167,7 +167,7 @@
           <!-- 数据卡片 -->
           <el-card ref="dataCardRef" class="box-card-data">
             <div ref="operationButtonsRef" class="operation-buttons">
-              <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:BASIC_DATA:TAG:CREATE']">添加标签</el-button>
+              <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:CREATE']">添加标签</el-button>
               <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
             </div>
 
@@ -211,7 +211,7 @@
                       inactive-text="禁用"
                       inline-prompt
                       @change="toggleStatus(row)"
-                      v-hasPermission="['SYSTEM:BASIC_DATA:TAG:UPDATE_STATUS']"
+                      v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE_STATUS']"
                     />
                   </template>
                 </el-table-column>
@@ -240,8 +240,8 @@
                       <el-button
                         size="small"
                         @click="showDetailDialog(row)"
-                        :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG:DETAIL'])"
-                        v-hasPermission="['SYSTEM:BASIC_DATA:TAG:DETAIL']"
+                        :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:DETAIL'])"
+                        v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:DETAIL']"
                       >
                         详情
                       </el-button>
@@ -249,8 +249,8 @@
                         size="small"
                         type="primary"
                         @click="showEditDialog(row)"
-                        :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG:UPDATE'])"
-                        v-hasPermission="['SYSTEM:BASIC_DATA:TAG:UPDATE']"
+                        :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE'])"
+                        v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE']"
                       >
                         编辑
                       </el-button>
@@ -261,23 +261,23 @@
                         </el-button>
                         <template #dropdown>
                           <el-dropdown-menu>
-                            <el-dropdown-item command="updateCode" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG:UPDATE_CODE'])">
+                            <el-dropdown-item command="updateCode" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE_CODE'])">
                               <el-icon><EditPen /></el-icon>
                               <span>修改编码</span>
                             </el-dropdown-item>
-                            <el-dropdown-item command="updateSort" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG:UPDATE_SORT'])">
+                            <el-dropdown-item command="updateSort" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE_SORT'])">
                               <el-icon><Sort /></el-icon>
                               <span>修改排序</span>
                             </el-dropdown-item>
-                            <el-dropdown-item command="updateCategory" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG:UPDATE_CATEGORY'])">
+                            <el-dropdown-item command="updateCategory" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE_CATEGORY'])">
                               <el-icon><Connection /></el-icon>
                               <span>修改分类</span>
                             </el-dropdown-item>
-                            <el-dropdown-item command="option" :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG_OPTION:CREATE'])">
+                            <el-dropdown-item command="option" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:CREATE'])">
                               <el-icon><Setting /></el-icon>
                               <span>选项</span>
                             </el-dropdown-item>
-                            <el-dropdown-item command="delete" divided :disabled="!hasPermission(['SYSTEM:BASIC_DATA:TAG:DELETE'])">
+                            <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:DELETE'])">
                               <el-icon><Delete /></el-icon>
                               <span>删除</span>
                             </el-dropdown-item>
@@ -299,7 +299,7 @@
                 :total="state.pagination.total"
                 @current-change="handlePageChange"
                 @size-change="handleSizeChange"
-                v-hasPermission="['SYSTEM:BASIC_DATA:TAG:PAGE_EXPAND']"
+                v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:PAGE_EXPAND']"
               />
             </div>
 
@@ -362,7 +362,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:BASIC_DATA:TAG'
+    name: 'MANAGE_APP:SYSTEM:BASIC_DATA:TAG'
   })
   import { ElTreeV2 } from 'element-plus'
   import { onMounted, reactive, ref, watch, computed, nextTick, onBeforeUnmount } from 'vue'

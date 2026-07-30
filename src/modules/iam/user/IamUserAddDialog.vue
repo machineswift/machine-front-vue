@@ -36,7 +36,9 @@
 
     <template #footer>
       <el-button @click="state.dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['SYSTEM:AUTH:USER:CREATE']">确定</el-button>
+      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:CREATE']">
+        确定
+      </el-button>
     </template>
   </el-dialog>
 </template>

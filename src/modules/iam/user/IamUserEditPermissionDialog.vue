@@ -45,7 +45,9 @@
         <el-tabs type="border-card" class="custom-role-tabs">
           <el-tab-pane v-for="option in state.roleTypeOptions" :key="option.code" :label="option.message">
             <div class="operation-buttons">
-              <el-button type="primary" size="small" @click="showRoleSelector(option)" v-hasPermission="['SYSTEM:AUTH:ROLE:PAGE_SIMPLE']">添加角色</el-button>
+              <el-button type="primary" size="small" @click="showRoleSelector(option)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:PAGE_SIMPLE']">
+                添加角色
+              </el-button>
             </div>
             <el-table :data="getFilteredRoleList(option.code)" border style="width: 100%" height="450">
               <el-table-column prop="name" label="角色名称" width="180" align="center" fixed="left" />
@@ -100,7 +102,9 @@
 
     <template #footer>
       <el-button @click="state.dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_PERMISSION']">保存</el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:UPDATE_PERMISSION']">
+        保存
+      </el-button>
     </template>
   </el-dialog>
 

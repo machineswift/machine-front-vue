@@ -5,10 +5,10 @@ import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
  */
 export const biRoutes: ExtendedRouteRecordRaw[] = [
   {
-    path: '/bi',
-    name: 'BI',
+    path: '/admin/bi',
+    name: 'MANAGE_APP:BI',
     meta: {
-      code: 'BI',
+      code: 'MANAGE_APP:BI',
       title: '商业智能',
       icon: 'el-icon-DataAnalysis',
       hidden: false,
@@ -16,11 +16,11 @@ export const biRoutes: ExtendedRouteRecordRaw[] = [
     },
     children: [
       {
-        path: '/bi/dashboard',
+        path: '/admin/bi/dashboard',
         component: () => import('@/modules/bi/components/BiDashboard.vue'),
-        name: 'BI:DASHBOARD',
+        name: 'MANAGE_APP:BI:DASHBOARD',
         meta: {
-          code: 'BI:DASHBOARD',
+          code: 'MANAGE_APP:BI:DASHBOARD',
           title: '智能看板',
           icon: 'el-icon-Monitor',
           hidden: false,

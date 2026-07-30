@@ -27,7 +27,7 @@
         <el-tab-pane v-for="tab in state.tabs" :key="tab.code" :label="tab.message" :name="tab.code">
           <!-- 操作按钮 -->
           <div class="operation-buttons">
-            <el-button type="primary" @click="handleAdd(null)" v-hasPermission="['SYSTEM:AUTH:ORGANIZATION:CREATE']">添加</el-button>
+            <el-button type="primary" @click="handleAdd(null)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE']">添加</el-button>
           </div>
 
           <!-- 搜索结果提示 -->
@@ -68,7 +68,7 @@
 <script lang="ts" setup>
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:AUTH:ORGANIZATION'
+    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION'
   })
   import Fuse from 'fuse.js'
   import { ElMessage, ElMessageBox } from 'element-plus'

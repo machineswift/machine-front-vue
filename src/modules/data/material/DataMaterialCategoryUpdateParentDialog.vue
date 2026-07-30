@@ -19,7 +19,12 @@
     </el-form>
     <template #footer>
       <el-button @click="state.dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE_PARENT']">
+      <el-button
+        type="primary"
+        @click="submitForm"
+        :loading="state.submitting"
+        v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE_PARENT']"
+      >
         确定
       </el-button>
     </template>

@@ -37,7 +37,7 @@
         @click="handleSubmit"
         :loading="state.loading"
         :disabled="!state.form.parentId"
-        v-hasPermission="['SYSTEM:AUTH:ORGANIZATION:UPDATE_PARENT']"
+        v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE_PARENT']"
       >
         确定
       </el-button>

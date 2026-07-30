@@ -120,11 +120,11 @@
                 <!-- 操作按钮组 -->
                 <div class="button-group">
                   <el-form-item>
-                    <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:BASIC_DATA:SHOP:PAGE_EXPAND']">
+                    <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:PAGE_EXPAND']">
                       <el-icon><Search /></el-icon>
                       搜索
                     </el-button>
-                    <el-button @click="resetSearch" v-hasPermission="['SYSTEM:BASIC_DATA:SHOP:PAGE_EXPAND']">
+                    <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:PAGE_EXPAND']">
                       <el-icon><Refresh /></el-icon>
                       重置
                     </el-button>
@@ -138,8 +138,8 @@
           <el-card ref="dataCardRef" class="box-card-data">
             <div ref="operationButtonsRef" class="operation-buttons">
               <div class="operation-buttons-left">
-                <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:BASIC_DATA:SHOP:CREATE']">添加</el-button>
-                <template v-if="hasPermission(['SYSTEM:BASIC_DATA:SHOP:EXPORT'])">
+                <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:CREATE']">添加</el-button>
+                <template v-if="hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:EXPORT'])">
                   <el-dropdown trigger="click" @command="handleExportCommand">
                     <el-button type="primary" size="default">
                       导出
@@ -225,8 +225,10 @@
                 <el-table-column label="操作" align="center" width="200" fixed="right">
                   <template #default="{ row }">
                     <div class="table-actions">
-                      <el-button size="small" @click="showDetailDialog(row)" v-hasPermission="['SYSTEM:BASIC_DATA:SHOP:DETAIL']">详情</el-button>
-                      <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:BASIC_DATA:SHOP:UPDATE']">编辑</el-button>
+                      <el-button size="small" @click="showDetailDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:DETAIL']">详情</el-button>
+                      <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:UPDATE']">
+                        编辑
+                      </el-button>
                       <el-dropdown trigger="click" @command="command => handleShopDropdownCommand(command, row)" placement="bottom-end">
                         <el-button size="small" type="info">
                           更多
@@ -234,11 +236,11 @@
                         </el-button>
                         <template #dropdown>
                           <el-dropdown-menu>
-                            <el-dropdown-item v-if="hasPermission(['SYSTEM:BASIC_DATA:SHOP:UPDATE_CERTIFICATE'])" command="certificate">
+                            <el-dropdown-item v-if="hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:UPDATE_CERTIFICATE'])" command="certificate">
                               <el-icon><Document /></el-icon>
                               <span>证件管理</span>
                             </el-dropdown-item>
-                            <el-dropdown-item v-if="hasPermission(['SYSTEM:BASIC_DATA:SHOP:UPDATE_LABEL_OPTION'])" command="label">
+                            <el-dropdown-item v-if="hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:UPDATE_LABEL_OPTION'])" command="label">
                               <el-icon><Collection /></el-icon>
                               <span>标签管理</span>
                             </el-dropdown-item>
@@ -251,7 +253,7 @@
               </el-table>
 
               <el-pagination
-                v-if="hasPermission(['SYSTEM:BASIC_DATA:SHOP:PAGE_EXPAND'])"
+                v-if="hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:PAGE_EXPAND'])"
                 ref="paginationRef"
                 v-model:current-page="state.pagination.current"
                 v-model:page-size="state.pagination.size"
@@ -285,7 +287,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:BASIC_DATA:SHOP'
+    name: 'MANAGE_APP:SYSTEM:BASIC_DATA:SHOP'
   })
   import { ElTreeV2 } from 'element-plus'
   import { ref, watch, onMounted, reactive, computed, nextTick, onBeforeUnmount } from 'vue'

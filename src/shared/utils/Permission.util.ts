@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash'
+import { cloneDeep } from 'lodash-es'
 import { routeLookup } from '@/shared/utils/RouteLookup.util'
 import { useIamUserStore } from '@/shared/stores/IamUser.store'
 import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
@@ -113,7 +113,7 @@ export class PermissionUtil {
  * }
  *
  * // 检查多个权限（任一满足即可）
- * if (hasPermission(['SYSTEM:BASIC_DATA:TAG:CREATE', 'SYSTEM:BASIC_DATA:TAG:UPDATE'])) {
+ * if (hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:CREATE', 'SYSTEM:BASIC_DATA:TAG:UPDATE'])) {
  *   // 有任一权限
  * }
  * ```

@@ -131,11 +131,11 @@
                 <!-- 操作按钮组 -->
                 <div class="button-group">
                   <el-form-item>
-                    <el-button type="primary" @click="handleSearch" v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']">
+                    <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_EXPAND']">
                       <el-icon><Search /></el-icon>
                       搜索
                     </el-button>
-                    <el-button @click="resetSearch" v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']">
+                    <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_EXPAND']">
                       <el-icon><Refresh /></el-icon>
                       重置
                     </el-button>
@@ -149,8 +149,10 @@
           <el-card ref="dataCardRef" class="box-card-data">
             <div ref="operationButtonsRef" class="operation-buttons">
               <div class="operation-buttons-left">
-                <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['SYSTEM:AUTH:USER:CREATE']">添加</el-button>
-                <el-dropdown trigger="click" @command="handleExportCommand" v-hasPermission="['SYSTEM:AUTH:USER:EXPORT']">
+                <el-button type="primary" size="default" @click="showAddDialog" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:CREATE']">
+                  添加
+                </el-button>
+                <el-dropdown trigger="click" @command="handleExportCommand" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:EXPORT']">
                   <el-button type="primary" size="default">
                     导出
                     <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -196,7 +198,7 @@
                       inactive-text="禁用"
                       inline-prompt
                       @change="toggleStatus(row)"
-                      v-hasPermission="['SYSTEM:AUTH:USER:UPDATE_STATUS']"
+                      v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:UPDATE_STATUS']"
                     />
                   </template>
                 </el-table-column>
@@ -221,7 +223,9 @@
                   <template #default="{ row }">
                     <div class="table-actions">
                       <el-button size="small" @click="showDetailDialog(row)">详情</el-button>
-                      <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['SYSTEM:AUTH:USER:UPDATE']">编辑</el-button>
+                      <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:UPDATE']">
+                        编辑
+                      </el-button>
                       <el-dropdown trigger="click" @command="command => handleUserDropdownCommand(command, row)" placement="bottom-end">
                         <el-button size="small" type="info">
                           更多
@@ -229,15 +233,22 @@
                         </el-button>
                         <template #dropdown>
                           <el-dropdown-menu>
-                            <el-dropdown-item command="updatePhone" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PHONE'])">
+                            <el-dropdown-item command="updatePhone" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:UPDATE_PHONE'])">
                               <el-icon><Phone /></el-icon>
                               <span>修改手机号</span>
                             </el-dropdown-item>
-                            <el-dropdown-item command="updatePermission" :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PERMISSION'])">
+                            <el-dropdown-item
+                              command="updatePermission"
+                              :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:UPDATE_PERMISSION'])"
+                            >
                               <el-icon><Key /></el-icon>
                               <span>修改权限</span>
                             </el-dropdown-item>
-                            <el-dropdown-item command="updatePassword" divided :disabled="!hasPermission(['SYSTEM:AUTH:USER:UPDATE_PASSWORD'])">
+                            <el-dropdown-item
+                              command="updatePassword"
+                              divided
+                              :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:UPDATE_PASSWORD'])"
+                            >
                               <el-icon><Lock /></el-icon>
                               <span>修改密码</span>
                             </el-dropdown-item>
@@ -259,7 +270,7 @@
                 :total="state.pagination.total"
                 @current-change="handlePageChange"
                 @size-change="handleSizeChange"
-                v-hasPermission="['SYSTEM:AUTH:USER:PAGE_EXPAND']"
+                v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_EXPAND']"
               />
             </div>
 
@@ -292,7 +303,7 @@
 <script setup lang="ts">
   // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
-    name: 'SYSTEM:AUTH:USER'
+    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER'
   })
   import { ElTreeV2 } from 'element-plus'
   import { onMounted, reactive, computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'

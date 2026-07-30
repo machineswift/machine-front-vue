@@ -70,7 +70,9 @@
     </el-form>
     <template #footer>
       <el-button @click="handleCancel">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['SYSTEM:AUTH:ROLE:UPDATE']">保存</el-button>
+      <el-button type="primary" @click="submitForm" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE:UPDATE']">
+        保存
+      </el-button>
     </template>
   </el-dialog>
 </template>
@@ -250,7 +252,7 @@
         const treeData = state.organizationTreeOptionsMap.get(orgType)
         if (!treeData || treeData.length === 0) return
 
-        let checkedKeys: string[] = []
+        let checkedKeys: string[]
 
         if (nodeDto.selectType === 'SELF_AND_SUB') {
           // 获取所有子节点ID（包括自身）
