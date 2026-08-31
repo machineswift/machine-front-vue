@@ -11,8 +11,8 @@ import type {
 } from '../type/CrmMember.type'
 
 // 创建会员
-const create = async (params: CrmMemberCreateRequestVo): Promise<IdResponse<string>> => {
-  return request.post<IdResponse<string>>(ADMIN_API_BASE_URL + 'admin/crm/member/create', params)
+const create = async (params: CrmMemberCreateRequestVo): Promise<IdResponse> => {
+  return request.post<IdResponse>(ADMIN_API_BASE_URL + 'admin/crm/member/create', params)
 }
 
 // 删除会员

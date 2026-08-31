@@ -41,7 +41,7 @@
   import { ElMessage } from 'element-plus'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
   import type { DataShopDetailResponseVo, DataShopUpdateShopLabelOptionRequestVo } from '@/modules/data/shop/type/DataShop.type'
-  import type { LabelOptionDto } from '@/modules/data/label/type/DataLabelOption.type'
+  import type { LabelOptionDto } from '@/modules/data/shop/type/DataShop.type'
 
   const props = defineProps<{
     modelValue: boolean
@@ -51,7 +51,6 @@
   const formRef = ref()
   const emit = defineEmits(['update:modelValue', 'success'])
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -67,7 +66,6 @@
     } as DataShopUpdateShopLabelOptionRequestVo
   })
 
-  // 获取门店数据和标签选项
   const fetchData = async () => {
     if (!props.shopId) {
       console.warn('shopId 为空，无法获取门店标签数据')
@@ -78,7 +76,6 @@
       state.loading = true
       state.form.id = props.shopId
 
-      // 获取门店详情
       const shopDetail: DataShopDetailResponseVo = await DataShopApi.detail({ id: props.shopId })
       state.shopName = shopDetail.name || ''
       state.form.labelOptionIdSet = shopDetail.labelOptionList?.map(item => item.id) || []
@@ -101,7 +98,6 @@
     }
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true
@@ -120,12 +116,10 @@
 
   // 对话框关闭时的处理
   const handleDialogClosed = () => {
-    // 重置表单数据
     state.form = {
       id: '',
       labelOptionIdSet: [] as string[]
     }
-    // 重置其他状态
     state.shopName = ''
     state.labelOptions = []
   }

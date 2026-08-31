@@ -79,7 +79,7 @@
   import { reactive, watch, computed } from 'vue'
   import { DataBrandApi } from '@/modules/data/brand/api/DataBrand.api'
   import DataBrandLogoPreview from '@/modules/data/brand/DataBrandLogoPreview.vue'
-  import type { DataBrandDetailResponseVo } from '@/modules/data/types'
+  import type { DataBrandDetailResponseVo } from '@/modules/data/brand/type/DataBrand.type'
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
@@ -88,7 +88,6 @@
 
   const emit = defineEmits(['update:modelValue', 'close'])
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -117,22 +116,20 @@
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
-  // 获取详情
   const fetchDetail = async () => {
     try {
       state.loading = true
       const response = await DataBrandApi.detail({ id: props.brandId })
-      state.detailData = response || {}
+      state.detailData = (response || {}) as DataBrandDetailResponseVo
     } catch (error) {
       console.error('获取品牌详情失败', error)
-      state.detailData = {}
+      state.detailData = {} as DataBrandDetailResponseVo
     } finally {
       state.loading = false
     }
   }
 
   const handleDialogClosed = () => {
-    // 重置详情数据
     state.detailData = {
       id: '',
       code: '',
@@ -149,7 +146,6 @@
       updateTime: 0
     }
 
-    // 重置加载状态
     state.loading = false
   }
 

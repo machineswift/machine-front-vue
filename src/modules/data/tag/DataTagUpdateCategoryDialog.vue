@@ -56,7 +56,6 @@
   const emit = defineEmits(['update:modelValue', 'success'])
   const formRef = ref<FormInstance>()
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -88,7 +87,6 @@
     categoryId: [{ required: true, validator: validateCategoryId, trigger: 'blur' }]
   }
 
-  // 加载分类树
   const loadCategoryTree = async () => {
     if (!props.type) return
     try {
@@ -104,7 +102,6 @@
     }
   }
 
-  // 加载标签数据
   const loadTagData = async () => {
     if (!props.tagId) return
     try {
@@ -138,7 +135,6 @@
     state.loading = false
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

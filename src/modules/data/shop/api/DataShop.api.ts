@@ -66,7 +66,7 @@ const bindOrganization = async (params: DataShopBindOrganizationRequestVo): Prom
 
 // 门店详情
 const detail = async (params: IdRequest): Promise<DataShopDetailResponseVo> => {
-  return request.post<DataBrandDetailResponseVo>(ADMIN_API_BASE_URL + 'admin/data/shop/detail', params)
+  return request.post<DataShopDetailResponseVo>(ADMIN_API_BASE_URL + 'admin/data/shop/detail', params)
 }
 
 // 查询门店证件
@@ -75,12 +75,12 @@ const getCertificate = async (params: IdRequest): Promise<DataShopCertificateRes
 }
 
 // 分页查询门店(应用于组件弹窗)
-const pageSimple = async (params: DataShopQueryPageRequestVo): Promise<DataBrandSimplePageResponse> => {
+const pageSimple = async (params: DataShopQueryPageRequestVo): Promise<DataShopSimplePageResponse> => {
   return request.post<DataShopSimplePageResponse>(ADMIN_API_BASE_URL + 'admin/data/shop/page_simple', params)
 }
 
 // 分页查询门店(应用于角色管理菜单)
-const pageExpand = async (params: DataShopQueryPageRequestVo): Promise<DataBrandExpandPageResponse> => {
+const pageExpand = async (params: DataShopQueryPageRequestVo): Promise<DataShopExpandPageResponse> => {
   return request.post<DataShopExpandPageResponse>(ADMIN_API_BASE_URL + 'admin/data/shop/page_expand', params)
 }
 

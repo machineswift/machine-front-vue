@@ -74,13 +74,13 @@
           <el-table-column prop="createName" label="创建人" width="120" show-overflow-tooltip />
 
           <el-table-column prop="createTime" label="创建时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
           </el-table-column>
 
           <el-table-column prop="updateName" label="更新人" width="120" show-overflow-tooltip />
 
           <el-table-column prop="updateTime" label="更新时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
           </el-table-column>
 
           <el-table-column label="操作" width="260" align="center" fixed="right">
@@ -189,7 +189,7 @@
   })
 
   import { ref, reactive, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'
-  import { ElMessageBox, ElTree } from 'element-plus'
+  import { ElMessageBox, ElTree, type TreeNodeData } from 'element-plus'
   import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
@@ -213,6 +213,7 @@
   const tableHeightReady = ref<boolean>(false)
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
+  let isFirstActivation = true
 
   const resolveCardElement = (target: unknown): HTMLElement | null => {
     if (target instanceof HTMLElement) return target
@@ -284,8 +285,7 @@
 
   const backCategoryTreeRef = ref<InstanceType<typeof ElTree>>()
 
-  // 工具函数
-  const formatTimestamp = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '-')
+  const formatTime = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '-')
 
   const setDefaultExpandedRows = (nodes: ScmFrontCategoryTreeExpandResponseVo[]) => {
     // 默认展开第一级
@@ -313,7 +313,6 @@
     return result
   }
 
-  // 搜索
   const handleSearch = () => {
     if (!hasSearchCriteria()) {
       resetTableDisplay()
@@ -430,7 +429,6 @@
     fetchCategoryTree()
   }
 
-  // 删除
   const handleDelete = async (row: ScmFrontCategoryTreeExpandResponseVo) => {
     try {
       await ScmFrontCategoryApi.destroy({ id: row.id })
@@ -499,7 +497,7 @@
 
   /** 缓存搜索关键字，避免每节点重复 toLowerCase */
   let cachedQuery = ''
-  const backCategoryFilterMethod = (value: string, data: ScmBackCategoryTreeSimpleResponseVo) => {
+  const backCategoryFilterMethod = (value: string, data: TreeNodeData) => {
     if (!value) return true
     cachedQuery = value.toLowerCase()
     return data.name?.toLowerCase().includes(cachedQuery) || false
@@ -529,7 +527,6 @@
   /** 请求去重 Promise，防止并发重复调用 */
   let fetchPromise: Promise<void> | null = null
 
-  // 获取数据
   const fetchCategoryTree = async () => {
     if (fetchPromise) return fetchPromise
 
@@ -560,8 +557,11 @@
     await updateTableHeight()
   })
 
-  /** keep-alive 切回标签时刷新数据 */
   onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
     await fetchCategoryTree()
   })
 
@@ -606,6 +606,10 @@
         gap: 8px;
         align-items: center;
         margin-left: auto;
+
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }

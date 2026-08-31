@@ -18,7 +18,7 @@ export class TreeDataUtil {
 
       // 复制节点并清空children
       const { children = [], ...rest } = node
-      const nodeCopy = { ...rest, children: [] } as T
+      const nodeCopy = { ...rest, children: [] } as unknown as T
       nodes.push(nodeCopy)
 
       // 反向压栈保持原始顺序

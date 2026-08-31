@@ -6,7 +6,7 @@
           <template #header>
             <div class="tree-header">
               <el-select v-model="state.searchForm.type" @change="handleTypeChange">
-                <el-option v-for="option in state.typeOptions" :key="option.code" :label="option.message" :value="option.code" />
+                <el-option v-for="option in typeOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
               <el-button type="primary" size="small" @click="showAddCategoryDialog()" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:CREATE']">
                 添加分类
@@ -21,14 +21,18 @@
               :data="currentCategoryTreeOptions"
               :props="state.categoryProps"
               :filter-method="categoryFilterMethod"
-              @node-click="handleCategoryNodeClick"
+              @node-click="(data: TreeNodeData) => handleCategoryNodeClick(data as DataTagCategoryTreeSimpleOutputDto)"
               :height="treeHeight"
             >
               <template #default="{ node, data }">
                 <div class="custom-tree-node">
                   <span class="tree-node-label">{{ node.label }}</span>
                   <div class="tree-node-actions">
-                    <el-dropdown trigger="click" @command="command => handleDropdownCommand(command, data)" placement="bottom-end">
+                    <el-dropdown
+                      trigger="click"
+                      @command="(command: string | number | object) => handleDropdownCommand(command as string, data as DataTagCategoryTreeSimpleOutputDto)"
+                      placement="bottom-end"
+                    >
                       <el-button type="primary" link class="tree-node-more-btn" @click.stop>
                         <el-icon><MoreFilled /></el-icon>
                       </el-button>
@@ -88,7 +92,7 @@
 
                   <el-form-item label="状态:" prop="status" class="form-item-responsive">
                     <el-select v-model="state.searchForm.status" placeholder="选择状态" clearable>
-                      <el-option v-for="option in state.statusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in statusOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
 
@@ -218,7 +222,7 @@
                 <el-table-column prop="sort" label="排序" align="center" width="100"></el-table-column>
                 <el-table-column prop="createTime" label="创建时间" align="center" width="180">
                   <template #default="{ row }">
-                    {{ formatTimestamp(row.createTime) }}
+                    {{ formatTime(row.createTime) }}
                   </template>
                 </el-table-column>
                 <el-table-column prop="updateName" label="修改人" align="center" width="160">
@@ -231,7 +235,7 @@
                 </el-table-column>
                 <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
                   <template #default="{ row }">
-                    {{ formatTimestamp(row.updateTime) }}
+                    {{ formatTime(row.updateTime) }}
                   </template>
                 </el-table-column>
                 <el-table-column label="操作" align="center" width="200" fixed="right">
@@ -254,7 +258,11 @@
                       >
                         编辑
                       </el-button>
-                      <el-dropdown trigger="click" @command="command => handleTagDropdownCommand(command, row)" placement="bottom-end">
+                      <el-dropdown
+                        trigger="click"
+                        @command="(command: string | number | object) => handleTagDropdownCommand(command as string, row)"
+                        placement="bottom-end"
+                      >
                         <el-button size="small" type="info">
                           更多
                           <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -310,12 +318,12 @@
           </el-card>
 
           <!-- 对话框组件 -->
-          <DataTagAddDialog v-model="state.dialog.add" :type="state.searchForm.type" @success="handleAddSuccess" />
+          <DataTagAddDialog v-model="state.dialog.add" :type="state.searchForm.type ?? undefined" @success="handleAddSuccess" />
           <DataTagDetailDialog v-model="state.dialog.detail" :tagId="state.currentTagId" />
           <DataTagEditDialog v-model="state.dialog.edit" :tagId="state.currentTagId" @success="handleEditSuccess" />
           <DataTagCategoryAddDialog
             v-model="state.dialog.addCategory"
-            :type="state.searchForm.type"
+            :type="state.searchForm.type ?? undefined"
             :parentId="state.currentCategoryParentId"
             @success="handleCategoryAddSuccess"
           />
@@ -329,7 +337,7 @@
           <DataTagCategoryUpdateParentDialog
             v-model="state.dialog.updateParentCategory"
             :categoryId="state.currentCategoryId"
-            :type="state.searchForm.type"
+            :type="state.searchForm.type ?? undefined"
             @success="handleCategoryUpdateParentSuccess"
           />
           <DataTagOptionDialog v-model="state.dialog.option" :tagId="state.currentTagId" />
@@ -338,16 +346,16 @@
           <DataTagUpdateCategoryDialog
             v-model="state.dialog.updateCategory"
             :tagId="state.currentTagId"
-            :type="state.searchForm.type"
+            :type="state.searchForm.type ?? undefined"
             @success="handleTagUpdateSuccess"
           />
-          <IamUserQuickSelectDialog
+          <BIamUserQuickSelectDialog
             v-model="state.createUserDialogVisible"
             @confirm="handleCreateUserSelect"
             :multiple="true"
             :selected-users="state.selectedCreateUsers"
           />
-          <IamUserQuickSelectDialog
+          <BIamUserQuickSelectDialog
             v-model="state.updateUserDialogVisible"
             @confirm="handleUpdateUserSelect"
             :multiple="true"
@@ -360,17 +368,17 @@
 </template>
 
 <script setup lang="ts">
-  // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:BASIC_DATA:TAG'
   })
-  import { ElTreeV2 } from 'element-plus'
-  import { onMounted, reactive, ref, watch, computed, nextTick, onBeforeUnmount } from 'vue'
+  import { onMounted, onActivated, reactive, ref, watch, computed, nextTick, onBeforeUnmount } from 'vue'
+  import { ElTreeV2, type TreeNodeData } from 'element-plus'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Refresh, Search, Plus, Edit, View, Sort, Connection, Delete, MoreFilled, ArrowDown, EditPen, Setting } from '@element-plus/icons-vue'
   import { DataTagApi } from '@/modules/data/tag/api/DataTag.api'
   import { DataTagCategoryApi } from '@/modules/data/tag/api/DataTagCategory.api'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_PROFILE_SUBJECT_TYPE, DICT_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import type { DataTagExpandListResponseVo, DataTagQueryPageRequestVo } from '@/modules/data/tag/type/DataTag.type'
   import type { DataTagCategoryTreeSimpleOutputDto } from '@/modules/data/tag/type/DataTagCategory.type'
@@ -386,14 +394,15 @@
   import DataTagUpdateCodeDialog from '@/modules/data/tag/DataTagUpdateCodeDialog.vue'
   import DataTagUpdateSortDialog from '@/modules/data/tag/DataTagUpdateSortDialog.vue'
   import DataTagUpdateCategoryDialog from '@/modules/data/tag/DataTagUpdateCategoryDialog.vue'
-  import IamUserQuickSelectDialog from '@/modules/iam/user/IamUserQuickSelectDialog.vue'
-  import type { IamUserSimpleListResponseVo } from '@/modules/iam/user/type/IamUser.type'
+  import BIamUserQuickSelectDialog from '@/modules/biam/user/BIamUserQuickSelectDialog.vue'
+  import type { BIamUserSimpleListResponseVo } from '@/modules/biam/user/type/BIamUser.type'
 
   // ==================== 组合式函数 ====================
-  const enumStore = useDictionaryEnumStore()
+  const { options: statusOptions, load: loadStatusOptions } = useEnumOptions(DICT_STATUS)
+  const { options: typeOptions, load: loadTypeOptions } = useEnumOptions(DICT_PROFILE_SUBJECT_TYPE)
 
   /** 格式化时间戳 */
-  const formatTimestamp = (timestamp: number): string => {
+  const formatTime = (timestamp: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
@@ -426,14 +435,9 @@
     categoryTreeRef.value?.setExpandedKeys([])
   }
 
-  // 统一状态管理
   const state = reactive({
     loading: false,
     showSearchCard: true,
-
-    //枚举状态
-    statusOptions: [],
-    typeOptions: [],
 
     //分类树相关状态
     categoryQuery: '',
@@ -446,17 +450,15 @@
     // 用户选择相关状态
     createUserDialogVisible: false,
     updateUserDialogVisible: false,
-    selectedCreateUsers: [] as IamUserSimpleListResponseVo[],
-    selectedUpdateUsers: [] as IamUserSimpleListResponseVo[],
+    selectedCreateUsers: [] as BIamUserSimpleListResponseVo[],
+    selectedUpdateUsers: [] as BIamUserSimpleListResponseVo[],
 
-    // 分页数据
     pagination: {
       current: 1,
       size: 20,
       total: 0
     },
 
-    // 搜索表单
     searchForm: {
       type: null as string | null,
       categoryIdSet: [] as string[],
@@ -503,6 +505,7 @@
   const treeHeightReady = ref<boolean>(false)
 
   let resizeObserver: ResizeObserver | null = null
+  let isFirstActivation = true
   let isFirstTableCalculation = true
   let isFirstTreeCalculation = true
 
@@ -584,14 +587,14 @@
   const selectedCreateUserIds = computed({
     get: () => state.selectedCreateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id } as IamUserSimpleListResponseVo))
+      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id } as BIamUserSimpleListResponseVo))
     }
   })
 
   const selectedUpdateUserIds = computed({
     get: () => state.selectedUpdateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id } as IamUserSimpleListResponseVo))
+      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id } as BIamUserSimpleListResponseVo))
     }
   })
 
@@ -604,7 +607,7 @@
   }
 
   /** 分类树过滤方法 */
-  const categoryFilterMethod = (query: string, node: DataTagCategoryTreeSimpleOutputDto) => {
+  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
     if (!query) return true
     return node.name?.toLowerCase().includes(query.toLowerCase()) || false
   }
@@ -630,7 +633,7 @@
       ...(searchForm.categoryIdSet.length > 0 && { categoryIdSet: searchForm.categoryIdSet }),
       ...(searchForm.code && { code: searchForm.code }),
       ...(searchForm.name && { name: searchForm.name }),
-      ...(searchForm.status && { status: searchForm.status }),
+      ...(searchForm.status ? { status: searchForm.status } : {}),
       ...(state.selectedCreateUsers.length > 0 && { createUserIdSet: state.selectedCreateUsers.map(u => u.id) }),
       ...(state.selectedUpdateUsers.length > 0 && { updateUserIdSet: state.selectedUpdateUsers.map(u => u.id) })
     }
@@ -809,7 +812,6 @@
   const handleCategoryUpdateParentSuccess = handleCategorySuccess
 
   // ==================== 用户选择相关方法 ====================
-  // 创建人选择相关方法
   const showCreateUserSelectorDialog = () => {
     state.createUserDialogVisible = true
   }
@@ -822,12 +824,11 @@
     state.selectedCreateUsers = state.selectedCreateUsers.filter(user => user.id !== userId)
   }
 
-  const handleCreateUserSelect = (users: IamUserSimpleListResponseVo[]) => {
+  const handleCreateUserSelect = (users: BIamUserSimpleListResponseVo[]) => {
     state.selectedCreateUsers = users
     state.createUserDialogVisible = false
   }
 
-  // 修改人选择相关方法
   const showUpdateUserSelectorDialog = () => {
     state.updateUserDialogVisible = true
   }
@@ -840,7 +841,7 @@
     state.selectedUpdateUsers = state.selectedUpdateUsers.filter(user => user.id !== userId)
   }
 
-  const handleUpdateUserSelect = (users: IamUserSimpleListResponseVo[]) => {
+  const handleUpdateUserSelect = (users: BIamUserSimpleListResponseVo[]) => {
     state.selectedUpdateUsers = users
     state.updateUserDialogVisible = false
   }
@@ -907,18 +908,24 @@
 
   // ==================== 初始化 ====================
   onMounted(async () => {
-    const [statusOptions, typeOptions] = await Promise.all([enumStore.getEnumDataAsync('StatusEnum'), enumStore.getEnumDataAsync('ProfileSubjectTypeEnum')])
-    state.statusOptions = statusOptions
-    state.typeOptions = typeOptions
+    await Promise.all([loadStatusOptions(), loadTypeOptions()])
 
-    if (typeOptions.length > 0) {
-      state.searchForm.type = typeOptions[0].code
-      await fetchData()
+    if (typeOptions.value.length > 0) {
+      state.searchForm.type = typeOptions.value[0].code
     }
+    await fetchData()
     await nextTick()
     setupResizeObserver()
     await calculateTableHeight()
     await calculateTreeHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await fetchData()
   })
 
   onBeforeUnmount(() => {
@@ -1050,6 +1057,10 @@
         margin-left: auto;
         white-space: nowrap;
         margin-top: 4px;
+
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }

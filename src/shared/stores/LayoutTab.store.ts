@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { RouteLocationNormalized, RouteLocationQuery, RouteParams } from 'vue-router'
+import type { RouteLocationNormalized, LocationQuery, RouteParams } from 'vue-router'
 
 export interface TabItem {
   path: string
@@ -10,7 +10,7 @@ export interface TabItem {
   icon?: string
   fixed?: boolean
   keepAlive?: boolean
-  query?: RouteLocationQuery
+  query?: LocationQuery
   params?: RouteParams
   // 存储标签页的状态数据（如筛选条件等）
   state?: Record<string, unknown>
@@ -53,10 +53,11 @@ export const useTabStore = defineStore(
         const tab: TabItem = {
           path: route.path,
           fullPath,
-          name: route.name as string,
-          title: (route.meta?.title as string) || route.name || '未命名',
+          name: typeof route.name === 'string' ? route.name : undefined,
+          title: (route.meta?.title as string) || (typeof route.name === 'string' ? route.name : '') || '未命名',
           icon: route.meta?.icon as string,
-          fixed: false,
+          // 首页标签默认固定，不可关闭
+          fixed: route.path === '/admin/home',
           keepAlive: route.meta?.keepAlive !== false,
           query: route.query,
           params: route.params,
@@ -199,14 +200,8 @@ export const useTabStore = defineStore(
   },
   {
     persist: {
-      enabled: true,
-      strategies: [
-        {
-          key: 'machine:tab',
-          storage: localStorage,
-          paths: ['tabs', 'activeTabPath']
-        }
-      ]
+      storage: localStorage,
+      pick: ['tabs', 'activeTabPath']
     }
   }
 )

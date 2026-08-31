@@ -3,7 +3,7 @@
     <el-form :model="state.form" :rules="rules" label-width="100px" ref="formRef" v-loading="state.loading">
       <el-form-item label="文件类型" prop="fileType">
         <el-select v-model="state.form.fileType" placeholder="请选择文件类型" style="width: 100%">
-          <el-option v-for="option in state.fileTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
+          <el-option v-for="option in fileTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
         </el-select>
       </el-form-item>
       <el-form-item label="上传文件" required>
@@ -46,11 +46,12 @@
   import { reactive, computed, ref, watch, nextTick } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance } from 'element-plus'
-  import { ElTreeV2 } from 'element-plus'
+  import { ElTreeV2, type TreeNodeData } from 'element-plus'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_DATA_FILE_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { DataMaterialCreateRequestVo } from '@/modules/data/material/type/DataMaterial.type'
   import type { DataMaterialCategorySimpleTreeResponseVo } from '@/modules/data/material/type/DataMaterialCategory.type'
@@ -66,7 +67,8 @@
   const formRef = ref<FormInstance>()
   const categoryTreeRef = ref<InstanceType<typeof ElTreeV2>>()
   const fileInputRef = ref<HTMLInputElement>()
-  const enumStore = useDictionaryEnumStore()
+
+  const { options: fileTypeOptions, load: loadFileTypeOptions } = useEnumOptions(DICT_DATA_FILE_TYPE)
 
   const categoryProps = { value: 'id', label: 'name', children: 'children', disabled: 'disabled' }
 
@@ -81,11 +83,11 @@
     selectedFileName: '',
     uploadedFileId: '',
     categoryQuery: '',
-    fileTypeOptions: [] as Array<{ code: string; message: string }>,
     categoryTreeOptions: [] as (DataMaterialCategorySimpleTreeResponseVo & { disabled?: boolean })[],
     form: {
       fileType: '',
       title: '',
+      fileTemp: { fileId: '' },
       categoryIdSet: [] as string[]
     } as DataMaterialCreateRequestVo & { categoryIdSet: string[] }
   })
@@ -133,14 +135,14 @@
     }
   }
 
-  const categoryFilterMethod = (query: string, node: DataMaterialCategorySimpleTreeResponseVo) => {
+  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
     if (!query) return true
     return node.name?.toLowerCase().includes(query.toLowerCase()) || false
   }
 
   const handleCategoryCheck = () => {
     if (categoryTreeRef.value) {
-      state.form.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(state.categoryTreeOptions, categoryTreeRef.value.getCheckedKeys())
+      state.form.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(state.categoryTreeOptions, categoryTreeRef.value.getCheckedKeys() as string[])
         .map(node => node.id)
         .filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID)
     }
@@ -153,7 +155,7 @@
   }
 
   const loadEnums = async () => {
-    state.fileTypeOptions = await enumStore.getEnumDataAsync('DataFileTypeEnum')
+    await loadFileTypeOptions()
   }
 
   const triggerFileSelect = () => {
@@ -184,7 +186,7 @@
   }
 
   const handleDialogClosed = () => {
-    state.form = { fileType: '', title: '', categoryIdSet: [] }
+    state.form = { fileType: '', title: '', fileTemp: { fileId: '' }, categoryIdSet: [] }
     state.categoryQuery = ''
     state.selectedFileName = ''
     state.uploadedFileId = ''
@@ -224,7 +226,7 @@
       if (modelValue) {
         await loadEnums()
         await loadCategoryTree()
-        state.form.fileType = state.fileTypeOptions[0]?.code ?? ''
+        state.form.fileType = fileTypeOptions.value[0]?.code ?? ''
         syncCategoryTreeCheckedKeys(state.form.categoryIdSet || [])
       }
     },

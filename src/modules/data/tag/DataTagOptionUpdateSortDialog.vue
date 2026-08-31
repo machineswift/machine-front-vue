@@ -45,7 +45,6 @@
   const emit = defineEmits(['update:modelValue', 'success'])
   const formRef = ref<FormInstance>()
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -71,7 +70,6 @@
     sort: [{ required: true, validator: validateSort, trigger: 'blur' }]
   }
 
-  // 加载选项数据
   const loadOptionData = async () => {
     if (!props.optionId) return
     try {
@@ -104,7 +102,6 @@
     state.loading = false
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

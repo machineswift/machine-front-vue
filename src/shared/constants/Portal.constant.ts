@@ -243,3 +243,45 @@ export const features = [
     services: ['iam-service', 'iam-app', 'security-starter']
   }
 ]
+
+/** 产品下拉菜单项 */
+export interface ProductCategoryItem {
+  code: string
+  title: string
+  desc: string
+  icon: string
+  gradient: string
+}
+
+/** 产品下拉菜单分类（由功能模块 features 按 featureCategories 分组派生） */
+export interface ProductCategory {
+  key: string
+  label: string
+  icon: string
+  products: ProductCategoryItem[]
+}
+
+const productCategoryIcons: Record<string, string> = {
+  market: '📣',
+  supply: '🏭',
+  manage: '🛠️',
+  intel: '🧠'
+}
+
+export const productCategories: ProductCategory[] = featureCategories
+  .filter(c => c.key !== 'all')
+  .map(c => ({
+    key: c.key,
+    label: c.label,
+    icon: productCategoryIcons[c.key] ?? '📦',
+    products: features
+      .filter(f => f.category === c.key)
+      .map(f => ({
+        code: f.code,
+        title: f.title,
+        desc: f.desc,
+        icon: f.icon,
+        gradient: f.gradient
+      }))
+  }))
+  .filter(c => c.products.length > 0)

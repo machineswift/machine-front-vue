@@ -2,34 +2,36 @@
   <div class="tabs-container">
     <div class="tabs-wrapper" ref="tabsWrapperRef">
       <draggable v-model="tabStore.tabs" :animation="200" item-key="fullPath" @end="onDragEnd" class="tabs-list" :disabled="false">
-        <template #item="{ element: tab }">
-          <div
-            :class="['tab-item', { active: tab.fullPath === tabStore.activeTabPath, fixed: tab.fixed }]"
-            @click="handleTabClick(tab)"
-            @contextmenu.prevent="handleContextMenu($event, tab)"
-          >
-            <el-icon v-if="tab.icon && tab.icon.startsWith('el-icon-')" class="tab-icon">
-              <component :is="tab.icon" />
+        <div
+          v-for="tab in tabStore.tabs"
+          :key="tab.fullPath"
+          :class="['tab-item', { active: tab.fullPath === tabStore.activeTabPath, fixed: tab.fixed }]"
+          @click="handleTabClick(tab)"
+          @contextmenu.prevent="handleContextMenu($event, tab)"
+        >
+          <el-icon v-if="isElIcon(tab.icon)" class="tab-icon">
+            <component :is="tab.icon" />
+          </el-icon>
+          <SvgIcon v-else-if="tab.icon" :name="tab.icon" width="14" height="14" class="tab-icon" />
+          <span class="tab-title">{{ tab.title }}</span>
+          <!-- 左：悬停时固定/取消固定（覆盖图标位置，大点击区域） -->
+          <div class="tab-pin-action" @click.stop>
+            <el-icon class="tab-action-icon pin-action-icon" @click="handleToggleFixed(tab)" :title="tab.fixed ? '取消固定' : '固定'">
+              <Unlock />
             </el-icon>
-            <SvgIcon v-if="tab.icon && !tab.icon.startsWith('el-icon-')" :name="tab.icon" width="14" height="14" class="tab-icon" />
-            <span class="tab-title">{{ tab.title }}</span>
-            <div class="tab-actions" @click.stop>
-              <el-icon class="tab-action-icon pin-icon" :class="{ pinned: tab.fixed }" @click="handleToggleFixed(tab)" :title="tab.fixed ? '取消固定' : '固定'">
-                <Lock v-if="tab.fixed" />
-                <Unlock v-else />
-              </el-icon>
-              <el-icon v-if="!tab.fixed" class="tab-action-icon close-icon" @click="handleClose(tab)" title="关闭">
-                <Close />
-              </el-icon>
-            </div>
           </div>
-        </template>
+          <!-- 右：悬停时关闭（仅非固定，靠右不变） -->
+          <div v-if="!tab.fixed" class="tab-actions" @click.stop>
+            <el-icon class="tab-action-icon close-icon" @click="handleClose(tab)" title="关闭">
+              <Close />
+            </el-icon>
+          </div>
+        </div>
       </draggable>
     </div>
 
     <!-- 右键菜单 -->
     <el-dropdown
-      ref="contextMenuRef"
       v-model:visible="contextMenuVisible"
       trigger="click"
       @command="handleContextMenuCommand"
@@ -40,7 +42,11 @@
       <div ref="contextMenuTriggerRef" style="position: fixed; width: 1px; height: 1px; pointer-events: none; opacity: 0; z-index: -1"></div>
       <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item :command="{ action: 'toggleFixed', tab: contextMenuTab }">
+          <el-dropdown-item :command="{ action: 'refresh', tab: contextMenuTab }">
+            <el-icon><Refresh /></el-icon>
+            <span>刷新</span>
+          </el-dropdown-item>
+          <el-dropdown-item divided :command="{ action: 'toggleFixed', tab: contextMenuTab }">
             <el-icon>
               <Lock v-if="contextMenuTab?.fixed" />
               <Unlock v-else />
@@ -61,7 +67,7 @@
   import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useTabStore, type TabItem } from '@/shared/stores/LayoutTab.store'
-  import { Close, Lock, Unlock } from '@element-plus/icons-vue'
+  import { Close, Lock, Refresh, Unlock } from '@element-plus/icons-vue'
   import { VueDraggable as Draggable } from 'vue-draggable-plus'
   import SvgIcon from '@/shared/components/SvgIcon.vue'
 
@@ -70,10 +76,12 @@
   const tabStore = useTabStore()
 
   const tabsWrapperRef = ref<HTMLElement>()
-  const contextMenuRef = ref()
   const contextMenuTriggerRef = ref<HTMLElement>()
   const contextMenuVisible = ref(false)
   const contextMenuTab = ref<TabItem | null>(null)
+
+  // 判断是否为 el-icon 图标
+  const isElIcon = (icon?: string) => !!icon && icon.startsWith('el-icon-')
 
   // 监听路由变化，自动添加标签页
   watch(
@@ -130,31 +138,9 @@
       return
     }
 
-    // 先设置活动标签页
+    // 标签来自 store，必然已存在，用 replace 避免历史记录堆积
     tabStore.setActiveTab(tab.fullPath)
-
-    // 如果目标标签页已经存在，使用 replace 避免在历史记录中创建新条目
-    // 同时确保 query 和 params 同步更新
-    const existingTab = tabStore.tabs.find(t => t.fullPath === tab.fullPath)
-    if (existingTab) {
-      // 更新标签页的 query 和 params 以匹配当前路由状态
-      existingTab.query = { ...tab.query }
-      existingTab.params = { ...tab.params }
-
-      // 使用 replace 而不是 push，避免触发不必要的路由变化
-      router.replace({
-        path: tab.path,
-        query: tab.query,
-        params: tab.params
-      })
-    } else {
-      // 新标签页，使用 push
-      router.push({
-        path: tab.path,
-        query: tab.query,
-        params: tab.params
-      })
-    }
+    router.replace({ path: tab.path, query: tab.query })
   }
 
   /**
@@ -170,8 +156,7 @@
       if (activeTab) {
         router.push({
           path: activeTab.path,
-          query: activeTab.query,
-          params: activeTab.params
+          query: activeTab.query
         })
       } else if (tabStore.tabs.length === 0) {
         // 如果没有标签页了，跳转到首页
@@ -197,15 +182,16 @@
 
     // 定位触发元素并显示菜单
     nextTick(() => {
-      if (contextMenuTriggerRef.value) {
-        // 设置触发元素的位置
-        const trigger = contextMenuTriggerRef.value
-        trigger.style.position = 'fixed'
-        trigger.style.left = `${event.clientX}px`
-        trigger.style.top = `${event.clientY}px`
-        trigger.style.width = '1px'
-        trigger.style.height = '1px'
-        trigger.style.pointerEvents = 'none'
+      const trigger = contextMenuTriggerRef.value
+      if (trigger) {
+        Object.assign(trigger.style, {
+          position: 'fixed',
+          left: `${event.clientX}px`,
+          top: `${event.clientY}px`,
+          width: '1px',
+          height: '1px',
+          pointerEvents: 'none'
+        })
         contextMenuVisible.value = true
       }
     })
@@ -221,6 +207,10 @@
     contextMenuVisible.value = false
 
     switch (action) {
+      case 'refresh': {
+        tabStore.refreshTab(tab.fullPath)
+        break
+      }
       case 'toggleFixed': {
         handleToggleFixed(tab)
         break
@@ -245,7 +235,6 @@
    * 拖拽结束
    */
   const onDragEnd = () => {
-    // 拖拽后保持固定标签在前
     tabStore.sortTabs()
   }
 
@@ -274,8 +263,7 @@
     overflow: hidden;
     display: flex;
     align-items: center;
-    padding: 0 12px 0 12px;
-    padding-right: 50px; // 为右侧按钮留出空间
+    padding: 0 76px 0 12px;
     border-bottom: 2px solid var(--el-border-color);
   }
 
@@ -348,16 +336,11 @@
       border-width: 3px;
       transform: translateY(-1px);
       box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.08);
-
-      .tab-actions {
-        opacity: 1;
-      }
     }
 
     &.active {
       border: 3px solid var(--el-border-color-darker);
       border-bottom: none;
-      height: 32px;
       padding: 4px 12px;
       z-index: 2;
       box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.1);
@@ -386,36 +369,21 @@
     }
 
     &.fixed {
-      border-left: 3px solid var(--el-border-color-darker);
+      border-left: 3px solid var(--el-color-primary);
       padding-left: 8px;
+      background: var(--el-color-primary-light-9);
 
-      .tab-icon {
-        position: relative;
-
-        &::after {
-          content: '';
-          position: absolute;
-          top: -2px;
-          right: -2px;
-          width: 5px;
-          height: 5px;
-          border: 1.5px solid var(--el-border-color-darker);
-          border-radius: 50%;
-          background: var(--el-bg-color);
-        }
+      &.active {
+        border-left: 3px solid var(--el-color-primary);
+        background: var(--el-color-primary-light-8);
       }
-    }
-
-    // 固定且激活的标签
-    &.fixed.active {
-      border-left: 3px solid var(--el-border-color-darker);
-      padding-left: 8px;
     }
   }
 
   .tab-icon {
     font-size: 12px;
     flex-shrink: 0;
+    transition: opacity 0.15s ease;
   }
 
   .tab-title {
@@ -426,28 +394,42 @@
     line-height: 1;
   }
 
+  .tab-pin-action,
   .tab-actions {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
-    gap: 3px;
     opacity: 0;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
-    margin-left: 3px;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 3;
+  }
+
+  .tab-pin-action {
+    left: 3px;
+  }
+
+  .tab-actions {
+    right: 4px;
+    padding-left: 8px;
+    border-radius: 3px;
+    background: linear-gradient(to right, transparent 0%, var(--el-bg-color) 40%);
   }
 
   .tab-action-icon {
-    font-size: 11px;
-    padding: 2px;
-    border-radius: 2px;
+    font-size: 12px;
+    padding: 3px;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
     border: 1.5px solid transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 16px;
-    min-height: 16px;
+    min-width: 20px;
+    min-height: 20px;
 
     &:hover {
       border-color: var(--el-border-color-darker);
@@ -460,27 +442,40 @@
       border-radius: 50%;
 
       &:hover {
-        border-color: var(--el-border-color-darker);
-        border-width: 2px;
         transform: rotate(90deg) scale(1.1);
-      }
-    }
-
-    &.pin-icon {
-      &.pinned {
-        opacity: 1;
-        border: 2px solid var(--el-border-color-darker);
-        border-style: dashed;
-      }
-
-      &:hover {
-        border-style: solid;
       }
     }
   }
 
-  // 活动标签页始终显示操作按钮
-  .tab-item.active .tab-actions {
-    opacity: 1;
+  .tab-item:hover {
+    .tab-icon {
+      opacity: 0;
+    }
+
+    .tab-pin-action,
+    .tab-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .tab-item:not(.fixed):hover .tab-title {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent calc(100% - 10px));
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent calc(100% - 10px));
+  }
+
+  .tab-item.fixed + .tab-item:not(.fixed) {
+    margin-left: 11px;
+  }
+
+  .tab-item.fixed + .tab-item:not(.fixed):not(.active)::before {
+    content: '';
+    position: absolute;
+    left: -11px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--el-border-color-darker);
   }
 </style>

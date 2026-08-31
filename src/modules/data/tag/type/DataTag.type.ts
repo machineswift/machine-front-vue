@@ -87,7 +87,7 @@ export interface DataTagExpandListResponseVo {
 // 智能标签分页查询接口请求参数
 export interface DataTagQueryPageRequestVo extends PageRequest {
   type: string
-  status: string
+  status?: string
   categoryIdSet?: string[]
   code?: string
   name?: string

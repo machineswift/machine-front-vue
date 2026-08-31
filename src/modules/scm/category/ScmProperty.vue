@@ -12,12 +12,12 @@
           </el-form-item>
           <el-form-item label="属性类型:" prop="propertyType">
             <el-select v-model="state.searchForm.propertyType" placeholder="全部" clearable style="width: 120px">
-              <el-option v-for="item in state.propertyTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
+              <el-option v-for="item in propertyTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
             </el-select>
           </el-form-item>
           <el-form-item label="输入方式:" prop="inputType">
             <el-select v-model="state.searchForm.inputType" placeholder="全部" clearable style="width: 120px">
-              <el-option v-for="item in state.inputTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
+              <el-option v-for="item in inputTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
             </el-select>
           </el-form-item>
           <el-form-item label="可搜索:" prop="isSearch">
@@ -54,14 +54,14 @@
           <el-table-column prop="propertyType" label="属性类型" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="propertyTypeTag(row.propertyType)" size="small">
-                {{ getEnumLabel(state.propertyTypeOptions, row.propertyType) }}
+                {{ getEnumLabel(propertyTypeOptions, row.propertyType) }}
               </el-tag>
             </template>
           </el-table-column>
 
           <el-table-column prop="inputType" label="输入方式" width="100" align="center">
             <template #default="{ row }">
-              {{ getEnumLabel(state.inputTypeOptions, row.inputType) }}
+              {{ getEnumLabel(inputTypeOptions, row.inputType) }}
             </template>
           </el-table-column>
 
@@ -92,13 +92,13 @@
           <el-table-column prop="createName" label="创建人" width="120" show-overflow-tooltip />
 
           <el-table-column prop="createTime" label="创建时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
           </el-table-column>
 
           <el-table-column prop="updateName" label="更新人" width="120" show-overflow-tooltip />
 
           <el-table-column prop="updateTime" label="更新时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
           </el-table-column>
 
           <el-table-column label="操作" width="220" align="center" fixed="right">
@@ -153,9 +153,10 @@
   import { ref, reactive, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { ScmPropertyApi } from '@/modules/scm/category/api/ScmProperty.api'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_SCM_PROPERTY_TYPE, DICT_SCM_ITEM_INPUT_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import type { ScmPropertyQueryPageRequestVo, ScmPropertyListResponseVo } from '@/modules/scm/category/type/ScmProperty.type'
-  import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
+  import type { IamDictionaryEnumInfoResponse } from '@/shared/types/DictionaryEnum.type'
   import ScmPropertyCreateDialog from '@/modules/scm/category/ScmPropertyCreateDialog.vue'
   import ScmPropertyEditDialog from '@/modules/scm/category/ScmPropertyEditDialog.vue'
   import ScmPropertyDetailDialog from '@/modules/scm/category/ScmPropertyDetailDialog.vue'
@@ -170,6 +171,7 @@
   const tableHeightReady = ref<boolean>(false)
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
+  let isFirstActivation = true
 
   const resolveCardElement = (target: unknown): HTMLElement | null => {
     if (target instanceof HTMLElement) return target
@@ -216,19 +218,18 @@
     resizeObserver.observe(dataCardEl)
   }
 
-  const dictEnumStore = useDictionaryEnumStore()
-
   // 字典枚举选项
   const enumNames = {
-    PROPERTY_TYPE: 'ScmProperityTypeEnum',
-    INPUT_TYPE: 'ScmItemInputTypeEnum'
+    PROPERTY_TYPE: DICT_SCM_PROPERTY_TYPE,
+    INPUT_TYPE: DICT_SCM_ITEM_INPUT_TYPE
   }
+
+  const { options: propertyTypeOptions, load: loadPropertyTypeOptions } = useEnumOptions(enumNames.PROPERTY_TYPE)
+  const { options: inputTypeOptions, load: loadInputTypeOptions } = useEnumOptions(enumNames.INPUT_TYPE)
 
   // 状态
   const state = reactive({
     loading: false,
-    propertyTypeOptions: [] as IamDictionaryEnumInfoResponse[],
-    inputTypeOptions: [] as IamDictionaryEnumInfoResponse[],
     searchForm: {
       code: '',
       name: '',
@@ -250,13 +251,15 @@
     }
   })
 
-  // 工具函数
-  const formatTimestamp = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '-')
+  const formatTime = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '-')
 
   const getEnumLabel = (options: IamDictionaryEnumInfoResponse[], code?: string): string => {
     if (!code) return '-'
     const item = options.find(o => o.code === code)
-    return item?.message || code
+    if (!item) {
+      throw new Error(`[dictionary] 枚举选项中不存在 code=${code}`)
+    }
+    return item.message
   }
 
   const propertyTypeTag = (type?: string): 'success' | 'warning' | 'info' => {
@@ -264,7 +267,6 @@
     return type ? map[type] || 'info' : 'info'
   }
 
-  // 搜索
   const buildSearchParams = (): ScmPropertyQueryPageRequestVo => {
     const params: ScmPropertyQueryPageRequestVo = {
       current: state.pagination.current,
@@ -327,7 +329,6 @@
     fetchPageData()
   }
 
-  // 删除
   const handleDelete = async (row: ScmPropertyListResponseVo) => {
     try {
       await ElMessageBox.confirm(`确定要删除属性「${row.name}」吗？删除后不可恢复。`, '删除确认', {
@@ -347,7 +348,6 @@
   /** 请求去重 Promise，防止并发重复调用 */
   let fetchPromise: Promise<void> | null = null
 
-  // 获取数据
   const fetchPageData = async () => {
     if (fetchPromise) return fetchPromise
 
@@ -370,15 +370,9 @@
     }
   }
 
-  // 加载字典枚举数据
   const loadEnumData = async () => {
     try {
-      const [propertyTypeData, inputTypeData] = await Promise.all([
-        dictEnumStore.getEnumDataAsync(enumNames.PROPERTY_TYPE),
-        dictEnumStore.getEnumDataAsync(enumNames.INPUT_TYPE)
-      ])
-      state.propertyTypeOptions = propertyTypeData
-      state.inputTypeOptions = inputTypeData
+      await Promise.all([loadPropertyTypeOptions(), loadInputTypeOptions()])
     } catch (error) {
       console.error('加载字典枚举失败', error)
     }
@@ -392,8 +386,11 @@
     await updateTableHeight()
   })
 
-  /** keep-alive 切回标签时刷新数据 */
   onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
     await fetchPageData()
   })
 
@@ -438,6 +435,10 @@
         gap: 8px;
         align-items: center;
         margin-left: auto;
+
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }

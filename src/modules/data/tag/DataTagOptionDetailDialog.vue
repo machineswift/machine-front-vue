@@ -23,9 +23,9 @@
       <el-descriptions-item label="排序">{{ state.detailData.sort || 0 }}</el-descriptions-item>
       <el-descriptions-item label="描述" :span="2">{{ state.detailData.description || '无' }}</el-descriptions-item>
       <el-descriptions-item label="创建人">{{ state.detailData.createName || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="创建时间">{{ formatTimestamp(state.detailData.createTime) }}</el-descriptions-item>
+      <el-descriptions-item label="创建时间">{{ formatTime(state.detailData.createTime) }}</el-descriptions-item>
       <el-descriptions-item label="修改人">{{ state.detailData.updateName || '无' }}</el-descriptions-item>
-      <el-descriptions-item label="修改时间">{{ formatTimestamp(state.detailData.updateTime) }}</el-descriptions-item>
+      <el-descriptions-item label="修改时间">{{ formatTime(state.detailData.updateTime) }}</el-descriptions-item>
     </el-descriptions>
 
     <template #footer>
@@ -47,7 +47,6 @@
 
   const emit = defineEmits(['update:modelValue'])
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -58,7 +57,7 @@
   })
 
   // 格式化时间戳
-  const formatTimestamp = (timestamp?: number): string => {
+  const formatTime = (timestamp?: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 

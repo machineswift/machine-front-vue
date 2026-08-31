@@ -2,22 +2,28 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { cloneDeep } from 'lodash-es'
 import router from '@/router'
+import { useSettingStore } from '@/shared/stores/SystemSetting.store'
+import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+import { CORE_DICTIONARY_ENUM_NAMES } from '@/shared/constants/DictionaryEnum.constant'
 import { PermissionUtil } from '@/shared/utils/Permission.util'
 import { constantRoute } from '@/shared/constants/Route.constant'
 import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
-import { IamAuthApi } from '@/modules/iam/auth/api/IamAuth.api'
-import { IamCurrentApi } from '@/modules/iam/auth/api/IamCurrent.api'
-import { IamPermissionApi } from '@/modules/iam/permission/api/IamPermission.api'
-import type { IamAuthLoginResponseVo } from '@/modules/iam/auth/type/IamAuth.type'
-import type { IamAuthCurrentUserResponseVo, IamAuthCurrentUserFunctionPermissionResponseVo } from '@/modules/iam/auth/type/IamCurrent.type'
-import type { IamPermissionTreeSimpleResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
-import type { RouteRecordNormalized } from 'vue-router'
+import { BIamAuthenticationCaptchaApi } from '@/modules/biam/authentication/api/BIamAuthenticationCaptcha.api'
+import { BIamAuthenticationCurrentApi } from '@/modules/biam/authentication/api/BIamAuthenticationCurrent.api'
+import { BIamPermissionApi } from '@/modules/biam/permission/api/BIamPermission.api'
+import type { BIamAuthLoginResponseVo } from '@/modules/biam/authentication/type/BIamAuthenticationCaptcha.type'
+import type {
+  BIamAuthCurrentUserResponseVo,
+  BIamAuthCurrentUserFunctionPermissionResponseVo
+} from '@/modules/biam/authentication/type/BIamAuthenticationCurrent.type'
+import type { BIamPermissionTreeSimpleResponseVo } from '@/modules/biam/permission/type/BIamPermission.type'
+import type { RouteRecordNormalized, RouteRecordRaw } from 'vue-router'
 
 export const useIamUserStore = defineStore(
   'machine:iamUser',
   () => {
     // State
-    const auth = ref<IamAuthLoginResponseVo>({
+    const auth = ref<BIamAuthLoginResponseVo>({
       accessToken: '',
       refreshToken: '',
       expiresIn: 0,
@@ -25,9 +31,9 @@ export const useIamUserStore = defineStore(
       lastRefreshTime: 0
     })
 
-    const currentUser = ref<IamAuthCurrentUserResponseVo | null>(null)
+    const currentUser = ref<BIamAuthCurrentUserResponseVo | null>(null)
 
-    const permissions = ref<IamAuthCurrentUserFunctionPermissionResponseVo>({
+    const permissions = ref<BIamAuthCurrentUserFunctionPermissionResponseVo>({
       roleCodeList: [],
       permissionCodeList: []
     })
@@ -45,7 +51,7 @@ export const useIamUserStore = defineStore(
     let refreshPromise: Promise<string> | null = null
 
     // Actions
-    const setAuthInfo = (authInfo: IamAuthLoginResponseVo) => {
+    const setAuthInfo = (authInfo: BIamAuthLoginResponseVo) => {
       auth.value = {
         ...authInfo,
         lastRefreshTime: Date.now()
@@ -67,6 +73,7 @@ export const useIamUserStore = defineStore(
     }
 
     const clearAuthInfo = () => {
+      useDictionaryEnumStore().clearAllEnumCache()
       auth.value = {
         accessToken: '',
         refreshToken: '',
@@ -82,32 +89,32 @@ export const useIamUserStore = defineStore(
       isAuthenticated.value = false
       // 清除暗黑模式（避免影响登录页样式）
       document.documentElement.className = ''
-      // 清除动态路由
       removeDynamicRoutes()
-      // 重置路由为静态路由
       menuRouters.value = constantRoute
       routeError.value = null
-      // 清空标签页
       import('@/shared/stores/LayoutTab.store').then(({ useTabStore }) => {
         const tabStore = useTabStore()
         tabStore.clearTabs()
       })
     }
 
-    const setUserInfo = (userInfo: IamAuthCurrentUserResponseVo) => {
+    const setUserInfo = (userInfo: BIamAuthCurrentUserResponseVo) => {
       currentUser.value = userInfo
     }
 
-    const setPermissionInfo = (permissionInfo: IamAuthCurrentUserFunctionPermissionResponseVo) => {
+    const setPermissionInfo = (permissionInfo: BIamAuthCurrentUserFunctionPermissionResponseVo) => {
       permissions.value = permissionInfo
     }
 
-    const login = async (authInfo: IamAuthLoginResponseVo) => {
+    const login = async (authInfo: BIamAuthLoginResponseVo) => {
       try {
         loading.value = true
         menuRouters.value = constantRoute
         setAuthInfo(authInfo)
-        const [userInfo, permissionInfo] = await Promise.all([IamCurrentApi.getCurrentUser(), IamCurrentApi.getFunctionPermission()])
+        const [userInfo, permissionInfo] = await Promise.all([
+          BIamAuthenticationCurrentApi.getCurrentUser(),
+          BIamAuthenticationCurrentApi.getFunctionPermission()
+        ])
 
         setUserInfo(userInfo)
         setPermissionInfo(permissionInfo)
@@ -116,6 +123,10 @@ export const useIamUserStore = defineStore(
           clearAuthInfo()
           return false
         }
+        useDictionaryEnumStore()
+          .preloadEnums([...CORE_DICTIONARY_ENUM_NAMES])
+          .catch(() => {})
+        useSettingStore().setIsCollapse(true)
         return true
       } catch (error) {
         clearAuthInfo()
@@ -127,7 +138,7 @@ export const useIamUserStore = defineStore(
 
     const logout = async () => {
       try {
-        await IamAuthApi.logout()
+        await BIamAuthenticationCaptchaApi.logout()
       } finally {
         clearAuthInfo()
         router.push('/website')
@@ -140,7 +151,7 @@ export const useIamUserStore = defineStore(
       }
 
       try {
-        const authInfo = await IamAuthApi.getAccessToken({
+        const authInfo = await BIamAuthenticationCaptchaApi.getAccessToken({
           refreshToken: auth.value.refreshToken
         })
         setAuthInfo({
@@ -158,7 +169,7 @@ export const useIamUserStore = defineStore(
       if (!auth.value.accessToken || !auth.value.expiresIn) {
         return false
       }
-      const expiresAt = auth.value.lastRefreshTime + auth.value.expiresIn * 1000
+      const expiresAt = (auth.value.lastRefreshTime ?? 0) + auth.value.expiresIn * 1000
       const now = Date.now()
       return now < expiresAt - 300000
     }
@@ -191,7 +202,10 @@ export const useIamUserStore = defineStore(
             await refreshToken()
           }
 
-          const [userInfo, permissionInfo] = await Promise.all([IamCurrentApi.getCurrentUser(), IamCurrentApi.getFunctionPermission()])
+          const [userInfo, permissionInfo] = await Promise.all([
+            BIamAuthenticationCurrentApi.getCurrentUser(),
+            BIamAuthenticationCurrentApi.getFunctionPermission()
+          ])
 
           setUserInfo(userInfo)
           setPermissionInfo(permissionInfo)
@@ -225,7 +239,7 @@ export const useIamUserStore = defineStore(
           removeDynamicRoutes()
 
           const constantRouteClone = cloneDeep(constantRoute)
-          const permissionTree: IamPermissionTreeSimpleResponseVo[] = (await IamPermissionApi.treeSimple({ id: 'manage_app' })).children
+          const permissionTree: BIamPermissionTreeSimpleResponseVo[] = (await BIamPermissionApi.treeSimple({ id: 'manage_app' })).children ?? []
 
           if (permissionTree.length === 0) {
             routeError.value = new Error('权限树为空')
@@ -250,12 +264,12 @@ export const useIamUserStore = defineStore(
           const layoutRoute = findRouteByCode(constantRouteClone, 'ADMIN:LAYOUT')
 
           if (layoutRoute) {
-            layoutRoute.children.push(...permissionTreeRoutes)
+            ;(layoutRoute.children ??= []).push(...permissionTreeRoutes)
           }
 
           // 重新注册所有路由（静态路由 + 动态路由）
           constantRouteClone.forEach((route: ExtendedRouteRecordRaw) => {
-            router.addRoute(route)
+            router.addRoute(route as RouteRecordRaw)
           })
 
           menuRouters.value = router.getRoutes()
@@ -277,7 +291,7 @@ export const useIamUserStore = defineStore(
       return routeLoadingPromise
     }
 
-    const getPermissionInfo = (): IamAuthCurrentUserFunctionPermissionResponseVo => {
+    const getPermissionInfo = (): BIamAuthCurrentUserFunctionPermissionResponseVo => {
       return permissions.value
     }
 
@@ -310,14 +324,8 @@ export const useIamUserStore = defineStore(
   },
   {
     persist: {
-      enabled: true,
-      strategies: [
-        {
-          key: 'machine:iamUser',
-          storage: localStorage,
-          paths: ['auth']
-        }
-      ]
+      storage: localStorage,
+      pick: ['auth']
     }
   }
 )

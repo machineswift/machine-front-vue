@@ -13,7 +13,12 @@
     <el-form :model="state.detailData" label-width="120px" v-loading="state.loading">
       <el-form-item label="所属厂商">
         <el-select v-model="state.detailData.providerId" placeholder="请选择厂商" filterable disabled style="width: 100%">
-          <el-option v-for="option in state.providerOptions" :key="option.id" :label="getProviderLabel(option.provider)" :value="option.id" />
+          <el-option
+            v-for="option in state.providerOptions"
+            :key="option.id"
+            :label="enumStore.getEnumLabel(DICT_AI_PROVIDER, option.provider)"
+            :value="option.id"
+          />
         </el-select>
       </el-form-item>
 
@@ -35,7 +40,7 @@
 
       <el-form-item label="能力类型">
         <el-checkbox-group v-model="state.detailData.features.capabilityList" disabled>
-          <el-checkbox v-for="option in state.capabilityOptions" :key="option.code" :label="option.code" :value="option.code">
+          <el-checkbox v-for="option in capabilityOptions" :key="option.code" :label="option.code" :value="option.code">
             {{ option.message }}
           </el-checkbox>
         </el-checkbox-group>
@@ -43,7 +48,7 @@
 
       <el-form-item label="模型特性">
         <el-checkbox-group v-model="state.detailData.features.featureList" disabled>
-          <el-checkbox v-for="option in state.featureOptions" :key="option.code" :label="option.code" :value="option.code">
+          <el-checkbox v-for="option in featureOptions" :key="option.code" :label="option.code" :value="option.code">
             {{ option.message }}
           </el-checkbox>
         </el-checkbox-group>
@@ -130,8 +135,14 @@
   import { AiResourceModelApi } from '@/modules/ai/resource/model/api/AiResourceModel.api'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
-  import type { AiResourceModelDetailResponseVo } from '@/modules/ai/resource/model/type/AiResourceModel.type'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_AI_MODEL_CAPABILITY, DICT_AI_MODEL_FEATURE, DICT_AI_PROVIDER } from '@/shared/constants/DictionaryEnum.constant'
+  import type { AiResourceModelDetailResponseVo, AiModelFeaturesDto, TokenLimits } from '@/modules/ai/resource/model/type/AiResourceModel.type'
   import type { AiResourceProviderListResponseVo } from '@/modules/ai/resource/provider/type/AiResourceProvider.type'
+
+  type DetailData = AiResourceModelDetailResponseVo & {
+    features: AiModelFeaturesDto & { tokenLimits: TokenLimits }
+  }
 
   const DEFAULT_FEATURES = {
     capabilityList: [],
@@ -144,6 +155,9 @@
   }
 
   const enumStore = useDictionaryEnumStore()
+
+  const { options: capabilityOptions, load: loadCapabilityOptions } = useEnumOptions(DICT_AI_MODEL_CAPABILITY)
+  const { options: featureOptions, load: loadFeatureOptions } = useEnumOptions(DICT_AI_MODEL_FEATURE)
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
@@ -160,25 +174,18 @@
     loading: false,
 
     providerOptions: [] as AiResourceProviderListResponseVo[],
-    capabilityOptions: [] as Array<{ code: string; message: string }>,
-    featureOptions: [] as Array<{ code: string; message: string }>,
 
     detailData: {
       features: { ...DEFAULT_FEATURES, tokenLimits: { ...DEFAULT_FEATURES.tokenLimits } }
-    } as AiResourceModelDetailResponseVo
+    } as unknown as DetailData
   })
-
-  const getProviderLabel = (provider: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('AiProviderEnum', provider)
-    return enumItem?.message || provider
-  }
 
   const formatTime = (timestamp: number) => {
     return timestamp ? new Date(timestamp).toLocaleString() : ''
   }
 
   const handleDialogClosed = () => {
-    state.detailData = { features: { ...DEFAULT_FEATURES, tokenLimits: { ...DEFAULT_FEATURES.tokenLimits } } } as AiResourceModelDetailResponseVo
+    state.detailData = { features: { ...DEFAULT_FEATURES, tokenLimits: { ...DEFAULT_FEATURES.tokenLimits } } } as unknown as DetailData
   }
 
   const fetchData = async () => {
@@ -188,7 +195,7 @@
       state.detailData = {
         ...res,
         features: res.features ?? { ...DEFAULT_FEATURES, tokenLimits: { ...DEFAULT_FEATURES.tokenLimits } }
-      }
+      } as unknown as DetailData
     } catch (error) {
       console.error('获取模型详情失败', error)
     } finally {
@@ -200,15 +207,14 @@
     [() => props.modelValue, () => props.modelId],
     async ([modelValue, modelId]) => {
       if (modelValue && modelId) {
-        const [providerList, capabilityOptions, featureOptions] = await Promise.all([
+        const [providerList] = await Promise.all([
           AiResourceProviderApi.listSimple().catch(() => []),
-          enumStore.getEnumDataAsync('AiModelCapabilityEnum'),
-          enumStore.getEnumDataAsync('AiModelFeatureEnum')
+          enumStore.getEnumDataAsync(DICT_AI_PROVIDER),
+          loadCapabilityOptions(),
+          loadFeatureOptions()
         ])
 
         state.providerOptions = providerList
-        state.capabilityOptions = capabilityOptions
-        state.featureOptions = featureOptions
 
         await fetchData()
       }

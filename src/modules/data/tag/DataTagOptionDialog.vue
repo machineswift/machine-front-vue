@@ -29,7 +29,7 @@
               active-text="启用"
               inactive-text="禁用"
               inline-prompt
-              @change="val => toggleStatus(row, val)"
+              @change="(val: unknown) => toggleStatus(row, val as string)"
               v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_STATUS']"
             />
           </template>
@@ -37,12 +37,12 @@
         <el-table-column prop="sort" label="排序" align="center" width="100"></el-table-column>
         <el-table-column prop="createTime" label="创建时间" align="center" width="180">
           <template #default="{ row }">
-            {{ formatTimestamp(row.createTime) }}
+            {{ formatTime(row.createTime) }}
           </template>
         </el-table-column>
         <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
           <template #default="{ row }">
-            {{ formatTimestamp(row.updateTime) }}
+            {{ formatTime(row.updateTime) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" align="center" width="200" fixed="right">
@@ -52,7 +52,7 @@
               <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE']">
                 编辑
               </el-button>
-              <el-dropdown trigger="click" @command="command => handleMoreCommand(command, row)" placement="bottom-end">
+              <el-dropdown trigger="click" @command="(command: string | number | object) => handleMoreCommand(command as string, row)" placement="bottom-end">
                 <el-button size="small" type="info">
                   更多
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -136,7 +136,7 @@
     updateSort: 'updateSort'
   }
 
-  const formatTimestamp = (timestamp?: number): string => {
+  const formatTime = (timestamp?: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 

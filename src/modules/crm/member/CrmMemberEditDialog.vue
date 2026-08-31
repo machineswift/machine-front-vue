@@ -29,7 +29,7 @@
 
       <el-form-item label="性别" prop="gender">
         <el-select v-model="state.formData.gender" placeholder="请选择性别">
-          <el-option v-for="option in state.memberGenders" :key="option.code" :label="option.message" :value="option.code" />
+          <el-option v-for="option in memberGenders" :key="option.code" :label="option.message" :value="option.code" />
         </el-select>
       </el-form-item>
 
@@ -54,10 +54,11 @@
 </template>
 
 <script setup lang="ts">
+  import { reactive, watch, computed, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormItemRule } from 'element-plus'
-  import { reactive, watch, computed, ref } from 'vue'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_GENDER } from '@/shared/constants/DictionaryEnum.constant'
   import { CrmMemberApi } from '@/modules/crm/member/api/CrmMember.api'
   import type { CrmMemberUpdateRequestVo } from '@/modules/crm/member/type/CrmMember.type'
 
@@ -67,8 +68,10 @@
   })
 
   const formRef = ref()
-  const enumStore = useDictionaryEnumStore()
   const emit = defineEmits(['update:modelValue', 'success'])
+
+  // 性别枚举选项
+  const { options: memberGenders, load: loadGenderOptions } = useEnumOptions(DICT_GENDER)
 
   const DEFAULT_FORM_DATA: CrmMemberUpdateRequestVo = {
     id: '',
@@ -79,7 +82,6 @@
     birthDay: undefined
   }
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -87,11 +89,9 @@
     }),
     loading: false,
     submitting: false,
-    memberGenders: [] as Array<{ code: string; message: string }>,
     formData: { ...DEFAULT_FORM_DATA },
     email: '',
-    phone: '',
-    enumInitialized: false
+    phone: ''
   })
 
   // 表单验证规则
@@ -132,15 +132,10 @@
     birthDay: [{ validator: validateBirthDay, trigger: 'blur' }]
   }
 
-  // 初始化枚举数据
-  const initEnumData = () => {
-    if (!state.enumInitialized) {
-      state.memberGenders = enumStore.getEnumDataSync('GenderEnum')
-      state.enumInitialized = true
-    }
+  const initEnumData = async () => {
+    await loadGenderOptions()
   }
 
-  // 获取会员数据
   const fetchData = async () => {
     try {
       state.loading = true
@@ -191,7 +186,6 @@
     { immediate: false }
   )
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

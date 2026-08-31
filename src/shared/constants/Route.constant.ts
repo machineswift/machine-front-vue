@@ -185,9 +185,9 @@ export const constantRoute: ExtendedRouteRecordRaw[] = [
             component: () => import('@/views/admin/home/AppHome.vue'),
             name: 'ADMIN:HOME',
             meta: {
-              title: '首页',
+              title: '应用中心',
               code: 'ADMIN:HOME',
-              icon: 'el-icon-House',
+              icon: 'el-icon-Grid',
               hidden: false
             }
           }

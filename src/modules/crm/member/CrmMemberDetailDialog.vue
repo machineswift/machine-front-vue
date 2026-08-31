@@ -27,7 +27,7 @@
         {{ state.detailData.name || '无' }}
       </el-descriptions-item>
       <el-descriptions-item label="性别">
-        {{ getMemberGenderLabel(state.detailData.gender) }}
+        {{ state.detailData.gender ? enumStore.getEnumLabel(DICT_GENDER, state.detailData.gender) : '无' }}
       </el-descriptions-item>
       <el-descriptions-item label="出生年份">
         {{ state.detailData.birthYear || '无' }}
@@ -40,10 +40,10 @@
         {{ state.detailData.updateName || '无' }}
       </el-descriptions-item>
       <el-descriptions-item label="创建时间">
-        {{ formatTimestamp(state.detailData.createTime) }}
+        {{ formatTime(state.detailData.createTime) }}
       </el-descriptions-item>
       <el-descriptions-item label="更新时间">
-        {{ formatTimestamp(state.detailData.updateTime) }}
+        {{ formatTime(state.detailData.updateTime) }}
       </el-descriptions-item>
     </el-descriptions>
 
@@ -57,6 +57,7 @@
   import { reactive, watch, computed } from 'vue'
   import { CrmMemberApi } from '@/modules/crm/member/api/CrmMember.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_GENDER } from '@/shared/constants/DictionaryEnum.constant'
   import type { CrmMemberDetailResponseVo } from '@/modules/crm/member/type/CrmMember.type'
   import { ElMessage } from 'element-plus'
 
@@ -69,7 +70,6 @@
 
   const emit = defineEmits(['update:modelValue'])
 
-  // 统一状态管理
   const state = reactive({
     visible: computed({
       get: () => props.modelValue,
@@ -79,19 +79,11 @@
     detailData: {} as Partial<CrmMemberDetailResponseVo>
   })
 
-  // 获取会员性别标签
-  const getMemberGenderLabel = (type?: string): string => {
-    if (!type) return '无'
-    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
-    return enumItem?.message || type
-  }
-
   // 格式化时间戳
-  const formatTimestamp = (timestamp?: number): string => {
+  const formatTime = (timestamp?: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
-  // 获取会员详情
   const fetchData = async () => {
     if (!props.memberId) return
 

@@ -21,7 +21,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="文件类型">
-            <el-tag size="small">{{ getFileTypeLabel(detailData.fileType) }}</el-tag>
+            <el-tag size="small">{{ detailData.fileType ? enumStore.getEnumLabel(DICT_DATA_FILE_TYPE, detailData.fileType) : '无' }}</el-tag>
           </el-form-item>
         </el-col>
       </el-row>
@@ -29,12 +29,18 @@
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="处理状态">
-            <el-input :model-value="getProcessStatusLabel(detailData.processStatus)" disabled />
+            <el-input
+              :model-value="detailData.processStatus ? enumStore.getEnumLabel(DICT_DATA_MATERIAL_PROCESS_STATUS, detailData.processStatus) : '无'"
+              disabled
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="业务状态">
-            <el-input :model-value="getBusinessStatusLabel(detailData.businessStatus)" disabled />
+            <el-input
+              :model-value="detailData.businessStatus ? enumStore.getEnumLabel(DICT_DATA_MATERIAL_BUSINESS_STATUS, detailData.businessStatus) : '无'"
+              disabled
+            />
           </el-form-item>
         </el-col>
       </el-row>
@@ -42,7 +48,7 @@
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="审核状态">
-            <el-input :model-value="getAuditStatusLabel(detailData.auditStatus)" disabled />
+            <el-input :model-value="detailData.auditStatus ? enumStore.getEnumLabel(DICT_DATA_MATERIAL_AUDIT_STATUS, detailData.auditStatus) : '无'" disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -103,12 +109,12 @@
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="创建时间">
-            <el-input :model-value="formatTimestamp(detailData.createTime)" disabled />
+            <el-input :model-value="formatTime(detailData.createTime)" disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="修改时间">
-            <el-input :model-value="formatTimestamp(detailData.updateTime)" disabled />
+            <el-input :model-value="formatTime(detailData.updateTime)" disabled />
           </el-form-item>
         </el-col>
       </el-row>
@@ -124,6 +130,12 @@
   import { ref, watch, computed } from 'vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import {
+    DICT_DATA_FILE_TYPE,
+    DICT_DATA_MATERIAL_PROCESS_STATUS,
+    DICT_DATA_MATERIAL_BUSINESS_STATUS,
+    DICT_DATA_MATERIAL_AUDIT_STATUS
+  } from '@/shared/constants/DictionaryEnum.constant'
   import type { DataMaterialDetailResponseVo } from '@/modules/data/material/type/DataMaterial.type'
 
   const props = defineProps({
@@ -148,11 +160,7 @@
     return (props.categoryNameMap && props.categoryNameMap[categoryId]) || categoryId
   }
 
-  const getFileTypeLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataFileTypeEnum', code)?.message || code : '无')
-  const getProcessStatusLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataMaterialProcessStatusEnum', code)?.message || code : '无')
-  const getBusinessStatusLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataMaterialBusinessStatusEnum', code)?.message || code : '无')
-  const getAuditStatusLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataMaterialAuditStatusEnum', code)?.message || code : '无')
-  const formatTimestamp = (timestamp?: number) => (timestamp ? new Date(timestamp).toLocaleString() : '无')
+  const formatTime = (timestamp?: number) => (timestamp ? new Date(timestamp).toLocaleString() : '无')
 
   const loadAttachmentUrl = async (materialId: string) => {
     if (!materialId) {

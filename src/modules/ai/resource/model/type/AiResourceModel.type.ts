@@ -1,21 +1,14 @@
 import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
-// 扩展特性-能力枚举
-export type AiModelCapabilityEnum = 'CHAT' | 'VISION' | 'ASR' | 'IMAGE' | 'TTS' | 'VIDEO' | 'EMBEDDING'
-
-// 扩展特性-特性枚举
-export type AiModelFeatureEnum = 'DEEP_THINKING' | 'THINKING_MODE' | 'STREAMING' | 'TOOL_STREAMING' | 'TOOL_CALL' | 'CONTEXT_CACHE' | 'STRUCTURED_OUTPUT'
-
 // Token限制
 export interface TokenLimits {
   contextLength?: number
   outputLength?: number
 }
 
-// 模型扩展特性
 export interface AiModelFeaturesDto {
-  capabilityList?: AiModelCapabilityEnum[]
-  featureList?: AiModelFeatureEnum[]
+  capabilityList?: string[]
+  featureList?: string[]
   temperature?: number
   tokenLimits?: TokenLimits
 }

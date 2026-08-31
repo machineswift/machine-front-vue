@@ -2,13 +2,13 @@ import { cloneDeep } from 'lodash-es'
 import { routeLookup } from '@/shared/utils/RouteLookup.util'
 import { useIamUserStore } from '@/shared/stores/IamUser.store'
 import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
-import type { IamPermissionTreeSimpleResponseVo } from '@/modules/iam/permission/type/IamPermission.type'
+import type { BIamPermissionTreeSimpleResponseVo } from '@/modules/biam/permission/type/BIamPermission.type'
 
 export class PermissionUtil {
   /**
    * 递归删除权限树中 resourceType 为 BUTTON 的节点
    */
-  public static removeButtonNodes(treeNodes: IamPermissionTreeSimpleResponseVo[]): IamPermissionTreeSimpleResponseVo[] {
+  public static removeButtonNodes(treeNodes: BIamPermissionTreeSimpleResponseVo[]): BIamPermissionTreeSimpleResponseVo[] {
     return treeNodes
       .filter(node => node.resourceType !== 'BUTTON')
       .map(node => ({
@@ -20,7 +20,7 @@ export class PermissionUtil {
   /**
    * 根据权限编码列表过滤权限树
    */
-  public static filterByPermissionCodes(treeNodes: IamPermissionTreeSimpleResponseVo[], permissionCodeList: string[]): IamPermissionTreeSimpleResponseVo[] {
+  public static filterByPermissionCodes(treeNodes: BIamPermissionTreeSimpleResponseVo[], permissionCodeList: string[]): BIamPermissionTreeSimpleResponseVo[] {
     if (!permissionCodeList || permissionCodeList.length === 0) {
       return []
     }
@@ -43,11 +43,11 @@ export class PermissionUtil {
   /**
    * 将权限树转换为路由配置
    */
-  public static convertPermissionTreeToRoutes(permissionTree: IamPermissionTreeSimpleResponseVo[]): ExtendedRouteRecordRaw[] {
+  public static convertPermissionTreeToRoutes(permissionTree: BIamPermissionTreeSimpleResponseVo[]): ExtendedRouteRecordRaw[] {
     // 存储最终生成的路由配置
     const resultRoutes: ExtendedRouteRecordRaw[] = []
 
-    const processNode = (node: IamPermissionTreeSimpleResponseVo): ExtendedRouteRecordRaw | null => {
+    const processNode = (node: BIamPermissionTreeSimpleResponseVo): ExtendedRouteRecordRaw | null => {
       // 通过权限码查找对应的路由配置
       const route = routeLookup.getByCode(node.code)
 
@@ -71,18 +71,20 @@ export class PermissionUtil {
       const routeClone = cloneDeep(route)
 
       // 如果权限节点有名称，则覆盖路由的title
-      if (node.name) {
+      if (node.name && routeClone.meta) {
         routeClone.meta.title = node.name
       }
 
       // 如果权限节点有图标，则覆盖路由的icon
-      if (node.icon) {
+      if (node.icon && routeClone.meta) {
         routeClone.meta.icon = node.icon
       }
 
       // 处理子节点（如果有）
       if (node.children && node.children.length > 0) {
         routeClone.children = node.children.map(processNode).filter(Boolean) as ExtendedRouteRecordRaw[]
+      } else {
+        routeClone.children = undefined
       }
 
       return routeClone

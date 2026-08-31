@@ -33,7 +33,14 @@
                   <div class="tree-node-actions">
                     <el-tooltip v-if="isCategoryVirtualNode(data)" content="虚拟节点不可操作" placement="top">
                       <span class="tree-node-actions-wrap">
-                        <el-dropdown disabled trigger="click" @command="command => handleDropdownCommand(command, data)" placement="bottom-end">
+                        <el-dropdown
+                          disabled
+                          trigger="click"
+                          @command="
+                            (command: string | number | object) => handleDropdownCommand(command as string, data as DataMaterialCategorySimpleTreeResponseVo)
+                          "
+                          placement="bottom-end"
+                        >
                           <el-button type="primary" link class="tree-node-more-btn" @click.stop disabled>
                             <el-icon><MoreFilled /></el-icon>
                           </el-button>
@@ -64,7 +71,14 @@
                         </el-dropdown>
                       </span>
                     </el-tooltip>
-                    <el-dropdown v-else trigger="click" @command="command => handleDropdownCommand(command, data)" placement="bottom-end">
+                    <el-dropdown
+                      v-else
+                      trigger="click"
+                      @command="
+                        (command: string | number | object) => handleDropdownCommand(command as string, data as DataMaterialCategorySimpleTreeResponseVo)
+                      "
+                      placement="bottom-end"
+                    >
                       <el-button type="primary" link class="tree-node-more-btn" @click.stop>
                         <el-icon><MoreFilled /></el-icon>
                       </el-button>
@@ -120,7 +134,7 @@
                       @change="handleFileTypeChange"
                       style="width: 100%"
                     >
-                      <el-option v-for="option in state.fileTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in fileTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
                   <el-form-item label="素材标题:" prop="title" class="form-item-responsive">
@@ -131,17 +145,17 @@
                   </el-form-item>
                   <el-form-item label="处理状态:" prop="processStatus" class="form-item-responsive">
                     <el-select v-model="state.searchForm.processStatus" placeholder="选择处理状态" clearable>
-                      <el-option v-for="option in state.processStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in processStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
                   <el-form-item label="业务状态:" prop="businessStatus" class="form-item-responsive">
                     <el-select v-model="state.searchForm.businessStatus" placeholder="选择业务状态" clearable>
-                      <el-option v-for="option in state.businessStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in businessStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
                   <el-form-item label="审核状态:" prop="auditStatus" class="form-item-responsive">
                     <el-select v-model="state.searchForm.auditStatus" placeholder="选择审核状态" clearable>
-                      <el-option v-for="option in state.auditStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in auditStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
                   <el-form-item label="创建人:" prop="createUserIdSet" class="form-item-responsive user-selector">
@@ -288,22 +302,22 @@
                 </el-table-column>
                 <el-table-column prop="fileType" label="文件类型" align="center" width="100">
                   <template #default="{ row }">
-                    <el-tag size="small">{{ getEnumLabel('DataFileTypeEnum', row.fileType) }}</el-tag>
+                    <el-tag size="small">{{ getEnumLabel(DICT_DATA_FILE_TYPE, row.fileType) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="processStatus" label="处理状态" align="center" width="100">
                   <template #default="{ row }">
-                    <el-tag size="small" type="info">{{ getEnumLabel('DataMaterialProcessStatusEnum', row.processStatus) }}</el-tag>
+                    <el-tag size="small" type="info">{{ getEnumLabel(DICT_DATA_MATERIAL_PROCESS_STATUS, row.processStatus) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="businessStatus" label="业务状态" align="center" width="100">
                   <template #default="{ row }">
-                    <el-tag size="small">{{ getEnumLabel('DataMaterialBusinessStatusEnum', row.businessStatus) }}</el-tag>
+                    <el-tag size="small">{{ getEnumLabel(DICT_DATA_MATERIAL_BUSINESS_STATUS, row.businessStatus) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="auditStatus" label="审核状态" align="center" width="120">
                   <template #default="{ row }">
-                    <el-tag size="small">{{ getEnumLabel('DataMaterialAuditStatusEnum', row.auditStatus) }}</el-tag>
+                    <el-tag size="small">{{ getEnumLabel(DICT_DATA_MATERIAL_AUDIT_STATUS, row.auditStatus) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column label="分类" align="center" width="140">
@@ -324,7 +338,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="createTime" label="创建时间" align="center" width="170">
-                  <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
+                  <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
                 </el-table-column>
                 <el-table-column prop="updateName" label="修改人" align="center" width="100">
                   <template #default="{ row }">
@@ -335,7 +349,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="updateTime" label="修改时间" align="center" width="170">
-                  <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
+                  <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
                 </el-table-column>
                 <el-table-column label="操作" align="center" width="200" fixed="right">
                   <template #default="{ row }">
@@ -357,7 +371,11 @@
                       >
                         编辑
                       </el-button>
-                      <el-dropdown trigger="click" @command="command => handleMaterialDropdownCommand(command, row)" placement="bottom-end">
+                      <el-dropdown
+                        trigger="click"
+                        @command="(command: string | number | object) => handleMaterialDropdownCommand(command as string, row)"
+                        placement="bottom-end"
+                      >
                         <el-button size="small" type="info">
                           更多
                           <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -410,13 +428,13 @@
             @success="handleCategoryUpdateParentSuccess"
           />
 
-          <IamUserQuickSelectDialog
+          <BIamUserQuickSelectDialog
             v-model="state.createUserDialogVisible"
             @confirm="handleCreateUserSelect"
             :multiple="true"
             :selected-users="state.selectedCreateUsers"
           />
-          <IamUserQuickSelectDialog
+          <BIamUserQuickSelectDialog
             v-model="state.updateUserDialogVisible"
             @confirm="handleUpdateUserSelect"
             :multiple="true"
@@ -432,13 +450,20 @@
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL'
   })
-  import { ElTreeV2 } from 'element-plus'
-  import { onMounted, reactive, ref, watch, computed, nextTick, onBeforeUnmount } from 'vue'
+  import { onMounted, onActivated, reactive, ref, watch, computed, nextTick, onBeforeUnmount } from 'vue'
+  import { ElTreeV2, type TreeNodeData } from 'element-plus'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Refresh, Search, Plus, Edit, View, Connection, Delete, MoreFilled, ArrowDown } from '@element-plus/icons-vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import {
+    DICT_DATA_FILE_TYPE,
+    DICT_DATA_MATERIAL_PROCESS_STATUS,
+    DICT_DATA_MATERIAL_BUSINESS_STATUS,
+    DICT_DATA_MATERIAL_AUDIT_STATUS
+  } from '@/shared/constants/DictionaryEnum.constant'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { DataMaterialExpandListResponseVo, DataMaterialQueryPageRequestVo } from '@/modules/data/material/type/DataMaterial.type'
@@ -451,11 +476,16 @@
   import DataMaterialCategoryEditDialog from '@/modules/data/material/DataMaterialCategoryEditDialog.vue'
   import DataMaterialCategoryDetailDialog from '@/modules/data/material/DataMaterialCategoryDetailDialog.vue'
   import DataMaterialCategoryUpdateParentDialog from '@/modules/data/material/DataMaterialCategoryUpdateParentDialog.vue'
-  import IamUserQuickSelectDialog from '@/modules/iam/user/IamUserQuickSelectDialog.vue'
+  import BIamUserQuickSelectDialog from '@/modules/biam/user/BIamUserQuickSelectDialog.vue'
   import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
-  import type { IamUserSimpleListResponseVo } from '@/modules/iam/user/type/IamUser.type'
+  import type { BIamUserSimpleListResponseVo } from '@/modules/biam/user/type/BIamUser.type'
 
   const enumStore = useDictionaryEnumStore()
+
+  const { options: fileTypeOptions, load: loadFileTypeOptions } = useEnumOptions(DICT_DATA_FILE_TYPE)
+  const { options: processStatusOptions, load: loadProcessStatusOptions } = useEnumOptions(DICT_DATA_MATERIAL_PROCESS_STATUS)
+  const { options: businessStatusOptions, load: loadBusinessStatusOptions } = useEnumOptions(DICT_DATA_MATERIAL_BUSINESS_STATUS)
+  const { options: auditStatusOptions, load: loadAuditStatusOptions } = useEnumOptions(DICT_DATA_MATERIAL_AUDIT_STATUS)
 
   // ---------- 常量（与后端 CommonDataConstant 等保持一致） ----------
   const DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID = 'data_material_category_virtual_node'
@@ -463,9 +493,9 @@
   const PAGE_SIZES = [20, 50, 100, 200, 500, 1000]
 
   const isCategoryVirtualNode = (data: DataMaterialCategorySimpleTreeResponseVo) => data?.id === DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID
-  const formatTimestamp = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '无')
-  /** 统一枚举文案（DataFileTypeEnum / DataMaterialProcessStatusEnum 等） */
-  const getEnumLabel = (enumKey: string, code?: string) => (code ? (enumStore.getEnumItemByCodeSync(enumKey, code)?.message ?? code) : '-')
+  const formatTime = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '无')
+  /** 统一枚举文案（DataFileTypeEnum / DataMaterialProcessStatusEnum 等）：code 为空回退 '-'；未命中自动加载并回退原始 code */
+  const getEnumLabel = (enumKey: string, code?: string) => enumStore.getEnumLabel(enumKey, code, '-')
 
   const reloadCategoryTree = async () => {
     try {
@@ -497,10 +527,6 @@
   const state = reactive({
     loading: false,
     showSearchCard: true,
-    fileTypeOptions: [] as Array<{ code: string; message: string }>,
-    processStatusOptions: [] as Array<{ code: string; message: string }>,
-    businessStatusOptions: [] as Array<{ code: string; message: string }>,
-    auditStatusOptions: [] as Array<{ code: string; message: string }>,
     categoryQuery: '',
     categoryTreeOptions: [] as DataMaterialCategorySimpleTreeResponseVo[],
     categoryMap: new Map<string, string>(),
@@ -512,8 +538,8 @@
     tableData: [] as DataMaterialExpandListResponseVo[],
     createUserDialogVisible: false,
     updateUserDialogVisible: false,
-    selectedCreateUsers: [] as IamUserSimpleListResponseVo[],
-    selectedUpdateUsers: [] as IamUserSimpleListResponseVo[],
+    selectedCreateUsers: [] as BIamUserSimpleListResponseVo[],
+    selectedUpdateUsers: [] as BIamUserSimpleListResponseVo[],
     pagination: { current: 1, size: 20, total: 0 },
     searchForm: {
       fileTypeSet: [] as string[],
@@ -559,6 +585,7 @@
   const treeHeightReady = ref<boolean>(false)
 
   let resizeObserver: ResizeObserver | null = null
+  let isFirstActivation = true
   let isFirstTableCalculation = true
   let isFirstTreeCalculation = true
 
@@ -640,26 +667,27 @@
   const selectedCreateUserIds = computed({
     get: () => state.selectedCreateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id } as IamUserSimpleListResponseVo))
+      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id } as BIamUserSimpleListResponseVo))
     }
   })
   const selectedUpdateUserIds = computed({
     get: () => state.selectedUpdateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id } as IamUserSimpleListResponseVo))
+      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id } as BIamUserSimpleListResponseVo))
     }
   })
 
   /** 左侧分类树勾选：将选中的根节点 id 同步到查询条件，点击搜索时再请求 */
   const handleCategoryCheck = () => {
     if (categoryTreeRef.value) {
-      state.searchForm.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(currentCategoryTreeOptions.value, categoryTreeRef.value.getCheckedKeys()).map(
-        node => node.id
-      )
+      state.searchForm.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(
+        currentCategoryTreeOptions.value,
+        categoryTreeRef.value.getCheckedKeys() as string[]
+      ).map(node => node.id)
     }
   }
 
-  const categoryFilterMethod = (query: string, node: DataMaterialCategorySimpleTreeResponseVo) => {
+  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
     if (!query) return true
     return node.name?.toLowerCase().includes(query.toLowerCase()) || false
   }
@@ -852,14 +880,14 @@
   const showCreateUserSelectorDialog = () => (state.createUserDialogVisible = true)
   const clearSelectorAllCreateUsers = () => (state.selectedCreateUsers = [])
   const removeQueryCreateUser = (userId: string) => (state.selectedCreateUsers = state.selectedCreateUsers.filter(u => u.id !== userId))
-  const handleCreateUserSelect = (users: IamUserSimpleListResponseVo[]) => {
+  const handleCreateUserSelect = (users: BIamUserSimpleListResponseVo[]) => {
     state.selectedCreateUsers = users
     state.createUserDialogVisible = false
   }
   const showUpdateUserSelectorDialog = () => (state.updateUserDialogVisible = true)
   const clearSelectorAllUpdateUsers = () => (state.selectedUpdateUsers = [])
   const removeQueryUpdateUser = (userId: string) => (state.selectedUpdateUsers = state.selectedUpdateUsers.filter(u => u.id !== userId))
-  const handleUpdateUserSelect = (users: IamUserSimpleListResponseVo[]) => {
+  const handleUpdateUserSelect = (users: BIamUserSimpleListResponseVo[]) => {
     state.selectedUpdateUsers = users
     state.updateUserDialogVisible = false
   }
@@ -874,22 +902,22 @@
   )
 
   onMounted(async () => {
-    const [fileTypeOptions, processStatusOptions, businessStatusOptions, auditStatusOptions] = await Promise.all([
-      enumStore.getEnumDataAsync('DataFileTypeEnum'),
-      enumStore.getEnumDataAsync('DataMaterialProcessStatusEnum'),
-      enumStore.getEnumDataAsync('DataMaterialBusinessStatusEnum'),
-      enumStore.getEnumDataAsync('DataMaterialAuditStatusEnum')
-    ])
-    state.fileTypeOptions = fileTypeOptions || []
-    state.processStatusOptions = processStatusOptions || []
-    state.businessStatusOptions = businessStatusOptions || []
-    state.auditStatusOptions = auditStatusOptions || []
+    await Promise.all([loadFileTypeOptions(), loadProcessStatusOptions(), loadBusinessStatusOptions(), loadAuditStatusOptions()])
     await reloadCategoryTree()
     await fetchData()
     await nextTick()
     setupResizeObserver()
     await calculateTableHeight()
     await calculateTreeHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await reloadCategoryTree()
+    await fetchData()
   })
 
   onBeforeUnmount(() => {
@@ -1005,6 +1033,9 @@
         margin-left: auto;
         white-space: nowrap;
         margin-top: 4px;
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }

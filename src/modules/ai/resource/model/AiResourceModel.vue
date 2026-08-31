@@ -7,7 +7,12 @@
           <div class="form-items-group">
             <el-form-item label="所属厂商:" prop="providerId" class="form-item-responsive">
               <el-select v-model="searchForm.providerId" placeholder="选择厂商" clearable filterable>
-                <el-option v-for="option in state.providerOptions" :key="option.id" :label="getProviderLabel(option.provider)" :value="option.id" />
+                <el-option
+                  v-for="option in state.providerOptions"
+                  :key="option.id"
+                  :label="enumStore.getEnumLabel(DICT_AI_PROVIDER, option.provider)"
+                  :value="option.id"
+                />
               </el-select>
             </el-form-item>
 
@@ -21,7 +26,7 @@
 
             <el-form-item label="状态:" prop="status" class="form-item-responsive">
               <el-select v-model="searchForm.status" placeholder="选择状态" clearable>
-                <el-option v-for="option in state.statusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                <el-option v-for="option in statusOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
 
@@ -77,7 +82,7 @@
         <el-table
           :data="state.modelList"
           border
-          v-loading="state.isLoading"
+          v-loading="state.loading"
           :height="tableHeight"
           style="margin: 10px 0"
           stripe
@@ -116,11 +121,11 @@
           </el-table-column>
           <el-table-column prop="createName" label="创建人" align="center" width="130" show-overflow-tooltip />
           <el-table-column prop="createTime" label="创建时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
           </el-table-column>
           <el-table-column prop="updateName" label="修改人" align="center" width="130" show-overflow-tooltip />
           <el-table-column prop="updateTime" label="修改时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
           </el-table-column>
           <el-table-column label="操作" width="200" align="center" fixed="right">
             <template #default="{ row }">
@@ -157,7 +162,7 @@
           layout="prev, pager, next, jumper, ->, total, sizes"
           :total="pagination.total"
           @current-change="handlePageChange"
-          @size-change="handlePageSizeChange"
+          @size-change="handleSizeChange"
           v-hasPermission="['MANAGE_APP:AI:RESOURCE_CENTER:MODEL:PAGE_EXPAND']"
         />
       </div>
@@ -179,10 +184,12 @@
     name: 'MANAGE_APP:AI:RESOURCE_CENTER:MODEL'
   })
 
-  import { reactive, onMounted, ref, nextTick, watch, onBeforeUnmount } from 'vue'
+  import { reactive, onMounted, onActivated, ref, nextTick, watch, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh, ArrowDown, Delete } from '@element-plus/icons-vue'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_AI_PROVIDER, DICT_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import { AiResourceModelApi } from '@/modules/ai/resource/model/api/AiResourceModel.api'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
@@ -198,17 +205,16 @@
 
   const enumStore = useDictionaryEnumStore()
 
+  const { options: statusOptions, load: loadStatusOptions } = useEnumOptions(DICT_STATUS)
+
   const state = reactive({
-    isLoading: false,
+    loading: false,
     showSearchCard: true,
     selectedModelId: '',
 
-    // 枚举选项
     providerList: [] as AiResourceProviderListResponseVo[],
     providerOptions: [] as AiResourceProviderListResponseVo[],
-    statusOptions: [] as Array<{ code: string; message: string }>,
 
-    // 表格数据
     modelList: [] as AiResourceModelExpandListResponseVo[],
 
     dialog: {
@@ -218,7 +224,7 @@
     }
   })
 
-  const pagination = reactive<AiResourceModelQueryPageRequestVo>({
+  const pagination = reactive<{ current: number; size: number; total: number }>({
     current: 1,
     size: 20,
     total: 0
@@ -248,6 +254,7 @@
   const tableHeightReady = ref<boolean>(false)
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
+  let isFirstActivation = true
 
   const resolveElement = (target: unknown): HTMLElement | null => {
     if (target instanceof HTMLElement) return target
@@ -294,30 +301,16 @@
     resizeObserver.observe(dataCardEl)
   }
 
-  watch(
-    () => state.showSearchCard,
-    () => {
-      calculateTableHeight()
-    }
-  )
-
-  // 工具函数
-  const getProviderLabel = (provider: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('AiProviderEnum', provider)
-    return enumItem?.message || provider
-  }
-
   const getProviderName = (providerId: string): string => {
     const provider = state.providerList.find(p => p.id === providerId)
     if (!provider) return providerId
-    return getProviderLabel(provider.provider)
+    return enumStore.getEnumLabel(DICT_AI_PROVIDER, provider.provider)
   }
 
-  const formatTimestamp = (timestamp: number): string => {
+  const formatTime = (timestamp: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
-  // 业务逻辑
   const buildQueryParams = (): AiResourceModelQueryPageRequestVo => {
     return {
       current: pagination.current,
@@ -335,7 +328,7 @@
 
   const fetchData = async (): Promise<void> => {
     try {
-      state.isLoading = true
+      state.loading = true
       const params = buildQueryParams()
       const response: AiResourceModelExpandPageResponse = await AiResourceModelApi.pageExpand(params)
 
@@ -344,7 +337,7 @@
     } catch (error) {
       console.error('获取模型列表失败:', error)
     } finally {
-      state.isLoading = false
+      state.loading = false
     }
   }
 
@@ -388,7 +381,7 @@
   const handlePageChange = async (): Promise<void> => {
     await fetchData()
   }
-  const handlePageSizeChange = (newSize: number): void => {
+  const handleSizeChange = (newSize: number): void => {
     pagination.size = newSize
     pagination.current = 1
     fetchData()
@@ -423,7 +416,6 @@
     commandMap[command]?.()
   }
 
-  // 切换模型状态
   const toggleModelStatus = async (row: AiResourceModelExpandListResponseVo): Promise<void> => {
     try {
       await ElMessageBox.confirm(`确定要${row.status === 'ENABLE' ? '禁用' : '启用'}模型 "${row.name}" 吗?`, '提示', {
@@ -442,7 +434,6 @@
     }
   }
 
-  // 删除模型
   const handleDeleteModel = async (row: AiResourceModelExpandListResponseVo): Promise<void> => {
     try {
       await ElMessageBox.confirm(`确定要删除模型 "${row.name}" 吗？`, '警告', { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' })
@@ -457,12 +448,17 @@
     }
   }
 
-  onMounted(async () => {
-    state.statusOptions = await enumStore.getEnumDataAsync('StatusEnum')
+  watch(
+    () => state.showSearchCard,
+    () => {
+      calculateTableHeight()
+    }
+  )
 
-    // 加载厂商列表（用于显示厂商名称）
+  onMounted(async () => {
+    await loadStatusOptions()
     try {
-      const providerList = await AiResourceProviderApi.listSimple()
+      const [providerList] = await Promise.all([AiResourceProviderApi.listSimple(), enumStore.getEnumDataAsync(DICT_AI_PROVIDER)])
       state.providerList = providerList
       state.providerOptions = providerList
     } catch (error) {
@@ -473,6 +469,14 @@
     await nextTick()
     setupResizeObserver()
     calculateTableHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await fetchData()
   })
 
   onBeforeUnmount(() => {
@@ -546,6 +550,10 @@
         margin-left: auto;
         white-space: nowrap;
         margin-top: 4px;
+
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }

@@ -42,7 +42,8 @@ export default defineConfig({
     vue({ compiler }),
     vueJsx(),
     fileViewerRenderers({
-      copyAssets: true
+      copyAssets: true,
+      inject: false
     }),
     createSvgIconsPlugin({
       iconDirs: [fileURLToPath(new URL('src/assets/icons', import.meta.url))],
@@ -85,10 +86,9 @@ export default defineConfig({
         manualChunks(id: string) {
           if (id.includes('element-plus') || id.includes('@element-plus')) return 'element-plus'
           if (id.includes('maplibre-gl')) return 'map-lib'
-          if (id.includes('pdfjs-dist') || id.includes('pdfjs')) return 'pdf-lib'
           if (id.includes('heic2any')) return 'image-lib'
           if (id.includes('codemirror') || id.includes('@codemirror')) return 'vendor-codemirror'
-          if (id.includes('mermaid')) return 'mermaid'
+          return undefined
         }
       }
     }

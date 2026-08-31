@@ -41,7 +41,11 @@ export interface DataAreaDetailResponseVo {
 }
 
 export interface DataAreaTreeRequestVo {
-  countryCode: string
+  country: string
+}
+
+export interface DataAreaTreeSimpleOutputDto extends TreeNode<DataAreaTreeSimpleOutputDto> {
+  code: string
 }
 
 export interface DataAreaTreeSimpleResponseVo extends TreeNode<DataAreaTreeSimpleOutputDto> {
@@ -56,6 +60,8 @@ export interface DataAreaExpandTreeResponseVo extends TreeNode<DataAreaExpandTre
   updateName: string
   updateBy: string
   updateTime: number
+  /** 搜索高亮片段 */
+  highlight?: { name?: string; code?: string }
 }
 
 export interface DataAreaWithShopTreeResponseVo extends TreeNode<DataAreaWithShopTreeResponseVo> {
@@ -69,3 +75,6 @@ export interface DataAreaWithShopTreeResponseVo extends TreeNode<DataAreaWithSho
   updateBy: string
   updateTime: number
 }
+
+/** @deprecated 请使用 DataAreaTreeSimpleResponseVo */
+export type DataAreaSimpleTreeResponseVo = DataAreaTreeSimpleResponseVo

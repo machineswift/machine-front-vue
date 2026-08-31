@@ -33,7 +33,7 @@
             <el-col :span="12">
               <el-form-item label="状态">
                 <el-tag :type="state.detailData.status === 'ENABLE' ? 'success' : 'danger'">
-                  {{ getStatusLabel(state.detailData.status) }}
+                  {{ state.detailData.status ? enumStore.getEnumLabel(DICT_STATUS, state.detailData.status) : '无' }}
                 </el-tag>
               </el-form-item>
             </el-col>
@@ -66,12 +66,12 @@
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="创建时间">
-                <el-input :model-value="formatTimestamp(state.detailData.createTime)" disabled />
+                <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="更新时间">
-                <el-input :model-value="formatTimestamp(state.detailData.updateTime)" disabled />
+                <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
               </el-form-item>
             </el-col>
           </el-row>
@@ -89,6 +89,7 @@
   import { reactive, watch, computed } from 'vue'
   import { DataTagApi } from '@/modules/data/tag/api/DataTag.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import type { DataTagDetailResponseVo } from '@/modules/data/tag/type/DataTag.type'
   import { ElMessage } from 'element-plus'
 
@@ -101,7 +102,6 @@
 
   const emit = defineEmits(['update:modelValue'])
 
-  // 统一状态管理
   const state = reactive({
     visible: computed({
       get: () => props.modelValue,
@@ -111,19 +111,11 @@
     detailData: {} as Partial<DataTagDetailResponseVo>
   })
 
-  // 获取状态标签
-  const getStatusLabel = (type?: string): string => {
-    if (!type) return '无'
-    const enumItem = enumStore.getEnumItemByCodeSync('StatusEnum', type)
-    return enumItem?.message || type
-  }
-
   // 格式化时间戳
-  const formatTimestamp = (timestamp?: number): string => {
+  const formatTime = (timestamp?: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
-  // 获取标签详情
   const fetchData = async () => {
     if (!props.tagId) return
 

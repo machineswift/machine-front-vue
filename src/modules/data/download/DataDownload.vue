@@ -10,7 +10,7 @@
 
             <el-form-item label="状态:" prop="statusList" class="form-item-responsive">
               <el-select v-model="state.searchForm.statusList" multiple clearable collapse-tags collapse-tags-tooltip placeholder="选择状态">
-                <el-option v-for="option in state.downloadStatus" :key="option.code" :label="option.message" :value="option.code" />
+                <el-option v-for="option in downloadStatus" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
 
@@ -62,12 +62,12 @@
 
           <el-table-column prop="module" label="模块" align="center" width="100">
             <template #default="{ row }">
-              {{ getModuleLabel(row.module) }}
+              {{ row.module ? enumStore.getEnumLabel(DICT_MODULE, row.module) : '-' }}
             </template>
           </el-table-column>
           <el-table-column prop="entity" label="实体" align="center" width="120">
             <template #default="{ row }">
-              {{ getEntityLabel(row.entity) }}
+              {{ row.entity ? enumStore.getEnumLabel(DICT_MODULE_ENTITY, row.entity) : '-' }}
             </template>
           </el-table-column>
 
@@ -82,13 +82,13 @@
 
           <el-table-column prop="fileType" label="文件类型" align="center" width="120">
             <template #default="{ row }">
-              {{ row.fileType ? getFileTypeLabel(row.fileType) : '-' }}
+              {{ row.fileType ? enumStore.getEnumLabel(DICT_DATA_FILE_TYPE, row.fileType) : '-' }}
             </template>
           </el-table-column>
           <el-table-column prop="status" label="状态" align="center" width="120">
             <template #default="{ row }">
               <el-tag :type="getDownloadStatusTagType(row.status)">
-                {{ getDownloadStatusLabel(row.status) }}
+                {{ enumStore.getEnumLabel(DICT_DATA_DOWNLOAD_STATUS, row.status) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -182,28 +182,27 @@
 </template>
 
 <script setup lang="ts">
-  // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:WORKSPACE:DOWNLOAD'
   })
-  import { ref, reactive, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
+  import { ref, reactive, onMounted, onActivated, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh } from '@element-plus/icons-vue'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_DATA_FILE_TYPE, DICT_DATA_DOWNLOAD_STATUS, DICT_MODULE, DICT_MODULE_ENTITY } from '@/shared/constants/DictionaryEnum.constant'
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
   import type { DataDownloadListResponseVo } from '@/modules/data/download/type/DataDownload.type'
-  import { DATA_FILE_TYPE_LABEL_MAP } from '@/modules/data/download/type/DataDownload.type'
   import DataDownloadDetailDialog from '@/modules/data/download/DataDownloadDetailDialog.vue'
 
-  // 组合式函数
   const enumStore = useDictionaryEnumStore()
 
-  // 状态管理
+  const { options: downloadStatus, load: loadDownloadStatus } = useEnumOptions(DICT_DATA_DOWNLOAD_STATUS)
+
   const state = reactive({
     loading: false,
     showSearchCard: true,
     currentDownloadId: '',
-    downloadStatus: [] as Array<{ code: string; message: string }>,
     pagination: {
       current: 1,
       size: 20,
@@ -227,11 +226,11 @@
   const operationButtonsRef = ref<HTMLElement | null>(null)
   const paginationRef = ref<HTMLElement | null>(null)
 
-  // 表格高度 - 初始为0，等计算完成后再显示
   const tableHeight = ref<number>(0)
   const tableHeightReady = ref<boolean>(false)
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
+  let isFirstActivation = true
 
   const resolveElement = (target: unknown): HTMLElement | null => {
     if (target instanceof HTMLElement) return target
@@ -286,7 +285,6 @@
     }
   )
 
-  // 方法
   const fetchDownloadList = async () => {
     try {
       state.loading = true
@@ -376,28 +374,6 @@
     return DOWNLOAD_STATUS_TAG_MAP[status] || 'info'
   }
 
-  const getFileTypeLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataFileTypeEnum', type)
-    return enumItem?.message ?? DATA_FILE_TYPE_LABEL_MAP[type] ?? type
-  }
-
-  const getDownloadStatusLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataDownloadStatusEnum', type)
-    return enumItem?.message || type
-  }
-
-  const getModuleLabel = (code?: string): string => {
-    if (!code) return '-'
-    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEnum', code)
-    return enumItem?.message ?? code
-  }
-
-  const getEntityLabel = (code?: string): string => {
-    if (!code) return '-'
-    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEntityEnum', code)
-    return enumItem?.message ?? code
-  }
-
   const formatTime = (timestamp: number) => {
     return timestamp ? new Date(timestamp).toLocaleString() : '-'
   }
@@ -415,19 +391,32 @@
     return parseFloat((bytes / Math.pow(FILE_SIZE_BASE, i)).toFixed(2)) + ' ' + FILE_SIZE_UNITS[i]
   }
 
-  // 初始化
   onMounted(async () => {
     await Promise.all([
-      enumStore.getEnumDataAsync('DataFileTypeEnum'),
-      enumStore.getEnumDataAsync('DataDownloadStatusEnum'),
-      enumStore.getEnumDataAsync('ModuleEnum'),
-      enumStore.getEnumDataAsync('ModuleEntityEnum')
+      enumStore.getEnumDataAsync(DICT_DATA_FILE_TYPE),
+      enumStore.getEnumDataAsync(DICT_DATA_DOWNLOAD_STATUS),
+      enumStore.getEnumDataAsync(DICT_MODULE),
+      enumStore.getEnumDataAsync(DICT_MODULE_ENTITY)
     ])
-    state.downloadStatus = enumStore.getEnumDataSync('DataDownloadStatusEnum')
+    await loadDownloadStatus()
     await fetchDownloadList()
     await nextTick()
     setupResizeObserver()
     await calculateTableHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await Promise.all([
+      enumStore.getEnumDataAsync(DICT_DATA_FILE_TYPE),
+      enumStore.getEnumDataAsync(DICT_DATA_DOWNLOAD_STATUS),
+      enumStore.getEnumDataAsync(DICT_MODULE),
+      enumStore.getEnumDataAsync(DICT_MODULE_ENTITY)
+    ])
+    await fetchDownloadList()
   })
 
   onBeforeUnmount(() => {
@@ -509,6 +498,10 @@
       margin-left: auto;
       white-space: nowrap;
       margin-top: 4px;
+
+      .el-form-item {
+        margin-bottom: 0;
+      }
     }
   }
 

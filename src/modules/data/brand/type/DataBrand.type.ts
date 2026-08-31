@@ -59,7 +59,7 @@ export interface DataBrandExpandListResponseVo {
   id: string
   code?: string
   name: string
-  status: StatusEnum
+  status: string
   logoMaterialId: string
   logoUrl: string
   description?: string

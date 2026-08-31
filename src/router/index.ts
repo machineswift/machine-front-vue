@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import type { RouteLocationNormalized, RouteLocationNormalizedLoaded } from 'vue-router'
+import type { RouteLocationNormalized, RouteLocationNormalizedLoaded, RouteRecordRaw } from 'vue-router'
 import { constantRoute } from '@/shared/constants/Route.constant'
 import { checkAuth, handleRedirects, setRouteTransition } from './guards'
 import setting from '@/setting'
@@ -13,7 +13,7 @@ nprogress.configure({ showSpinner: false })
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes: [...constantRoute],
+  routes: [...constantRoute] as RouteRecordRaw[],
   scrollBehavior(_to, _from, savedPosition) {
     return savedPosition || { top: 0, behavior: 'smooth' }
   }

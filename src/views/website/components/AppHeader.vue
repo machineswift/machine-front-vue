@@ -16,7 +16,25 @@
         >
           {{ item.label }}
         </a>
-        <router-link to="/website/portal/products" class="nav-link">产品</router-link>
+        <div class="nav-dropdown product-dropdown">
+          <router-link to="/website/portal/products" class="nav-dropdown-trigger">产品</router-link>
+          <div class="dropdown-menu product-menu">
+            <div v-for="cat in productCategories" :key="cat.key" class="dropdown-category">
+              <div class="dropdown-category-title">
+                <span class="cat-icon">{{ cat.icon }}</span>
+                <span>{{ cat.label }}</span>
+              </div>
+              <div class="dropdown-category-items">
+                <router-link v-for="p in cat.products" :key="p.code" to="/website/portal/products" class="dropdown-item product-item">
+                  <span class="product-item-icon" :style="{ background: p.gradient }">
+                    <el-icon :size="12"><component :is="p.icon" /></el-icon>
+                  </span>
+                  <span class="item-label">{{ p.title }}</span>
+                </router-link>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="nav-dropdown">
           <router-link to="/website/tools" class="nav-dropdown-trigger">工具</router-link>
           <div class="dropdown-menu">
@@ -107,19 +125,32 @@
   import { useIamUserStore } from '@/shared/stores/IamUser.store'
   import { usePortalTheme } from '@/views/website/composables/usePortalTheme'
   import setting from '@/setting'
+  import {
+    toolCategories as defaultToolCategories,
+    productCategories as defaultProductCategories,
+    type ProductCategory
+  } from '@/shared/constants/Portal.constant'
 
   const { isDark, toggle: toggleTheme } = usePortalTheme()
 
-  defineProps<{
-    navItems?: Array<{ key: string; href: string; label: string }>
-    toolCategories: Array<{
-      key: string
-      label: string
-      icon: string
-      tools: Array<{ path: string; label: string }>
-    }>
-    activeSection?: string
-  }>()
+  withDefaults(
+    defineProps<{
+      navItems?: Array<{ key: string; href: string; label: string }>
+      toolCategories?: Array<{
+        key: string
+        label: string
+        icon: string
+        tools: Array<{ path: string; label: string }>
+      }>
+      productCategories?: ProductCategory[]
+      activeSection?: string
+    }>(),
+    {
+      navItems: () => [],
+      toolCategories: () => defaultToolCategories,
+      productCategories: () => defaultProductCategories
+    }
+  )
 
   const emit = defineEmits<{
     'scroll-to': [key: string]
@@ -358,6 +389,51 @@
         .item-label {
           flex: 1;
         }
+      }
+    }
+  }
+
+  // ========== 产品下拉菜单 ==========
+  .product-dropdown {
+    .dropdown-menu {
+      width: max-content;
+      min-width: 420px;
+      max-width: 74vw;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 24px;
+      padding: 14px 18px 16px;
+    }
+
+    .dropdown-category {
+      padding: 6px 0;
+    }
+
+    // 产品行：图标 + 单行标题，保持对齐整齐
+    .product-item {
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+
+      .product-item-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      }
+
+      .item-label {
+        flex: 1;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--portal-t1, $t1);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
   }

@@ -24,7 +24,7 @@
     <!-- 数据展示区域 -->
     <el-card v-if="currentTabState.searchReady" ref="boxCardData" class="box-card-data">
       <el-tabs v-model="state.activeCountry" type="card" @tab-change="handleCountryChange">
-        <el-tab-pane v-for="country in state.countryOptions" :key="country.code" :label="country.message" :name="country.code">
+        <el-tab-pane v-for="country in countryOptions" :key="country.code" :label="country.message" :name="country.code">
           <!-- 操作按钮 -->
           <div class="operation-buttons">
             <el-button type="primary" @click="handleAdd(null)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:CREATE']">添加</el-button>
@@ -64,26 +64,26 @@
 </template>
 
 <script lang="ts" setup>
-  // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:BASIC_DATA:AREA'
   })
-  import Fuse from 'fuse.js'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ref, reactive, computed, onMounted, onActivated, watch, h, nextTick, onBeforeUnmount } from 'vue'
+  import Fuse, { type FuseResultMatch } from 'fuse.js'
+  import { ElMessage, ElMessageBox, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus'
+  import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
   import { useElementSize } from '@vueuse/core'
-  import { ref, reactive, computed, onMounted, watch, h, nextTick, onBeforeUnmount } from 'vue'
+  import { hasPermission } from '@/shared/utils/Permission.util'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_DATA_COUNTRY } from '@/shared/constants/DictionaryEnum.constant'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
-  import TableActions from '@/modules/data/area/DataAreaTableActions'
-  import type { DataAreaExpandTreeResponseVo, IamDictionaryEnumInfoResponse } from '@/modules/data/types'
+  import type { DataAreaExpandTreeResponseVo } from '@/modules/data/area/type/DataArea.type'
   import DataAreaCreateDialog from '@/modules/data/area/DataAreaCreateDialog.vue'
   import DataAreaEditDialog from '@/modules/data/area/DataAreaEditDialog.vue'
   import DataAreaDetailDialog from '@/modules/data/area/DataAreaDetailDialog.vue'
   import DataAreaUpdateParentDialog from '@/modules/data/area/DataAreaUpdateParentDialog.vue'
 
   interface TabState {
-    // 搜索相关
     searchForm: {
       name: string
       code: string
@@ -94,7 +94,6 @@
     searchTimeCost: number
     showSearchNotice: boolean
 
-    // 表格数据
     allData: DataAreaExpandTreeResponseVo[]
     displayData: DataAreaExpandTreeResponseVo[]
     expandedRowKeys: string[]
@@ -113,7 +112,6 @@
       detail: boolean
     }
 
-    // 搜索工具
     nameFuse: Fuse<DataAreaExpandTreeResponseVo> | null
     codeFuse: Fuse<DataAreaExpandTreeResponseVo> | null
   }
@@ -166,31 +164,90 @@
       align: 'center',
       fixed: 'right',
       cellRenderer: ({ rowData }: { rowData: DataAreaExpandTreeResponseVo }) =>
-        h(TableActions, {
-          rowData,
-          onDetail: () => handleDetail(rowData),
-          onAdd: () => handleAdd(rowData),
-          onEdit: () => handleEdit(rowData),
-          onChangeParent: () => handleChangeParent(rowData),
-          onDelete: () => handleDelete(rowData),
-          onDeleteConfirm: () => handleDeleteConfirm(rowData)
-        })
+        h('div', { class: 'table-actions' }, [
+          h(
+            ElButton,
+            {
+              size: 'small',
+              disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:DETAIL']),
+              onClick: () => handleDetail(rowData)
+            },
+            () => '详情'
+          ),
+          h(
+            ElButton,
+            {
+              size: 'small',
+              type: 'primary',
+              disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:UPDATE']),
+              onClick: () => handleEdit(rowData)
+            },
+            () => '编辑'
+          ),
+          h(
+            ElDropdown,
+            {
+              trigger: 'click',
+              placement: 'bottom-end',
+              onCommand: (command: string) => {
+                const commandMap: Record<string, () => void> = {
+                  add: () => handleAdd(rowData),
+                  changeParent: () => handleChangeParent(rowData),
+                  delete: () => handleDeleteConfirm(rowData)
+                }
+                commandMap[command]?.()
+              }
+            },
+            {
+              default: () =>
+                h(ElButton, { size: 'small', type: 'info' }, () => ['更多', h(ElIcon, { class: 'el-icon--right' }, { default: () => h(ArrowDown) })]),
+              dropdown: () =>
+                h(ElDropdownMenu, null, () => [
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'add',
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:CREATE'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Plus) }), h('span', null, '新增')]
+                  ),
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'changeParent',
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:UPDATE_PARENT'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '修改父节点')]
+                  ),
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'delete',
+                      divided: true,
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:AREA:DELETE'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Delete) }), h('span', null, '删除')]
+                  )
+                ])
+            }
+          )
+        ])
     }
   ]
 
-  // 状态管理
   const shouldRenderTable = ref(true)
-  const enumStore = useDictionaryEnumStore()
   const pageContainerRef = ref<HTMLElement | null>(null)
   const searchCardRef = ref()
   const boxCardData = ref<HTMLElement | null>(null)
   const { width: containerWidth } = useElementSize(boxCardData)
   const tableHeight = ref<number>(680)
   let resizeObserver: ResizeObserver | null = null
+  let isFirstActivation = true
+
+  const { options: countryOptions, load: loadCountryOptions } = useEnumOptions(DICT_DATA_COUNTRY)
 
   // 全局状态
   const state = reactive({
-    countryOptions: [] as IamDictionaryEnumInfoResponse[],
     activeCountry: '',
     tabStates: new Map<string, TabState>(),
     initializedTabs: new Set<string>()
@@ -209,7 +266,6 @@
     return state.tabStates.get(state.activeCountry)!
   })
 
-  // 计算属性
   const updateParentDialog = ref<InstanceType<typeof DataAreaUpdateParentDialog>>()
   const expandColumnKey = ref('name')
   const tableWidth = computed(() => Math.max(containerWidth.value - 24, 800))
@@ -275,26 +331,24 @@
     codeFuse: null
   })
 
-  // 初始化国家选项
   const fetchCountryOptions = async () => {
     try {
-      state.countryOptions = await enumStore.getEnumDataAsync('DataCountryEnum')
-      if (state.countryOptions.length > 0) {
-        state.activeCountry = state.countryOptions[0].code
+      await loadCountryOptions()
+      if (countryOptions.value.length > 0) {
+        state.activeCountry = countryOptions.value[0].code
       }
     } catch (error) {
       console.error('获取国家枚举失败', error)
     }
   }
 
-  // 获取区域树数据
   const fetchAreaTree = async () => {
     if (!state.activeCountry) return
 
     const tabState = currentTabState.value
 
     try {
-      const response = await DataAreaApi.treeExpand({ countryCode: state.activeCountry })
+      const response = await DataAreaApi.treeExpand({ country: state.activeCountry })
       tabState.rootNode = response
       tabState.allData = response.children || []
       tabState.displayData = response.children || []
@@ -306,7 +360,6 @@
     }
   }
 
-  // 初始化搜索工具
   const initSearchTools = (tabState: TabState) => {
     const flatData = TreeDataUtil.collectAllNodes(tabState.allData)
 
@@ -319,7 +372,7 @@
       ignoreLocation: true,
       distance: 30,
       findAllMatches: true,
-      tokenize: true
+      tokenize: (text: string) => text.split(/\s+/)
     })
 
     tabState.codeFuse = new Fuse(flatData, {
@@ -331,12 +384,12 @@
       ignoreLocation: true,
       distance: 10,
       findAllMatches: true,
-      tokenize: true
+      tokenize: (text: string) => text.split(/\s+/)
     })
   }
 
   // 高亮匹配文本
-  const highlightMatch = (text: string, matches: readonly Fuse.FuseResultMatch[] | undefined) => {
+  const highlightMatch = (text: string, matches: readonly FuseResultMatch[] | undefined) => {
     if (!matches?.length) return text
 
     let result = text
@@ -391,7 +444,7 @@
             ...nameResult.item,
             highlight: {
               name: highlightMatch(nameResult.item.name, nameResult.matches),
-              code: codeResult ? highlightMatch(codeResult.item.code, codeResult.matches) : codeResult?.item.code
+              code: codeResult ? highlightMatch(codeResult.item.code, codeResult.matches) : ''
             }
           }
         })
@@ -405,17 +458,17 @@
       tabState.matchedCount = codeResults.length
       matchedItems = codeResults.slice(0, 50).map(result => ({
         ...result.item,
-        highlight: { code: highlightMatch(result.item.code, result.matches) }
+        highlight: { code: highlightMatch(result.item.code || '', result.matches) }
       }))
     }
 
     // 收集所有匹配节点及其父节点ID
     const matchedIds = new Set(
       matchedItems.map(item => {
-        let parentId = item.parentId
+        let parentId: string | undefined = item.parentId
         while (parentId) {
           parentIds.add(parentId)
-          const parent = TreeDataUtil.findNode(tabState.allData, parentId)
+          const parent: DataAreaExpandTreeResponseVo | null = TreeDataUtil.findNode(tabState.allData, parentId ?? null)
           parentId = parent?.parentId
         }
         return item.id
@@ -560,15 +613,20 @@
     }
   )
 
-  // 初始化
   onMounted(async () => {
     await fetchCountryOptions()
-    if (state.activeCountry) {
-      await fetchAreaTree()
-    }
+    await fetchAreaTree()
     await nextTick()
     setupResizeObserver()
     calculateTableHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await fetchAreaTree()
   })
 
   onBeforeUnmount(() => {

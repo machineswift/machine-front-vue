@@ -12,8 +12,8 @@ import type {
 } from '../type/DataTagCategory.type'
 
 // 创建智能标签分类
-const create = async (params: DataTagCategoryCreateRequestVo): Promise<IdResponse<string>> => {
-  return request.post<IdResponse<string>>(ADMIN_API_BASE_URL + 'admin/data/tag_category/create', params)
+const create = async (params: DataTagCategoryCreateRequestVo): Promise<IdResponse> => {
+  return request.post<IdResponse>(ADMIN_API_BASE_URL + 'admin/data/tag_category/create', params)
 }
 
 // 删除智能标签分类

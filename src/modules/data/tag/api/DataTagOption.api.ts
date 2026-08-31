@@ -14,8 +14,8 @@ import type {
 } from '../type/DataTagOption.type'
 
 // 创建智能标签选项
-const create = async (params: DataTagOptionCreateRequestVo): Promise<IdResponse<string>> => {
-  return request.post<IdResponse<string>>(ADMIN_API_BASE_URL + 'admin/data/tag_option/create', params)
+const create = async (params: DataTagOptionCreateRequestVo): Promise<IdResponse> => {
+  return request.post<IdResponse>(ADMIN_API_BASE_URL + 'admin/data/tag_option/create', params)
 }
 
 // 删除智能标签选项

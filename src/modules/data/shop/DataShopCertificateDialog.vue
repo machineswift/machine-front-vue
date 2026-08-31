@@ -13,24 +13,36 @@
     <el-tabs v-model="state.activeTab">
       <!-- 营业执照 -->
       <el-tab-pane label="营业执照" name="businessLicense">
-        <el-form :model="state.form.businessLicense" label-width="180px" ref="businessLicenseFormRef">
+        <el-form :model="state.form.businessLicense.temporaryBusinessLicense" label-width="180px" ref="businessLicenseFormRef">
           <el-form-item label="统一社会信用代码" prop="unifiedSocialCreditCode">
-            <el-input v-model="state.form.businessLicense.unifiedSocialCreditCode" placeholder="请输入统一社会信用代码" />
+            <el-input v-model="state.form.businessLicense.temporaryBusinessLicense.unifiedSocialCreditCode" placeholder="请输入统一社会信用代码" />
           </el-form-item>
           <el-form-item label="企业名称" prop="enterpriseName">
-            <el-input v-model="state.form.businessLicense.enterpriseName" placeholder="请输入企业名称" />
+            <el-input v-model="state.form.businessLicense.temporaryBusinessLicense.enterpriseName" placeholder="请输入企业名称" />
           </el-form-item>
           <el-form-item label="法定代表人" prop="legalPersonName">
-            <el-input v-model="state.form.businessLicense.legalPersonName" placeholder="请输入法定代表人" />
+            <el-input v-model="state.form.businessLicense.temporaryBusinessLicense.legalPersonName" placeholder="请输入法定代表人" />
           </el-form-item>
           <el-form-item label="发证日期" prop="issueDate">
-            <el-date-picker v-model="state.form.businessLicense.issueDate" type="date" placeholder="选择发证日期" value-format="x" style="width: 100%" />
+            <el-date-picker
+              v-model="state.form.businessLicense.temporaryBusinessLicense.issueDate"
+              type="date"
+              placeholder="选择发证日期"
+              value-format="x"
+              style="width: 100%"
+            />
           </el-form-item>
           <el-form-item label="有效期至" prop="expiryDate">
-            <el-date-picker v-model="state.form.businessLicense.expiryDate" type="date" placeholder="选择有效期" value-format="x" style="width: 100%" />
+            <el-date-picker
+              v-model="state.form.businessLicense.temporaryBusinessLicense.expiryDate"
+              type="date"
+              placeholder="选择有效期"
+              value-format="x"
+              style="width: 100%"
+            />
           </el-form-item>
           <el-form-item label="企业地址" prop="enterpriseAddress">
-            <el-input v-model="state.form.businessLicense.enterpriseAddress.address" placeholder="请输入企业地址" />
+            <el-input v-model="state.form.businessLicense.temporaryBusinessLicense.enterpriseAddress.address" placeholder="请输入企业地址" />
           </el-form-item>
           <el-form-item label="营业执照照片" prop="materialIdList">
             <el-upload
@@ -49,24 +61,36 @@
 
       <!-- 食品经营许可证 -->
       <el-tab-pane label="食品经营许可证" name="foodBusinessLicense">
-        <el-form :model="state.form.foodBusinessLicense" label-width="180px" ref="foodBusinessLicenseFormRef">
+        <el-form :model="state.form.foodBusinessLicense.temporaryFoodBusinessLicense" label-width="180px" ref="foodBusinessLicenseFormRef">
           <el-form-item label="统一社会信用代码" prop="unifiedSocialCreditCode">
-            <el-input v-model="state.form.foodBusinessLicense.unifiedSocialCreditCode" placeholder="请输入统一社会信用代码" />
+            <el-input v-model="state.form.foodBusinessLicense.temporaryFoodBusinessLicense.unifiedSocialCreditCode" placeholder="请输入统一社会信用代码" />
           </el-form-item>
           <el-form-item label="企业名称" prop="enterpriseName">
-            <el-input v-model="state.form.foodBusinessLicense.enterpriseName" placeholder="请输入企业名称" />
+            <el-input v-model="state.form.foodBusinessLicense.temporaryFoodBusinessLicense.enterpriseName" placeholder="请输入企业名称" />
           </el-form-item>
           <el-form-item label="法定代表人" prop="legalPersonName">
-            <el-input v-model="state.form.foodBusinessLicense.legalPersonName" placeholder="请输入法定代表人" />
+            <el-input v-model="state.form.foodBusinessLicense.temporaryFoodBusinessLicense.legalPersonName" placeholder="请输入法定代表人" />
           </el-form-item>
           <el-form-item label="发证日期" prop="issueDate">
-            <el-date-picker v-model="state.form.foodBusinessLicense.issueDate" type="date" placeholder="选择发证日期" value-format="x" style="width: 100%" />
+            <el-date-picker
+              v-model="state.form.foodBusinessLicense.temporaryFoodBusinessLicense.issueDate"
+              type="date"
+              placeholder="选择发证日期"
+              value-format="x"
+              style="width: 100%"
+            />
           </el-form-item>
           <el-form-item label="有效期至" prop="expiryDate">
-            <el-date-picker v-model="state.form.foodBusinessLicense.expiryDate" type="date" placeholder="选择有效期" value-format="x" style="width: 100%" />
+            <el-date-picker
+              v-model="state.form.foodBusinessLicense.temporaryFoodBusinessLicense.expiryDate"
+              type="date"
+              placeholder="选择有效期"
+              value-format="x"
+              style="width: 100%"
+            />
           </el-form-item>
           <el-form-item label="企业地址" prop="enterpriseAddress">
-            <el-input v-model="state.form.foodBusinessLicense.enterpriseAddress.address" placeholder="请输入企业地址" />
+            <el-input v-model="state.form.foodBusinessLicense.temporaryFoodBusinessLicense.enterpriseAddress.address" placeholder="请输入企业地址" />
           </el-form-item>
           <el-form-item label="许可证照片" prop="materialIdList">
             <el-upload
@@ -85,18 +109,30 @@
 
       <!-- 消杀合同 -->
       <el-tab-pane label="消杀合同" name="disinfectingContract">
-        <el-form :model="state.form.disinfectingContract" label-width="180px" ref="disinfectingContractFormRef">
+        <el-form :model="state.form.disinfectingContract.temporaryDisinfectingContract" label-width="180px" ref="disinfectingContractFormRef">
           <el-form-item label="合同编号" prop="contractCode">
-            <el-input v-model="state.form.disinfectingContract.contractCode" placeholder="请输入合同编号" />
+            <el-input v-model="state.form.disinfectingContract.temporaryDisinfectingContract.contractCode" placeholder="请输入合同编号" />
           </el-form-item>
           <el-form-item label="合同名称" prop="contractName">
-            <el-input v-model="state.form.disinfectingContract.contractName" placeholder="请输入合同名称" />
+            <el-input v-model="state.form.disinfectingContract.temporaryDisinfectingContract.contractName" placeholder="请输入合同名称" />
           </el-form-item>
           <el-form-item label="签订日期" prop="issueDate">
-            <el-date-picker v-model="state.form.disinfectingContract.issueDate" type="date" placeholder="选择签订日期" value-format="x" style="width: 100%" />
+            <el-date-picker
+              v-model="state.form.disinfectingContract.temporaryDisinfectingContract.issueDate"
+              type="date"
+              placeholder="选择签订日期"
+              value-format="x"
+              style="width: 100%"
+            />
           </el-form-item>
           <el-form-item label="有效期至" prop="expiryDate">
-            <el-date-picker v-model="state.form.disinfectingContract.expiryDate" type="date" placeholder="选择有效期" value-format="x" style="width: 100%" />
+            <el-date-picker
+              v-model="state.form.disinfectingContract.temporaryDisinfectingContract.expiryDate"
+              type="date"
+              placeholder="选择有效期"
+              value-format="x"
+              style="width: 100%"
+            />
           </el-form-item>
           <el-form-item label="合同照片" prop="contractMaterialList">
             <el-upload
@@ -155,7 +191,6 @@
 
   const emit = defineEmits(['update:modelValue', 'success'])
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -264,7 +299,6 @@
   const disinfectingContractFormRef = ref()
   const frontPhotoFormRef = ref()
 
-  // 获取证件数据
   const fetchData = async () => {
     try {
       state.loading = true
@@ -330,7 +364,6 @@
     console.log('===')
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

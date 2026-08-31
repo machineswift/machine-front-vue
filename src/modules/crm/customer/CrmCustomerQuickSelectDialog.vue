@@ -50,7 +50,8 @@
         row-key="id"
         height="400"
         v-loading="state.customerDataLoading"
-        @selection-change="handleSelectionChange"
+        @selection-change="rows => handleSelectionChange(rows as CrmCustomerSimpleListResponseVo[])"
+        @row-click="handleRowClick"
         border
         stripe
         style="margin: 10px 0"
@@ -72,7 +73,7 @@
         <el-table-column prop="name" label="姓名" align="center" width="120" />
         <el-table-column prop="gender" label="性别" align="center" width="80">
           <template #default="{ row }">
-            {{ getCustomerGenderLabel(row.gender) }}
+            {{ enumStore.getEnumLabel(DICT_GENDER, row.gender) }}
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180">
@@ -100,8 +101,8 @@
     <template #footer>
       <div class="footer-container">
         <div v-if="multiple" class="selected-info">
-          已选择 {{ state.selectedCount }} 个客户
-          <el-button type="warning" @click="clearAllSelection" v-if="state.selectedCount > 0">清空</el-button>
+          已选择 {{ selectedCount }} 个客户
+          <el-button type="warning" @click="clearAllSelection" v-if="selectedCount > 0">清空</el-button>
         </div>
         <div class="footer-buttons">
           <el-button @click="state.dialogVisible = false">取消</el-button>
@@ -113,10 +114,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ElMessage, ElTable } from 'element-plus'
   import { reactive, watch, computed, ref } from 'vue'
+  import { ElMessage, ElTable, type TableInstance } from 'element-plus'
   import { CrmCustomerApi } from '@/modules/crm/customer/api/CrmCustomer.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_GENDER } from '@/shared/constants/DictionaryEnum.constant'
   import type { CrmCustomerQueryPageRequestVo, CrmCustomerSimpleListResponseVo } from '@/modules/crm/customer/type/CrmCustomer.type'
 
   const props = defineProps({
@@ -153,7 +155,6 @@
     customerList: [] as CrmCustomerSimpleListResponseVo[],
     singleSelected: null as string | null,
     selectedRows: new Map<string, CrmCustomerSimpleListResponseVo>(),
-    selectedCount: computed(() => state.selectedRows.size),
 
     searchForm: {
       code: '',
@@ -169,16 +170,12 @@
     }
   })
 
-  const customerTableRef = ref<InstanceType<typeof ElTable>>()
+  const selectedCount = computed(() => state.selectedRows.size)
 
-  // 方法
+  const customerTableRef = ref<TableInstance>()
+
   const formatTime = (timestamp: number) => {
     return timestamp ? new Date(timestamp).toLocaleString() : '-'
-  }
-
-  const getCustomerGenderLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
-    return enumItem?.message || type
   }
 
   const isRowDisabled = (row: CrmCustomerSimpleListResponseVo) => {
@@ -188,6 +185,19 @@
   const handleRadioChange = (row: CrmCustomerSimpleListResponseVo) => {
     if (!isRowDisabled(row)) {
       state.singleSelected = row.id
+    }
+  }
+
+  const handleRowClick = (row: unknown, column: { type?: string } | null) => {
+    // 点击复选框列时由复选框自身处理，避免重复切换
+    if (column?.type === 'selection') {
+      return
+    }
+
+    if (props.multiple) {
+      customerTableRef.value?.toggleRowSelection(row as CrmCustomerSimpleListResponseVo, !state.selectedRows.has((row as CrmCustomerSimpleListResponseVo).id))
+    } else {
+      handleRadioChange(row as CrmCustomerSimpleListResponseVo)
     }
   }
 
@@ -302,7 +312,7 @@
 
   const handleConfirm = () => {
     if (props.multiple) {
-      if (state.selectedCount === 0) {
+      if (selectedCount.value === 0) {
         ElMessage.warning('请至少选择一个客户')
         return
       }
@@ -328,7 +338,6 @@
         return
       }
 
-      // 初始化选择的数据状态
       if (props.multiple) {
         state.selectedRows = new Map()
         props.selectedCustomers.forEach(customer => {
@@ -373,6 +382,10 @@
         margin-left: auto;
         white-space: nowrap;
         margin-top: 4px;
+
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }
@@ -381,6 +394,10 @@
     .el-radio__label {
       display: none !important;
     }
+  }
+
+  :deep(.el-table__row) {
+    cursor: pointer;
   }
 
   .footer-container {

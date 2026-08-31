@@ -68,7 +68,7 @@
 <script setup lang="ts">
   import { reactive, watch, computed } from 'vue'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
-  import type { DataAreaDetailResponseVo } from '@/modules/data/types'
+  import type { DataAreaDetailResponseVo } from '@/modules/data/area/type/DataArea.type'
 
   const props = defineProps<{
     modelValue: boolean
@@ -77,7 +77,6 @@
 
   const emit = defineEmits(['update:modelValue'])
 
-  // 统一状态管理
   const state = reactive({
     visible: computed({
       get: () => props.modelValue,
@@ -92,7 +91,6 @@
     return timestamp ? new Date(timestamp).toLocaleString() : '-'
   }
 
-  // 获取区域详情
   const fetchData = async () => {
     if (!props.areaId) return
 

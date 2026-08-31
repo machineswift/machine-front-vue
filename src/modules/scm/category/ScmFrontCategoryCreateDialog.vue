@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
   import { reactive, watch, computed, ref, nextTick } from 'vue'
-  import { ElMessage, ElTree } from 'element-plus'
+  import { ElMessage, ElTree, type TreeNodeData } from 'element-plus'
   import { FolderOpened } from '@element-plus/icons-vue'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
   import { ScmBackCategoryApi } from '@/modules/scm/category/api/ScmBackCategory.api'
@@ -142,7 +142,6 @@
     state.backCategoryQuery = ''
   }
 
-  // 加载后台分类树
   const loadBackCategoryTree = async () => {
     try {
       const res = await ScmBackCategoryApi.treeSimple()
@@ -163,7 +162,7 @@
     }
   }
 
-  const backCategoryFilterMethod = (value: string, data: ScmBackCategoryTreeSimpleResponseVo) => {
+  const backCategoryFilterMethod = (value: string, data: TreeNodeData) => {
     if (!value) return true
     return data.name?.toLowerCase().includes(value.toLowerCase()) || false
   }

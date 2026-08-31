@@ -11,8 +11,8 @@ import type {
 } from '../type/CrmCustomer.type'
 
 // 创建客户
-const create = async (params: CrmCustomerCreateRequestVo): Promise<IdResponse<string>> => {
-  return request.post<IdResponse<string>>(ADMIN_API_BASE_URL + 'admin/crm/customer/create', params)
+const create = async (params: CrmCustomerCreateRequestVo): Promise<IdResponse> => {
+  return request.post<IdResponse>(ADMIN_API_BASE_URL + 'admin/crm/customer/create', params)
 }
 
 // 删除客户

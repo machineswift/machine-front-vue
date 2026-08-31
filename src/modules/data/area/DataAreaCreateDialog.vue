@@ -37,17 +37,16 @@
   import { reactive, watch, computed, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
-  import type { DataAreaCreateRequestVo, DataAreaExpandTreeResponseVo } from '@/modules/data/types'
+  import type { DataAreaCreateRequestVo, DataAreaExpandTreeResponseVo } from '@/modules/data/area/type/DataArea.type'
 
   const props = defineProps<{
     modelValue: boolean
-    parentNode: DataAreaExpandTreeResponseVo
+    parentNode: DataAreaExpandTreeResponseVo | null
   }>()
 
   const emit = defineEmits(['update:modelValue', 'success'])
   const formRef = ref()
 
-  // 统一状态管理
   const state = reactive({
     visible: computed({
       get: () => props.modelValue,
@@ -85,7 +84,6 @@
     state.submitting = false
   }
 
-  // 提交表单
   const handleSubmit = async () => {
     try {
       await formRef.value?.validate()
@@ -103,7 +101,6 @@
     }
   }
 
-  // 初始化表单数据
   const initFormData = () => {
     if (props.parentNode) {
       state.formData.parentId = props.parentNode.id

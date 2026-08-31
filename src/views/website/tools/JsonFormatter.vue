@@ -121,9 +121,9 @@
     </div>
 
     <!-- 主体区域 -->
-    <div class="json-main">
+    <div class="json-main" :class="{ 'left-collapsed': collapsedSide === 'left', 'right-collapsed': collapsedSide === 'right' }">
       <!-- 输入面板 -->
-      <div class="json-panel input-panel">
+      <div class="json-panel input-panel" :class="{ 'panel-collapsed': collapsedSide === 'left' }">
         <div class="panel-editor" ref="inputEditorRef" @dragover.prevent @drop.prevent="onDrop"></div>
         <div v-if="errorMsg" class="panel-error">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12,2L1,21H23M12,6L19.5,19H4.5M11,10V14H13V10M11,16V18H13V16" /></svg>
@@ -131,17 +131,36 @@
         </div>
       </div>
 
-      <!-- 分隔线 -->
-      <div class="json-divider" @mousedown="startResize">
-        <div class="divider-handle">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z" />
-          </svg>
+      <!-- 分隔线（可拖拽 + 折叠按钮） -->
+      <div class="json-divider" :class="{ 'no-drag': collapsedSide !== null }" @mousedown="startResize">
+        <div class="divider-btns">
+          <button
+            class="divider-btn"
+            :class="{ active: collapsedSide === 'left' }"
+            @mousedown.stop
+            @click.stop="toggleCollapse('left')"
+            :title="collapsedSide === 'left' ? '展开左侧输入 (Alt+1)' : '折叠左侧输入 (Alt+1)'"
+          >
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" :class="{ flip: collapsedSide === 'left' }">
+              <path d="M15.41,7.41L14,6L8,12L14,18L15.41,16.59L10.83,12Z" />
+            </svg>
+          </button>
+          <button
+            class="divider-btn"
+            :class="{ active: collapsedSide === 'right' }"
+            @mousedown.stop
+            @click.stop="toggleCollapse('right')"
+            :title="collapsedSide === 'right' ? '展开右侧输出 (Alt+2)' : '折叠右侧输出 (Alt+2)'"
+          >
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" :class="{ flip: collapsedSide === 'right' }">
+              <path d="M8.59,16.59L10,18L16,12L10,6L8.59,7.41L13.17,12Z" />
+            </svg>
+          </button>
         </div>
       </div>
 
       <!-- 输出面板 -->
-      <div class="json-panel output-panel">
+      <div class="json-panel output-panel" :class="{ 'panel-collapsed': collapsedSide === 'right' }">
         <div class="panel-tree">
           <div class="tree-scroll">
             <JsonTree
@@ -207,6 +226,9 @@
   // 更多操作下拉
   const moreOpen = ref(false)
   const treeRef = ref<any>(null)
+
+  // 面板折叠状态: 'left' | 'right' | null
+  const collapsedSide = ref<'left' | 'right' | null>(null)
 
   // 点击外部关闭下拉
   function onDocClickForMore(e: MouseEvent) {
@@ -817,25 +839,67 @@
   // ========== 分隔线 ==========
   let isResizing = false
   function startResize(_e: MouseEvent) {
+    if (collapsedSide.value) return
     isResizing = true
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
+    const c = (_e.currentTarget as HTMLElement).closest('.json-main') as HTMLElement | null
+    c?.classList.add('resizing')
     const mv = (ev: MouseEvent) => {
       if (!isResizing) return
-      const c = (ev.target as HTMLElement).closest('.json-main') as HTMLElement
-      if (!c) return
-      const r = c.getBoundingClientRect()
-      c.style.setProperty('--split', Math.max(25, Math.min(75, ((ev.clientX - r.left) / r.width) * 100)) + '%')
+      const r = c?.getBoundingClientRect()
+      if (!r) return
+      c?.style.setProperty('--split', Math.max(25, Math.min(75, ((ev.clientX - r.left) / r.width) * 100)) + '%')
     }
     const up = () => {
       isResizing = false
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+      c?.classList.remove('resizing')
       document.removeEventListener('mousemove', mv)
       document.removeEventListener('mouseup', up)
+      saveLayout()
     }
     document.addEventListener('mousemove', mv)
     document.addEventListener('mouseup', up)
+  }
+
+  // ========== 面板折叠/布局记忆 ==========
+  function toggleCollapse(side: 'left' | 'right') {
+    collapsedSide.value = collapsedSide.value === side ? null : side
+    saveLayout()
+    if (collapsedSide.value) {
+      showToast(side === 'left' ? '已折叠左侧输入' : '已折叠右侧输出')
+    } else {
+      showToast('已恢复双栏布局')
+    }
+  }
+
+  function loadLayout() {
+    try {
+      const saved = localStorage.getItem('json-formatter-layout')
+      if (!saved) return
+      const p = JSON.parse(saved)
+      const mainEl = document.querySelector('.json-main') as HTMLElement | null
+      if (typeof p.split === 'number' && p.split >= 25 && p.split <= 75) {
+        mainEl?.style.setProperty('--split', p.split + '%')
+      }
+      if (p.collapsed === 'left' || p.collapsed === 'right' || p.collapsed === null) {
+        collapsedSide.value = p.collapsed
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function saveLayout() {
+    try {
+      const mainEl = document.querySelector('.json-main') as HTMLElement | null
+      const split = parseFloat(mainEl?.style.getPropertyValue('--split') || '50')
+      localStorage.setItem('json-formatter-layout', JSON.stringify({ split: Number.isNaN(split) ? 50 : split, collapsed: collapsedSide.value }))
+    } catch {
+      /* ignore */
+    }
   }
 
   // ========== 快捷键 ==========
@@ -843,6 +907,14 @@
     if ((e.altKey || e.metaKey) && e.key === 'f') {
       e.preventDefault()
       formatJson()
+    }
+    if (e.altKey && e.key === '1') {
+      e.preventDefault()
+      toggleCollapse('left')
+    }
+    if (e.altKey && e.key === '2') {
+      e.preventDefault()
+      toggleCollapse('right')
     }
   }
 
@@ -856,6 +928,7 @@
   // ========== 生命周期 ==========
   onMounted(() => {
     initEditor()
+    loadLayout()
     document.addEventListener('keydown', handleKeydown)
   })
   onBeforeUnmount(() => {
@@ -971,13 +1044,38 @@
     display: flex;
     overflow: hidden;
     --split: 50%;
+    &.resizing .json-panel {
+      transition: none;
+    }
   }
   .json-panel {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    width: var(--split, 50%);
     min-width: 0;
+    transition:
+      flex-basis 0.25s ease,
+      opacity 0.25s ease;
+  }
+  .input-panel {
+    flex: 0 0 var(--split, 50%);
+  }
+  .output-panel {
+    flex: 1 1 0;
+  }
+  .json-main.left-collapsed .output-panel {
+    flex: 1 1 0;
+  }
+  .json-main.right-collapsed .input-panel {
+    flex: 1 1 0;
+  }
+  .json-panel.panel-collapsed {
+    flex-basis: 0 !important;
+    flex-grow: 0 !important;
+    width: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
   }
   .input-panel,
   .output-panel {
@@ -992,6 +1090,20 @@
     }
     :deep(.cm-gutters) {
       background: $bc !important;
+    }
+    :deep(.cm-scroller) {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+      &::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
     }
   }
   .panel-output {
@@ -1332,13 +1444,34 @@
   }
   .tree-scroll {
     flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: auto;
     padding: 4px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    &::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      &:hover {
+        background: rgba(255, 255, 255, 0.22);
+        background-clip: padding-box;
+      }
+    }
+    &::-webkit-scrollbar-corner {
+      background: transparent;
+    }
   }
   .json-divider {
     flex-shrink: 0;
-    width: 7px;
+    width: 22px;
     cursor: col-resize;
     display: flex;
     align-items: center;
@@ -1352,15 +1485,45 @@
     &:hover {
       background: rgba(102, 126, 234, 0.1);
     }
-    .divider-handle {
+    &.no-drag {
+      cursor: default;
+    }
+    .divider-btns {
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 0;
+    }
+    .divider-btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      background: $bg;
+      border: 1px solid $bd;
+      border-radius: 5px;
       color: $t3;
-      opacity: 0.5;
-    }
-    &:hover .divider-handle {
-      opacity: 1;
+      cursor: pointer;
+      transition: all 0.15s;
+      svg {
+        transition: transform 0.15s;
+        &.flip {
+          transform: rotate(180deg);
+        }
+      }
+      &:hover {
+        color: $a;
+        border-color: rgba(102, 126, 234, 0.3);
+        background: rgba(102, 126, 234, 0.12);
+      }
+      &.active {
+        color: $a;
+        border-color: rgba(102, 126, 234, 0.35);
+        background: rgba(102, 126, 234, 0.12);
+      }
     }
   }
   .json-toast {
@@ -1387,14 +1550,18 @@
   @media (max-width: 768px) {
     .json-main {
       flex-direction: column;
-      --split: 100% !important;
+      --split: 50% !important;
+    }
+    .input-panel,
+    .output-panel {
+      flex: 1 1 0 !important;
     }
     .json-divider {
       width: 100%;
-      height: 6px;
+      height: 26px;
       cursor: row-resize;
-      .divider-handle {
-        transform: rotate(90deg);
+      .divider-btns {
+        flex-direction: row;
       }
     }
     .toolbar-left {

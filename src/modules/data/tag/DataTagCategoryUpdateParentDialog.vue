@@ -54,7 +54,6 @@
   const emit = defineEmits(['update:modelValue', 'success'])
   const formRef = ref<FormInstance>()
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -104,7 +103,6 @@
       }))
   }
 
-  // 加载分类树
   const loadCategoryTree = async () => {
     if (!props.type) return
     try {
@@ -121,6 +119,9 @@
         // 构建包含根节点的树结构
         const rootNode: DataTagCategoryTreeSimpleOutputDto = {
           id: response.id,
+          parentId: '',
+          type: '',
+          sort: 0,
           name: response.name || '根节点',
           children: response.children || []
         }
@@ -141,7 +142,6 @@
     }
   }
 
-  // 加载分类数据
   const loadCategoryData = async () => {
     if (!props.categoryId) return
     try {
@@ -172,7 +172,6 @@
     state.loading = false
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       if (!state.form.parentId) {

@@ -7,13 +7,13 @@
           <div class="form-items-group">
             <el-form-item label="厂商:" prop="provider" class="form-item-responsive">
               <el-select v-model="searchForm.provider" placeholder="选择厂商" clearable>
-                <el-option v-for="option in state.providerOptions" :key="option.code" :label="option.message" :value="option.code" />
+                <el-option v-for="option in providerOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
 
             <el-form-item label="状态:" prop="status" class="form-item-responsive">
               <el-select v-model="searchForm.status" placeholder="选择状态" clearable>
-                <el-option v-for="option in state.statusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                <el-option v-for="option in statusOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
           </div>
@@ -57,7 +57,7 @@
           <el-table-column prop="provider" label="厂商" align="center" width="160" fixed>
             <template #default="{ row }">
               <el-tag>
-                {{ getProviderLabel(row.provider) }}
+                {{ enumStore.getEnumLabel(DICT_AI_PROVIDER, row.provider) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -83,11 +83,11 @@
           </el-table-column>
           <el-table-column prop="createName" label="创建人" align="center" width="140" show-overflow-tooltip />
           <el-table-column prop="createTime" label="创建时间" align="center" width="180">
-            <template #default="{ row }">{{ formatTimestamp(row.createTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
           </el-table-column>
           <el-table-column prop="updateName" label="修改人" align="center" width="140" show-overflow-tooltip />
           <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
-            <template #default="{ row }">{{ formatTimestamp(row.updateTime) }}</template>
+            <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
           </el-table-column>
           <el-table-column label="操作" width="200" align="center" fixed="right">
             <template #default="{ row }">
@@ -133,10 +133,12 @@
     name: 'MANAGE_APP:AI:RESOURCE_CENTER:PROVIDER'
   })
 
-  import { reactive, onMounted, ref, nextTick, watch, onBeforeUnmount } from 'vue'
+  import { reactive, onMounted, onActivated, ref, nextTick, watch, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh, ArrowDown, Delete } from '@element-plus/icons-vue'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_AI_PROVIDER, DICT_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
   import AiResourceProviderAddDialog from '@/modules/ai/resource/provider/AiResourceProviderAddDialog.vue'
@@ -146,16 +148,13 @@
 
   const enumStore = useDictionaryEnumStore()
 
+  const { options: providerOptions, load: loadProviderOptions } = useEnumOptions(DICT_AI_PROVIDER)
+  const { options: statusOptions, load: loadStatusOptions } = useEnumOptions(DICT_STATUS)
+
   const state = reactive({
     loading: false,
     showSearchCard: true,
     selectedProviderId: '',
-
-    // 枚举选项
-    providerOptions: [] as Array<{ code: string; message: string }>,
-    statusOptions: [] as Array<{ code: string; message: string }>,
-
-    // 列表数据
     providerList: [] as AiResourceProviderExpandListResponseVo[],
 
     dialog: {
@@ -181,6 +180,7 @@
   const tableHeightReady = ref<boolean>(false)
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
+  let isFirstActivation = true
 
   const resolveElement = (target: unknown): HTMLElement | null => {
     if (target instanceof HTMLElement) return target
@@ -226,24 +226,10 @@
     resizeObserver.observe(dataCardEl)
   }
 
-  watch(
-    () => state.showSearchCard,
-    () => {
-      calculateTableHeight()
-    }
-  )
-
-  // 工具函数
-  const getProviderLabel = (provider: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('AiProviderEnum', provider)
-    return enumItem?.message || provider
-  }
-
-  const formatTimestamp = (timestamp: number): string => {
+  const formatTime = (timestamp: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
-  // 业务逻辑
   const fetchData = async (): Promise<void> => {
     try {
       state.loading = true
@@ -298,10 +284,10 @@
     commandMap[command]?.()
   }
 
-  // 切换厂商状态
   const toggleProviderStatus = async (row: AiResourceProviderExpandListResponseVo): Promise<void> => {
     try {
-      await ElMessageBox.confirm(`确定要${row.status === 'ENABLE' ? '禁用' : '启用'}厂商 "${getProviderLabel(row.provider)}" 吗?`, '提示', {
+      const providerName = await enumStore.getEnumLabelAsync(DICT_AI_PROVIDER, row.provider)
+      await ElMessageBox.confirm(`确定要${row.status === 'ENABLE' ? '禁用' : '启用'}厂商 "${providerName}" 吗?`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -322,10 +308,10 @@
     }
   }
 
-  // 删除厂商
   const handleDeleteProvider = async (row: AiResourceProviderExpandListResponseVo): Promise<void> => {
     try {
-      await ElMessageBox.confirm(`确定要删除厂商 "${getProviderLabel(row.provider)}" 吗？此操作将同时删除该厂商下的所有模型配置，不可恢复。`, '警告', {
+      const providerName = await enumStore.getEnumLabelAsync(DICT_AI_PROVIDER, row.provider)
+      await ElMessageBox.confirm(`确定要删除厂商 "${providerName}" 吗？此操作将同时删除该厂商下的所有模型配置，不可恢复。`, '警告', {
         confirmButtonText: '确定删除',
         cancelButtonText: '取消',
         type: 'warning'
@@ -341,13 +327,28 @@
     }
   }
 
+  watch(
+    () => state.showSearchCard,
+    () => {
+      calculateTableHeight()
+    }
+  )
+
   onMounted(async () => {
-    state.statusOptions = await enumStore.getEnumDataAsync('StatusEnum')
-    state.providerOptions = await enumStore.getEnumDataAsync('AiProviderEnum')
+    await loadStatusOptions()
+    await loadProviderOptions()
     await fetchData()
     await nextTick()
     setupResizeObserver()
     calculateTableHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await fetchData()
   })
 
   onBeforeUnmount(() => {
@@ -412,6 +413,10 @@
         margin-left: auto;
         white-space: nowrap;
         margin-top: 4px;
+
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }

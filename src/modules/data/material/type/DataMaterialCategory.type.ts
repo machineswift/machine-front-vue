@@ -27,6 +27,12 @@ export interface DataMaterialCategoryDetailResponseVo {
   code?: string
   name?: string
   sort?: number
+  createName?: string
+  createBy?: string
+  createTime?: number
+  updateName?: string
+  updateBy?: string
+  updateTime?: number
 }
 
 /** 素材分类简单树（选择器） */

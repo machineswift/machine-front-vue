@@ -5,6 +5,8 @@ export interface DataPermissionMetaDto {
   functionCode: string
   functionName: string
   scopeList: DataPermissionMetaScopeDto[]
+  /** 已选中的范围（前端勾选状态） */
+  selectedScopes?: string[]
 }
 
 /**

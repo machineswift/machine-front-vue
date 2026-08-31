@@ -22,17 +22,17 @@
       </el-descriptions-item>
       <el-descriptions-item label="经营状态">
         <el-tag :type="getStatusTagType(detailData.businessStatus)">
-          {{ getBusinessStatusLabel(detailData.businessStatus) }}
+          {{ detailData.businessStatus ? enumStore.getEnumLabel(DICT_DATA_SHOP_BUSINESS_STATUS, detailData.businessStatus) : '无' }}
         </el-tag>
       </el-descriptions-item>
       <el-descriptions-item label="运营状态">
         <el-tag :type="getStatusTagType(detailData.operationStatus)">
-          {{ getOperationStatusLabel(detailData.operationStatus) }}
+          {{ detailData.operationStatus ? enumStore.getEnumLabel(DICT_DATA_SHOP_OPERATION_STATUS, detailData.operationStatus) : '无' }}
         </el-tag>
       </el-descriptions-item>
       <el-descriptions-item label="物理状态">
         <el-tag :type="getStatusTagType(detailData.physicalStatus)">
-          {{ getPhysicalStatusLabel(detailData.physicalStatus) }}
+          {{ detailData.physicalStatus ? enumStore.getEnumLabel(DICT_DATA_SHOP_PHYSICAL_STATUS, detailData.physicalStatus) : '无' }}
         </el-tag>
       </el-descriptions-item>
       <el-descriptions-item label="门店地址">
@@ -58,13 +58,13 @@
         {{ detailData.createName || '无' }}
       </el-descriptions-item>
       <el-descriptions-item label="创建时间">
-        {{ formatTimestamp(detailData.createTime) }}
+        {{ formatTime(detailData.createTime) }}
       </el-descriptions-item>
       <el-descriptions-item label="更新人">
         {{ detailData.updateName || '无' }}
       </el-descriptions-item>
       <el-descriptions-item label="更新时间">
-        {{ formatTimestamp(detailData.updateTime) }}
+        {{ formatTime(detailData.updateTime) }}
       </el-descriptions-item>
     </el-descriptions>
     <template #footer>
@@ -76,11 +76,11 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_DATA_SHOP_BUSINESS_STATUS, DICT_DATA_SHOP_OPERATION_STATUS, DICT_DATA_SHOP_PHYSICAL_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
   import type { DataShopDetailResponseVo } from '@/modules/data/shop/type/DataShop.type'
   import type { AddressInfoDto } from '@/shared/types/CommonData.type'
 
-  // 组合式函数
   const enumStore = useDictionaryEnumStore()
 
   const props = defineProps({
@@ -115,7 +115,6 @@
     updateTime: 0
   })
 
-  // 获取详情数据
   const fetchData = async () => {
     try {
       loading.value = true
@@ -129,7 +128,6 @@
 
   // 对话框关闭时的处理
   const handleDialogClosed = () => {
-    // 重置详情数据
     detailData.value = {
       id: '',
       code: '',
@@ -149,22 +147,6 @@
     // 通知父组件对话框已关闭
     emit('update:modelValue', false)
     emit('close')
-  }
-
-  // 获取状态标签
-  const getBusinessStatusLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('ShopBusinessStatusEnum', type)
-    return enumItem?.message || type
-  }
-
-  const getOperationStatusLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('ShopOperationStatusEnum', type)
-    return enumItem?.message || type
-  }
-
-  const getPhysicalStatusLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('ShopPhysicalStatusEnum', type)
-    return enumItem?.message || type
   }
 
   // 获取状态标签类型
@@ -191,7 +173,7 @@
   }
 
   // 格式化时间戳
-  const formatTimestamp = (timestamp: number): string => {
+  const formatTime = (timestamp: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 

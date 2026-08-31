@@ -5,7 +5,7 @@
         <el-card class="box-card-tree-select">
           <template #header>
             <el-select v-model="state.searchForm.organizationType">
-              <el-option v-for="option in state.organizationTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
+              <el-option v-for="option in organizationTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
             </el-select>
           </template>
           <el-input v-model="state.organizationQuery" placeholder="请输入关键字" @input="onOrganizationQueryChanged" />
@@ -44,7 +44,7 @@
 
                   <el-form-item label="经营状态:" prop="businessStatusSet" class="form-item-responsive">
                     <el-select v-model="state.searchForm.businessStatusSet" placeholder="请选择经营状态" multiple collapse-tags collapse-tags-tooltip clearable>
-                      <el-option v-for="option in state.businessStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in businessStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
 
@@ -57,19 +57,19 @@
                       collapse-tags-tooltip
                       clearable
                     >
-                      <el-option v-for="option in state.operationStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in operationStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
 
                   <el-form-item label="物理状态:" prop="physicalStatusSet" class="form-item-responsive">
                     <el-select v-model="state.searchForm.physicalStatusSet" placeholder="请选择物理状态" multiple collapse-tags collapse-tags-tooltip clearable>
-                      <el-option v-for="option in state.physicalStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in physicalStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
 
                   <el-form-item label="国家:" prop="countryCode" class="form-item-responsive">
                     <el-select v-model="state.searchForm.countryCode" placeholder="请选择国家" clearable>
-                      <el-option v-for="option in state.countryCodeOptions" :key="option.code" :label="option.message" :value="option.code" />
+                      <el-option v-for="option in countryCodeOptions" :key="option.code" :label="option.message" :value="option.code" />
                     </el-select>
                   </el-form-item>
 
@@ -180,21 +180,21 @@
                 <el-table-column prop="businessStatus" label="经营状态" align="center" width="100">
                   <template #default="{ row }">
                     <el-tag :type="getStatusTagType(row.businessStatus)">
-                      {{ getBusinessStatusLabel(row.businessStatus) }}
+                      {{ enumStore.getEnumLabel(DICT_DATA_SHOP_BUSINESS_STATUS, row.businessStatus) }}
                     </el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="operationStatus" label="运营状态" align="center" width="100">
                   <template #default="{ row }">
                     <el-tag :type="getStatusTagType(row.operationStatus)">
-                      {{ getOperationStatusLabel(row.operationStatus) }}
+                      {{ enumStore.getEnumLabel(DICT_DATA_SHOP_OPERATION_STATUS, row.operationStatus) }}
                     </el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="physicalStatus" label="物理状态" align="center" width="100">
                   <template #default="{ row }">
                     <el-tag :type="getStatusTagType(row.physicalStatus)">
-                      {{ getPhysicalStatusLabel(row.physicalStatus) }}
+                      {{ enumStore.getEnumLabel(DICT_DATA_SHOP_PHYSICAL_STATUS, row.physicalStatus) }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -213,13 +213,13 @@
                 </el-table-column>
                 <el-table-column prop="createTime" label="创建时间" align="center" width="180">
                   <template #default="{ row }">
-                    {{ formatTimestamp(row.createTime) }}
+                    {{ formatTime(row.createTime) }}
                   </template>
                 </el-table-column>
                 <el-table-column prop="updateName" label="修改人" align="center" width="120" />
                 <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
                   <template #default="{ row }">
-                    {{ formatTimestamp(row.updateTime) }}
+                    {{ formatTime(row.updateTime) }}
                   </template>
                 </el-table-column>
                 <el-table-column label="操作" align="center" width="200" fixed="right">
@@ -229,7 +229,11 @@
                       <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:SHOP:UPDATE']">
                         编辑
                       </el-button>
-                      <el-dropdown trigger="click" @command="command => handleShopDropdownCommand(command, row)" placement="bottom-end">
+                      <el-dropdown
+                        trigger="click"
+                        @command="(command: string | number | object) => handleShopDropdownCommand(command as string, row)"
+                        placement="bottom-end"
+                      >
                         <el-button size="small" type="info">
                           更多
                           <el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -285,24 +289,31 @@
 </template>
 
 <script setup lang="ts">
-  // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:BASIC_DATA:SHOP'
   })
+  import { ref, watch, onMounted, onActivated, reactive, computed, nextTick, onBeforeUnmount } from 'vue'
   import { ElTreeV2 } from 'element-plus'
-  import { ref, watch, onMounted, reactive, computed, nextTick, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
-  import { ElMessageBox } from 'element-plus'
+  import { ElMessageBox, type TreeNodeData, type TableInstance } from 'element-plus'
   import { Refresh, Search, ArrowDown, Document, Collection } from '@element-plus/icons-vue'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
-  import { IamOrganizationApi } from '@/modules/iam/organization/api/IamOrganization.api'
+  import { BIamOrganizationApi } from '@/modules/biam/organization/api/BIamOrganization.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import {
+    DICT_DATA_COUNTRY,
+    DICT_DATA_SHOP_BUSINESS_STATUS,
+    DICT_DATA_SHOP_OPERATION_STATUS,
+    DICT_DATA_SHOP_PHYSICAL_STATUS,
+    DICT_IAM_ORG_TYPE
+  } from '@/shared/constants/DictionaryEnum.constant'
   import type { AddressInfoDto } from '@/shared/types/CommonData.type'
   import type {
     DataShopExpandPageResponse,
     DataShopQueryPageRequestVo,
-    DataShopDetailResponseVo,
+    DataShopExpandListResponseVo,
     DataShopExportRequestVo
   } from '@/modules/data/shop/type/DataShop.type'
   import DataShopAddDialog from '@/modules/data/shop/DataShopAddDialog.vue'
@@ -311,14 +322,21 @@
   import DataShopCertificateDialog from '@/modules/data/shop/DataShopCertificateDialog.vue'
   import DataShopLabelDialog from '@/modules/data/shop/DataShopLabelDialog.vue'
   import type { DataAreaSimpleTreeResponseVo, DataAreaTreeSimpleResponseVo } from '@/modules/data/area/type/DataArea.type'
-  import type { IamOrganizationSimpleTreeResponseVo } from '@/modules/iam/organization/type/IamOrganization.type'
+  import type { BIamOrganizationSimpleTreeResponseVo } from '@/modules/biam/organization/type/BIamOrganization.type'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import { hasPermission } from '@/shared/utils/Permission.util'
 
   const router = useRouter()
   const enumStore = useDictionaryEnumStore()
+
+  const { options: organizationTypeOptions, load: loadOrganizationTypeOptions } = useEnumOptions(DICT_IAM_ORG_TYPE)
+  const { options: countryCodeOptions, load: loadCountryCodeOptions } = useEnumOptions(DICT_DATA_COUNTRY)
+  const { options: businessStatusOptions, load: loadBusinessStatusOptions } = useEnumOptions(DICT_DATA_SHOP_BUSINESS_STATUS)
+  const { options: operationStatusOptions, load: loadOperationStatusOptions } = useEnumOptions(DICT_DATA_SHOP_OPERATION_STATUS)
+  const { options: physicalStatusOptions, load: loadPhysicalStatusOptions } = useEnumOptions(DICT_DATA_SHOP_PHYSICAL_STATUS)
+
   const organizationTreeRef = ref<InstanceType<typeof ElTreeV2>>()
-  const tableRef = ref<InstanceType<typeof import('element-plus').ElTable>>()
+  const tableRef = ref<TableInstance>()
   const pageContainerRef = ref<HTMLElement | null>(null)
   const rightContentRef = ref<HTMLElement | null>(null)
   const searchCardRef = ref()
@@ -334,6 +352,7 @@
   const treeHeightReady = ref<boolean>(false)
 
   let resizeObserver: ResizeObserver | null = null
+  let isFirstActivation = true
   let isFirstTableCalculation = true
   let isFirstTreeCalculation = true
 
@@ -344,7 +363,7 @@
   /** 待恢复的选中 ID（翻页前保存），watch tableData 后再恢复，避免被 selection-change([]) 冲掉 */
   const pendingRestoreIds = ref<Set<string> | null>(null)
   const currentAreaTreeOptions = ref<DataAreaTreeSimpleResponseVo[]>([])
-  const currentOrganizationTreeOptions = ref<IamOrganizationSimpleTreeResponseVo[]>([])
+  const currentOrganizationTreeOptions = ref<BIamOrganizationSimpleTreeResponseVo[]>([])
 
   const selectedRowCount = computed(() => selectedShopIdSet.value.size)
 
@@ -423,27 +442,19 @@
     resizeObserver.observe(treeCardEl)
   }
 
-  // 统一状态管理
   const state = reactive({
     loading: false,
     showSearchCard: true,
-
-    //枚举状态
-    organizationTypeOptions: [] as Array<{ code: string; message: string }>,
-    countryCodeOptions: [] as Array<{ code: string; message: string }>,
-    businessStatusOptions: [] as Array<{ code: string; message: string }>,
-    operationStatusOptions: [] as Array<{ code: string; message: string }>,
-    physicalStatusOptions: [] as Array<{ code: string; message: string }>,
 
     currentShopId: '',
     organizationQuery: '',
 
     //区域组织数据
     areaTreeOptions: new Map<string, DataAreaSimpleTreeResponseVo[]>(),
-    organizationTreeOptions: new Map<string, IamOrganizationSimpleTreeResponseVo[]>(),
+    organizationTreeOptions: new Map<string, BIamOrganizationSimpleTreeResponseVo[]>(),
 
     //表格数据
-    tableData: [] as DataShopDetailResponseVo[],
+    tableData: [] as DataShopExpandListResponseVo[],
 
     //组织选择
     organizationProps: {
@@ -460,14 +471,12 @@
       children: 'children',
       expandTrigger: 'hover' as const
     },
-    // 分页数据
     pagination: {
       current: 1,
       size: 20,
       total: 0
     },
 
-    // 搜索表单
     searchForm: {
       code: '',
       name: '',
@@ -497,7 +506,7 @@
   })
 
   /** 选择变化时：当前页外的已选 ID 保留，当前页以本次勾选为准，实现跨页多选 */
-  const handleSelectionChange = (rows: DataShopDetailResponseVo[]) => {
+  const handleSelectionChange = (rows: DataShopExpandListResponseVo[]) => {
     if (isRestoringSelection.value || pendingRestoreIds.value !== null) return
     const currentPageIds = new Set(state.tableData.map(r => r.id))
     const selectedIds = new Set(rows.map(r => r.id))
@@ -565,7 +574,7 @@
         cancelButtonText: '知道了',
         type: 'success'
       })
-      router.push('/system/workspace/download')
+      router.push('/admin/system/workspace/download')
     } catch (error) {
       if (error !== 'cancel') {
         console.error('导出门店失败', error)
@@ -605,22 +614,20 @@
     }
   }
 
-  const organizationFilterMethod = (query: string, node: IamOrganizationSimpleTreeResponseVo) => {
+  const organizationFilterMethod = (query: string, node: TreeNodeData) => {
     if (!query) return true
     return node.name?.toLowerCase().includes(query.toLowerCase()) || false
   }
 
-  // 处理组织树勾选事件
   const handleOrganizationCheck = () => {
     if (organizationTreeRef.value) {
       state.searchForm.organizationIdSet = TreeDataUtil.getRootNodesFromSelected(
         currentOrganizationTreeOptions.value,
-        organizationTreeRef.value.getCheckedKeys()
+        organizationTreeRef.value.getCheckedKeys() as string[]
       ).map(node => node.id)
     }
   }
 
-  // 获取门店列表
   const fetchData = async () => {
     try {
       state.loading = true
@@ -659,13 +666,11 @@
     }
   }
 
-  // 搜索
   const handleSearch = () => {
     state.pagination.current = 1
     fetchData()
   }
 
-  // 重置搜索
   const resetSearch = () => {
     state.searchForm = {
       code: '',
@@ -709,31 +714,31 @@
   }
 
   // 显示编辑门店对话框
-  const showEditDialog = (row: DataShopDetailResponseVo) => {
+  const showEditDialog = (row: DataShopExpandListResponseVo) => {
     state.currentShopId = row.id
     state.dialog.edit = true
   }
 
   // 显示门店详情对话框
-  const showDetailDialog = (row: DataShopDetailResponseVo) => {
+  const showDetailDialog = (row: DataShopExpandListResponseVo) => {
     state.currentShopId = row.id
     state.dialog.detail = true
   }
 
   // 显示证件管理对话框
-  const showCertificateDialog = (row: DataShopDetailResponseVo) => {
+  const showCertificateDialog = (row: DataShopExpandListResponseVo) => {
     state.currentShopId = row.id
     state.dialog.certificate = true
   }
 
   // 显示标签管理对话框
-  const showLabelDialog = (row: DataShopDetailResponseVo) => {
+  const showLabelDialog = (row: DataShopExpandListResponseVo) => {
     state.currentShopId = row.id
     state.dialog.label = true
   }
 
   /** 处理门店下拉菜单命令 */
-  const handleShopDropdownCommand = (command: string, row: DataShopDetailResponseVo) => {
+  const handleShopDropdownCommand = (command: string, row: DataShopExpandListResponseVo) => {
     const commandMap: Record<string, () => void> = {
       certificate: () => showCertificateDialog(row),
       label: () => showLabelDialog(row)
@@ -746,22 +751,6 @@
   const handleEditSuccess = () => fetchData()
   const handleCertificateUpdateSuccess = () => fetchData()
   const handleLabelUpdateSuccess = () => fetchData()
-
-  // 获取状态标签
-  const getBusinessStatusLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataShopBusinessStatusEnum', type)
-    return enumItem?.message || type
-  }
-
-  const getOperationStatusLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataShopOperationStatusEnum', type)
-    return enumItem?.message || type
-  }
-
-  const getPhysicalStatusLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataShopPhysicalStatusEnum', type)
-    return enumItem?.message || type
-  }
 
   // 获取状态标签类型
   const getStatusTagType = (status: string): string => {
@@ -787,7 +776,7 @@
   }
 
   // 格式化时间戳
-  const formatTimestamp = (timestamp: number): string => {
+  const formatTime = (timestamp: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
@@ -799,8 +788,8 @@
       }
 
       if (!state.organizationTreeOptions.has(organizationType)) {
-        const response = await IamOrganizationApi.treeSimple({ type: organizationType })
-        state.organizationTreeOptions.set(organizationType, response.children)
+        const response = await BIamOrganizationApi.treeSimple({ type: organizationType })
+        state.organizationTreeOptions.set(organizationType, response.children ?? [])
       }
 
       state.searchForm.organizationIdSet = []
@@ -821,8 +810,8 @@
       }
 
       if (!state.areaTreeOptions.has(countryCode)) {
-        const response = await DataAreaApi.treeSimple({ countryCode })
-        state.areaTreeOptions.set(countryCode, response.children)
+        const response = await DataAreaApi.treeSimple({ country: countryCode })
+        state.areaTreeOptions.set(countryCode, response.children ?? [])
       }
 
       currentAreaTreeOptions.value = state.areaTreeOptions.get(countryCode)!
@@ -855,25 +844,17 @@
     { flush: 'post' }
   )
 
-  // 初始化
   onMounted(async () => {
-    // 枚举选项
-    const [countryCodeOptions, businessStatusOptions, operationStatusOptions, physicalStatusOptions, organizationTypeOptions] = await Promise.all([
-      enumStore.getEnumDataAsync('DataCountryEnum'),
-      enumStore.getEnumDataAsync('DataShopBusinessStatusEnum'),
-      enumStore.getEnumDataAsync('DataShopOperationStatusEnum'),
-      enumStore.getEnumDataAsync('DataShopPhysicalStatusEnum'),
-      enumStore.getEnumDataAsync('IamOrganizationTypeEnum')
+    await Promise.all([
+      loadCountryCodeOptions(),
+      loadBusinessStatusOptions(),
+      loadOperationStatusOptions(),
+      loadPhysicalStatusOptions(),
+      loadOrganizationTypeOptions()
     ])
 
-    state.countryCodeOptions = countryCodeOptions
-    state.businessStatusOptions = businessStatusOptions
-    state.operationStatusOptions = operationStatusOptions
-    state.physicalStatusOptions = physicalStatusOptions
-    state.organizationTypeOptions = organizationTypeOptions
-
-    if (organizationTypeOptions.length > 0) {
-      state.searchForm.organizationType = organizationTypeOptions[0].code
+    if (organizationTypeOptions.value.length > 0) {
+      state.searchForm.organizationType = organizationTypeOptions.value[0].code
     }
 
     await fetchData()
@@ -881,6 +862,14 @@
     setupResizeObserver()
     await calculateTableHeight()
     await calculateTreeHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await fetchData()
   })
 
   onBeforeUnmount(() => {
@@ -1008,6 +997,10 @@
         margin-left: auto;
         white-space: nowrap;
         margin-top: 4px;
+
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
   }

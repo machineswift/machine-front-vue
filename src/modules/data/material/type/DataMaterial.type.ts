@@ -1,5 +1,12 @@
 import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
+/** 素材上传参数 */
+export interface DataMaterialUploadParams {
+  file: File
+  storageType: string
+  materIalType: string
+}
+
 /** 文件类型（与后端 DataFileTypeEnum 一致，传字符串） */
 export type DataFileTypeEnum = string
 
@@ -69,6 +76,7 @@ export interface DataMaterialDetailResponseVo {
   auditStatus?: DataMaterialAuditStatusEnum
   title?: string
   categoryIdSet?: string[]
+  url?: string
   createName?: string
   createBy?: string
   createTime?: number

@@ -63,7 +63,7 @@
         <el-table-column prop="name" label="姓名" align="center" width="120"></el-table-column>
         <el-table-column prop="gender" label="性别" align="center" width="80">
           <template #default="{ row }">
-            {{ getMemberGenderLabel(row.gender) }}
+            {{ enumStore.getEnumLabel(DICT_GENDER, row.gender) }}
           </template>
         </el-table-column>
         <el-table-column prop="birthYear" label="出生年份" align="center" width="120">
@@ -74,13 +74,13 @@
         <el-table-column prop="createName" label="创建人" align="center" width="160"></el-table-column>
         <el-table-column prop="createTime" label="创建时间" align="center" width="180">
           <template #default="{ row }">
-            {{ formatTimestamp(row.createTime) }}
+            {{ formatTime(row.createTime) }}
           </template>
         </el-table-column>
         <el-table-column prop="updateName" label="修改人" align="center" width="160"></el-table-column>
         <el-table-column prop="updateTime" label="修改时间" align="center" width="180">
           <template #default="{ row }">
-            {{ formatTimestamp(row.updateTime) }}
+            {{ formatTime(row.updateTime) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" align="center" width="180" fixed="right">
@@ -113,24 +113,22 @@
 </template>
 
 <script setup lang="ts">
-  // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
     name: 'MANAGE_APP:CRM:CUSTOMER:MEMBER'
   })
-  import { onMounted, reactive, ref } from 'vue'
+  import { onMounted, onActivated, reactive, ref } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { Refresh, Search } from '@element-plus/icons-vue'
   import { CrmMemberApi } from '@/modules/crm/member/api/CrmMember.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_GENDER } from '@/shared/constants/DictionaryEnum.constant'
   import type { CrmMemberDetailResponseVo, CrmMemberExpandPageResponse, CrmMemberQueryPageRequestVo } from '@/modules/crm/member/type/CrmMember.type'
   import CrmMemberAddDialog from '@/modules/crm/member/CrmMemberAddDialog.vue'
   import CrmMemberDetailDialog from '@/modules/crm/member/CrmMemberDetailDialog.vue'
   import CrmMemberEditDialog from '@/modules/crm/member/CrmMemberEditDialog.vue'
 
-  // 组合式函数
   const enumStore = useDictionaryEnumStore()
 
-  // 统一状态管理
   const state = reactive({
     loading: false,
     showSearchCard: true,
@@ -139,14 +137,12 @@
     currentMemberId: '',
     tableData: [] as CrmMemberDetailResponseVo[],
 
-    // 分页数据
     pagination: {
       current: 1,
       size: 20,
       total: 0
     },
 
-    // 搜索表单
     searchForm: {
       code: '',
       email: '',
@@ -179,7 +175,6 @@
     }
   }
 
-  // 获取会员列表
   const fetchData = async () => {
     try {
       state.loading = true
@@ -206,13 +201,11 @@
     }
   }
 
-  // 搜索
   const handleSearch = () => {
     state.pagination.current = 1
     fetchData()
   }
 
-  // 重置搜索
   const resetSearch = () => {
     state.searchForm = {
       code: '',
@@ -252,7 +245,6 @@
     state.dialog.edit = true
   }
 
-  // 删除操作
   const handleDelete = async (row: CrmMemberDetailResponseVo) => {
     try {
       await ElMessageBox.confirm(`确定要删除会员 ${row.name || row.code} 吗？`, '提示', {
@@ -279,21 +271,23 @@
     fetchData()
   }
 
-  // 工具函数
-  const getMemberGenderLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('GenderEnum', type)
-    return enumItem?.message || type
-  }
-
-  const formatTimestamp = (timestamp: number): string => {
+  const formatTime = (timestamp: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '-'
   }
 
-  // 生命周期
-  onMounted(async () => {
-    // 枚举选项
-    await Promise.all([enumStore.getEnumDataAsync('GenderEnum')])
+  let isFirstActivation = true
 
+  onMounted(async () => {
+    await Promise.all([enumStore.getEnumDataAsync(DICT_GENDER)])
+
+    await fetchData()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
     await fetchData()
   })
 </script>
@@ -348,6 +342,10 @@
           margin-left: auto;
           white-space: nowrap;
           margin-top: 4px;
+
+          .el-form-item {
+            margin-bottom: 0;
+          }
         }
       }
     }

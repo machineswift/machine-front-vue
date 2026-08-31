@@ -15,7 +15,7 @@
 
             <el-form-item label="状态:" prop="status" class="form-item-responsive">
               <el-select v-model="state.searchForm.status" placeholder="选择状态" clearable>
-                <el-option v-for="option in state.brandStatus" :key="option.code" :label="option.message" :value="option.code" />
+                <el-option v-for="option in brandStatus" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
 
@@ -122,7 +122,6 @@
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
-      <!-- 使用 v-show 配合 tableHeightReady 控制显示，避免高度闪烁 -->
       <div v-show="tableHeightReady" style="flex: 1; min-height: 0">
         <el-table
           :data="state.tableData"
@@ -252,13 +251,13 @@
     <DataBrandEditDialog v-model="state.dialog.edit" :brand-id="state.currentBrandId" @success="fetchBrandList" />
     <DataBrandDetailDialog v-model="state.dialog.detail" :brand-id="state.currentBrandId" />
 
-    <IamUserQuickSelectDialog
+    <BIamUserQuickSelectDialog
       v-model="state.createUserDialogVisible"
       @confirm="handleCreateUserSelect"
       :multiple="true"
       :selected-users="state.selectedCreateUsers"
     />
-    <IamUserQuickSelectDialog
+    <BIamUserQuickSelectDialog
       v-model="state.updateUserDialogVisible"
       @confirm="handleUpdateUserSelect"
       :multiple="true"
@@ -268,14 +267,14 @@
 </template>
 
 <script setup lang="ts">
-  // 定义组件名称，用于 keep-alive 缓存
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:BASIC_DATA:BRAND'
   })
-  import { ref, reactive, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+  import { ref, reactive, onMounted, onActivated, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Search, Refresh, ArrowDown, Delete } from '@element-plus/icons-vue'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import { DataBrandApi } from '@/modules/data/brand/api/DataBrand.api'
   import type { DataBrandExpandPageResponse } from '@/modules/data/brand/type/DataBrand.type'
@@ -283,18 +282,15 @@
   import DataBrandDetailDialog from '@/modules/data/brand/DataBrandDetailDialog.vue'
   import DataBrandEditDialog from '@/modules/data/brand/DataBrandEditDialog.vue'
   import DataBrandLogoPreview from '@/modules/data/brand/DataBrandLogoPreview.vue'
-  import IamUserQuickSelectDialog from '@/modules/iam/user/IamUserQuickSelectDialog.vue'
-  import type { IamUserSimpleListResponseVo } from '@/modules/iam/types'
+  import BIamUserQuickSelectDialog from '@/modules/biam/user/BIamUserQuickSelectDialog.vue'
+  import type { BIamUserSimpleListResponseVo } from '@/modules/biam/user/type/BIamUser.type'
 
-  // 组合式函数
-  const enumStore = useDictionaryEnumStore()
+  const { options: brandStatus, load: loadBrandStatus } = useEnumOptions(DICT_STATUS)
 
-  // 状态管理
   const state = reactive({
     loading: false,
     showSearchCard: true,
     currentBrandId: '',
-    brandStatus: [],
     pagination: {
       current: 1,
       size: 10,
@@ -322,8 +318,8 @@
     // 新增的用户选择相关状态
     createUserDialogVisible: false,
     updateUserDialogVisible: false,
-    selectedCreateUsers: [] as IamUserSimpleListResponseVo[],
-    selectedUpdateUsers: [] as IamUserSimpleListResponseVo[]
+    selectedCreateUsers: [] as BIamUserSimpleListResponseVo[],
+    selectedUpdateUsers: [] as BIamUserSimpleListResponseVo[]
   })
 
   const searchFormRef = ref()
@@ -338,6 +334,7 @@
   const tableHeightReady = ref<boolean>(false)
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
+  let isFirstActivation = true
 
   const resolveElement = (target: unknown): HTMLElement | null => {
     if (target instanceof HTMLElement) return target
@@ -393,18 +390,17 @@
     }
   )
 
-  // 计算属性
   const selectedCreateUserIds = computed({
     get: () => state.selectedCreateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id: id } as IamUserSimpleListResponseVo))
+      state.selectedCreateUsers = newIds.map(id => state.selectedCreateUsers.find(user => user.id === id) || ({ id: id } as BIamUserSimpleListResponseVo))
     }
   })
 
   const selectedUpdateUserIds = computed({
     get: () => state.selectedUpdateUsers.map(u => u.id),
     set: newIds => {
-      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id: id } as IamUserSimpleListResponseVo))
+      state.selectedUpdateUsers = newIds.map(id => state.selectedUpdateUsers.find(user => user.id === id) || ({ id: id } as BIamUserSimpleListResponseVo))
     }
   })
 
@@ -433,7 +429,6 @@
     }
   }
 
-  // 方法
   const fetchBrandList = async () => {
     try {
       state.loading = true
@@ -534,7 +529,7 @@
     state.selectedCreateUsers = state.selectedCreateUsers.filter(user => user.id !== userId)
   }
 
-  const handleCreateUserSelect = (users: IamUserSimpleListResponseVo[]) => {
+  const handleCreateUserSelect = (users: BIamUserSimpleListResponseVo[]) => {
     state.selectedCreateUsers = users
     state.createUserDialogVisible = false
   }
@@ -551,7 +546,7 @@
     state.selectedUpdateUsers = state.selectedUpdateUsers.filter(user => user.id !== userId)
   }
 
-  const handleUpdateUserSelect = (users: IamUserSimpleListResponseVo[]) => {
+  const handleUpdateUserSelect = (users: BIamUserSimpleListResponseVo[]) => {
     state.selectedUpdateUsers = users
     state.updateUserDialogVisible = false
   }
@@ -582,15 +577,20 @@
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
-  // 初始化
   onMounted(async () => {
-    // 枚举选项
-    state.brandStatus = await enumStore.getEnumDataAsync('StatusEnum')
+    await loadBrandStatus()
     await fetchBrandList()
     await nextTick()
     setupResizeObserver()
-    // 立即计算高度（不等待 ResizeObserver 第一次触发）
     await calculateTableHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await fetchBrandList()
   })
 
   onBeforeUnmount(() => {
@@ -685,6 +685,10 @@
       margin-left: auto;
       white-space: nowrap;
       margin-top: 4px;
+
+      .el-form-item {
+        margin-bottom: 0;
+      }
     }
   }
 

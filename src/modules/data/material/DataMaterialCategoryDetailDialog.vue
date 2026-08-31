@@ -48,12 +48,12 @@
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="创建时间">
-            <el-input :model-value="formatTimestamp(state.detailData.createTime)" disabled />
+            <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="更新时间">
-            <el-input :model-value="formatTimestamp(state.detailData.updateTime)" disabled />
+            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
           </el-form-item>
         </el-col>
       </el-row>
@@ -88,7 +88,7 @@
   })
 
   // 格式化时间戳
-  const formatTimestamp = (timestamp?: number): string => {
+  const formatTime = (timestamp?: number): string => {
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 

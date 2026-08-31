@@ -96,7 +96,7 @@
 
 <script setup lang="ts">
   import { reactive, watch, computed, ref, nextTick } from 'vue'
-  import { ElTree } from 'element-plus'
+  import { ElTree, type TreeNodeData } from 'element-plus'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
   import { ScmBackCategoryApi } from '@/modules/scm/category/api/ScmBackCategory.api'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
@@ -168,7 +168,7 @@
 
   /** 缓存搜索关键字，避免每节点重复 toLowerCase */
   let cachedQuery = ''
-  const backCategoryFilterMethod = (value: string, data: ScmBackCategoryTreeSimpleResponseVo) => {
+  const backCategoryFilterMethod = (value: string, data: TreeNodeData) => {
     if (!value) return true
     cachedQuery = value.toLowerCase()
     return data.name?.toLowerCase().includes(cachedQuery) || false

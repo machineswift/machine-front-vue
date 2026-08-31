@@ -51,7 +51,6 @@
   const emit = defineEmits(['update:modelValue', 'success'])
   const formRef = ref<FormInstance>()
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -111,7 +110,6 @@
     state.submitting = false
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

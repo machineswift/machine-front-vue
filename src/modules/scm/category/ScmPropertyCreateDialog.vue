@@ -23,14 +23,14 @@
         <el-col :span="12">
           <el-form-item label="属性类型" prop="propertyType">
             <el-select v-model="state.formData.propertyType" placeholder="请选择" style="width: 100%">
-              <el-option v-for="item in state.propertyTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
+              <el-option v-for="item in propertyTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="输入方式" prop="inputType">
             <el-select v-model="state.formData.inputType" placeholder="请选择" style="width: 100%">
-              <el-option v-for="item in state.inputTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
+              <el-option v-for="item in inputTypeOptions" :key="item.code" :label="item.message" :value="item.code" />
             </el-select>
           </el-form-item>
         </el-col>
@@ -70,9 +70,9 @@
   import { reactive, watch, computed, ref, onMounted } from 'vue'
   import { ElMessage } from 'element-plus'
   import { ScmPropertyApi } from '@/modules/scm/category/api/ScmProperty.api'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_SCM_PROPERTY_TYPE, DICT_SCM_ITEM_INPUT_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import type { ScmPropertyCreateRequestVo } from '@/modules/scm/category/type/ScmProperty.type'
-  import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
 
   const props = defineProps<{
     modelValue: boolean
@@ -80,7 +80,9 @@
 
   const emit = defineEmits(['update:modelValue', 'success'])
   const formRef = ref()
-  const dictEnumStore = useDictionaryEnumStore()
+
+  const { options: propertyTypeOptions, load: loadPropertyTypeOptions } = useEnumOptions(DICT_SCM_PROPERTY_TYPE)
+  const { options: inputTypeOptions, load: loadInputTypeOptions } = useEnumOptions(DICT_SCM_ITEM_INPUT_TYPE)
 
   const state = reactive({
     visible: computed({
@@ -88,8 +90,6 @@
       set: val => emit('update:modelValue', val)
     }),
     submitting: false,
-    propertyTypeOptions: [] as IamDictionaryEnumInfoResponse[],
-    inputTypeOptions: [] as IamDictionaryEnumInfoResponse[],
     formData: {
       code: '',
       name: '',
@@ -165,12 +165,7 @@
   // 加载字典枚举
   const loadEnumData = async () => {
     try {
-      const [propertyTypeData, inputTypeData] = await Promise.all([
-        dictEnumStore.getEnumDataAsync('ScmProperityTypeEnum'),
-        dictEnumStore.getEnumDataAsync('ScmItemInputTypeEnum')
-      ])
-      state.propertyTypeOptions = propertyTypeData
-      state.inputTypeOptions = inputTypeData
+      await Promise.all([loadPropertyTypeOptions(), loadInputTypeOptions()])
     } catch (error) {
       console.error('加载字典枚举失败', error)
     }

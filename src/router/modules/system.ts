@@ -101,7 +101,7 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         children: [
           {
             path: '/admin/system/access_control/user',
-            component: () => import('@/modules/iam/user/IamUser.vue'),
+            component: () => import('@/modules/biam/user/BIamUser.vue'),
             name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER',
             meta: {
               code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER',
@@ -113,7 +113,7 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
           },
           {
             path: '/admin/system/access_control/role',
-            component: () => import('@/modules/iam/role/IamRole.vue'),
+            component: () => import('@/modules/biam/role/BIamRole.vue'),
             name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE',
             meta: {
               code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ROLE',
@@ -125,7 +125,7 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
           },
           {
             path: '/admin/system/access_control/permission',
-            component: () => import('@/modules/iam/permission/IamPermission.vue'),
+            component: () => import('@/modules/biam/permission/BIamPermission.vue'),
             name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION',
             meta: {
               code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION',
@@ -137,36 +137,12 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
           },
           {
             path: '/admin/system/access_control/organization',
-            component: () => import('@/modules/iam/organization/IamOrganization.vue'),
+            component: () => import('@/modules/biam/organization/BIamOrganization.vue'),
             name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION',
             meta: {
               code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION',
               title: '组织管理',
               icon: 'el-icon-OfficeBuilding',
-              hidden: false,
-              isDynamic: true
-            }
-          },
-          {
-            path: '/admin/system/access_control/operation_log',
-            component: () => import('@/modules/iam/operationLog/IamOperationLog.vue'),
-            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:OPERATION_LOG',
-            meta: {
-              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:OPERATION_LOG',
-              title: '操作日志',
-              icon: 'el-icon-Document',
-              hidden: false,
-              isDynamic: true
-            }
-          },
-          {
-            path: '/admin/system/access_control/login_log',
-            component: () => import('@/modules/iam/loginLog/IamUserLoginLog.vue'),
-            name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG',
-            meta: {
-              code: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:LOGIN_LOG',
-              title: '登录日志',
-              icon: 'el-icon-Notebook',
               hidden: false,
               isDynamic: true
             }
@@ -186,7 +162,81 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
         children: [
           {
             path: '/admin/system/identity_center/auth2_registered_client',
-            component: () => import('@/modules/iam/auth2RegisteredClient/IamAuth2RegisteredClient.vue'),
+            component: () => import('@/modules/biam/auth2RegisteredClient/BIamAuth2RegisteredClient.vue'),
+            name: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER:AUTH2_REGISTERED_CLIENT',
+            meta: {
+              code: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER:AUTH2_REGISTERED_CLIENT',
+              title: '客户端管理',
+              icon: 'el-icon-Monitor',
+              hidden: false,
+              isDynamic: true
+            }
+          }
+        ]
+      },
+      {
+        path: '/admin/system/log_center',
+        name: 'MANAGE_APP:SYSTEM:LOG_CENTER',
+        meta: {
+          code: 'MANAGE_APP:SYSTEM:LOG_CENTER',
+          title: '日志中心',
+          icon: 'el-icon-Document',
+          hidden: false,
+          isDynamic: true
+        },
+        children: [
+          {
+            path: '/admin/system/log_center/operation_log',
+            component: () => import('@/modules/biam/operationLog/BIamOperationLog.vue'),
+            name: 'MANAGE_APP:SYSTEM:LOG_CENTER:OPERATION_LOG',
+            meta: {
+              code: 'MANAGE_APP:SYSTEM:LOG_CENTER:OPERATION_LOG',
+              title: '操作日志',
+              icon: 'el-icon-Document',
+              hidden: false,
+              isDynamic: true
+            }
+          },
+          {
+            path: '/admin/system/log_center/login_log',
+            component: () => import('@/modules/biam/loginLog/BIamUserLoginLog.vue'),
+            name: 'MANAGE_APP:SYSTEM:LOG_CENTER:LOGIN_LOG',
+            meta: {
+              code: 'MANAGE_APP:SYSTEM:LOG_CENTER:LOGIN_LOG',
+              title: '登录日志',
+              icon: 'el-icon-Notebook',
+              hidden: false,
+              isDynamic: true
+            }
+          },
+          {
+            path: '/admin/system/log_center/access_log',
+            component: () => import('@/modules/biam/accessLog/BIamAccessLog.vue'),
+            name: 'MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG',
+            meta: {
+              code: 'MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG',
+              title: '访问日志',
+              icon: 'el-icon-Connection',
+              hidden: false,
+              isDynamic: true
+            }
+          }
+        ]
+      },
+      {
+        path: '/admin/system/identity_center',
+        name: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER',
+        meta: {
+          code: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER',
+          title: '认证中心',
+          icon: 'el-icon-Key',
+          hidden: false,
+          isDynamic: true
+        },
+        children: [
+          {
+            path: '/admin/system/identity_center/auth2_registered_client',
+            component: () => import('@/modules/biam/auth2RegisteredClient/BIamAuth2RegisteredClient.vue'),
             name: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER:AUTH2_REGISTERED_CLIENT',
             meta: {
               code: 'MANAGE_APP:SYSTEM:IDENTITY_CENTER:AUTH2_REGISTERED_CLIENT',

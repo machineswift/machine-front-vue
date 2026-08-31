@@ -1,6 +1,6 @@
 <template>
   <router-view v-slot="{ Component, route }">
-    <transition :name="route.meta.transition || 'fade-scale'" mode="out-in" @before-enter="beforeEnter" @after-enter="afterEnter">
+    <transition :name="route.meta.transition || 'fade-scale'" @before-enter="beforeEnter" @after-enter="afterEnter">
       <keep-alive :include="cachedViews" :max="50">
         <component :is="Component" :key="componentKey" class="optimized-transition" v-if="flag" />
       </keep-alive>

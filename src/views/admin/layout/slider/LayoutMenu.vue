@@ -35,7 +35,6 @@
   import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
   import SvgIcon from '@/shared/components/SvgIcon.vue'
 
-  // 获取父组件数据
   defineProps<{
     menuList: ExtendedRouteRecordRaw[]
   }>()

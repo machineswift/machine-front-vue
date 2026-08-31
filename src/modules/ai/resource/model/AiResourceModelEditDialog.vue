@@ -14,7 +14,12 @@
     <el-form :model="state.formData" label-width="120px" :rules="state.rules" ref="formRef">
       <el-form-item label="所属厂商" prop="providerId">
         <el-select v-model="state.formData.providerId" placeholder="请选择厂商" filterable disabled>
-          <el-option v-for="option in state.providerOptions" :key="option.id" :label="getProviderLabel(option.provider)" :value="option.id" />
+          <el-option
+            v-for="option in state.providerOptions"
+            :key="option.id"
+            :label="enumStore.getEnumLabel(DICT_AI_PROVIDER, option.provider)"
+            :value="option.id"
+          />
         </el-select>
       </el-form-item>
 
@@ -30,7 +35,7 @@
 
       <el-form-item label="能力类型">
         <el-checkbox-group v-model="state.formData.features.capabilityList">
-          <el-checkbox v-for="option in state.capabilityOptions" :key="option.code" :label="option.code" :value="option.code">
+          <el-checkbox v-for="option in capabilityOptions" :key="option.code" :label="option.code" :value="option.code">
             {{ option.message }}
           </el-checkbox>
         </el-checkbox-group>
@@ -38,7 +43,7 @@
 
       <el-form-item label="模型特性">
         <el-checkbox-group v-model="state.formData.features.featureList">
-          <el-checkbox v-for="option in state.featureOptions" :key="option.code" :label="option.code" :value="option.code">
+          <el-checkbox v-for="option in featureOptions" :key="option.code" :label="option.code" :value="option.code">
             {{ option.message }}
           </el-checkbox>
         </el-checkbox-group>
@@ -94,11 +99,13 @@
 </template>
 
 <script setup lang="ts">
-  import { ElMessage } from 'element-plus'
   import { ref, watch, reactive, computed, nextTick } from 'vue'
+  import { ElMessage } from 'element-plus'
   import { AiResourceModelApi } from '@/modules/ai/resource/model/api/AiResourceModel.api'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_AI_MODEL_CAPABILITY, DICT_AI_MODEL_FEATURE, DICT_AI_PROVIDER } from '@/shared/constants/DictionaryEnum.constant'
   import type { AiResourceProviderListResponseVo } from '@/modules/ai/resource/provider/type/AiResourceProvider.type'
   import type { AiModelFeaturesDto } from '@/modules/ai/resource/model/type/AiResourceModel.type'
 
@@ -123,6 +130,9 @@
 
   const enumStore = useDictionaryEnumStore()
 
+  const { options: capabilityOptions, load: loadCapabilityOptions } = useEnumOptions(DICT_AI_MODEL_CAPABILITY)
+  const { options: featureOptions, load: loadFeatureOptions } = useEnumOptions(DICT_AI_MODEL_FEATURE)
+
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
     modelId: { type: String, required: true }
@@ -142,8 +152,6 @@
     submitting: false,
 
     providerOptions: [] as AiResourceProviderListResponseVo[],
-    capabilityOptions: [] as Array<{ code: string; message: string }>,
-    featureOptions: [] as Array<{ code: string; message: string }>,
 
     formData: JSON.parse(JSON.stringify(DEFAULT_FORM_DATA)),
 
@@ -158,11 +166,6 @@
       ]
     }
   })
-
-  const getProviderLabel = (provider: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('AiProviderEnum', provider)
-    return enumItem?.message || provider
-  }
 
   const handleDialogClosed = () => {
     state.formData = JSON.parse(JSON.stringify(DEFAULT_FORM_DATA))
@@ -226,15 +229,14 @@
     () => props.modelValue,
     async modelValue => {
       if (modelValue) {
-        const [providerList, capabilityOptions, featureOptions] = await Promise.all([
+        const [providerList] = await Promise.all([
           AiResourceProviderApi.listSimple().catch(() => []),
-          enumStore.getEnumDataAsync('AiModelCapabilityEnum'),
-          enumStore.getEnumDataAsync('AiModelFeatureEnum')
+          enumStore.getEnumDataAsync(DICT_AI_PROVIDER),
+          loadCapabilityOptions(),
+          loadFeatureOptions()
         ])
 
         state.providerOptions = providerList
-        state.capabilityOptions = capabilityOptions
-        state.featureOptions = featureOptions
       }
     },
     { immediate: false }

@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, onMounted } from 'vue'
   import { useRoute } from 'vue-router'
   import LayoutLogo from '@/views/admin/layout/slider/LayoutLogo.vue'
   import LayoutMenu from '@/views/admin/layout/slider/LayoutMenu.vue'
@@ -31,10 +31,18 @@
   import LayoutHead from '@/views/admin/layout/head/LayoutHead.vue'
   import { useIamUserStore } from '@/shared/stores/IamUser.store'
   import { useSettingStore } from '@/shared/stores/SystemSetting.store'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { CORE_DICTIONARY_ENUM_NAMES } from '@/shared/constants/DictionaryEnum.constant'
   import type { ExtendedRouteRecordRaw } from '@/shared/types/Router.type'
 
   const userStore = useIamUserStore()
   const settingStore = useSettingStore()
+  const dictionaryEnumStore = useDictionaryEnumStore()
+
+  // 布局挂载（登录后导航 / 刷新后恢复会话）预加载核心字典枚举，避免首屏下拉空/闪烁
+  onMounted(() => {
+    dictionaryEnumStore.preloadEnums([...CORE_DICTIONARY_ENUM_NAMES]).catch(() => {})
+  })
 
   // 获取当前路由
   const route = useRoute()
@@ -43,7 +51,7 @@
   const activeMenu = computed(() => {
     const currentPath = route.path
     const rootRoute = userStore.menuRouters.find(r => r.name === 'ADMIN:LAYOUT')
-    const findActiveCode = routes => {
+    const findActiveCode = (routes: ExtendedRouteRecordRaw[]): string | null => {
       for (const item of routes) {
         if (item.path === currentPath) {
           return item.meta?.code || item.path

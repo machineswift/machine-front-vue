@@ -35,7 +35,7 @@
   import { reactive, computed, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormItemRule } from 'element-plus'
-  import type { DataBrandCreateRequestVo } from '@/modules/data/types'
+  import type { DataBrandCreateRequestVo } from '@/modules/data/brand/type/DataBrand.type'
   import { DataBrandApi } from '@/modules/data/brand/api/DataBrand.api'
   import DataBrandLogoUpload from '@/modules/data/brand/DataBrandLogoUpload.vue'
 
@@ -46,7 +46,6 @@
   const emit = defineEmits(['update:modelValue', 'success'])
   const formRef = ref()
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -58,7 +57,7 @@
       logoMaterialId: '',
       logoUrl: '',
       description: ''
-    } as DataBrandCreateRequestVo
+    } as DataBrandCreateRequestVo & { logoUrl: string }
   })
 
   // 表单验证规则
@@ -85,7 +84,6 @@
   }
 
   const handleDialogClosed = () => {
-    // 重置表单数据
     state.formData = {
       name: '',
       logoMaterialId: '',
@@ -97,11 +95,9 @@
     formRef.value?.resetFields()
     formRef.value?.clearValidate()
 
-    // 重置提交状态
     state.submitting = false
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

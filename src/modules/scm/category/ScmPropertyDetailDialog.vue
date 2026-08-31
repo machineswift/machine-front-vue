@@ -30,13 +30,13 @@
         <el-col :span="12">
           <el-form-item label="属性类型">
             <el-tag :type="propertyTypeTag(state.detailData.propertyType)" size="small">
-              {{ getEnumLabel(state.propertyTypeOptions, state.detailData.propertyType) }}
+              {{ getEnumLabel(propertyTypeOptions, state.detailData.propertyType) }}
             </el-tag>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="输入方式">
-            <el-input :model-value="getEnumLabel(state.inputTypeOptions, state.detailData.inputType)" disabled />
+            <el-input :model-value="getEnumLabel(inputTypeOptions, state.detailData.inputType)" disabled />
           </el-form-item>
         </el-col>
       </el-row>
@@ -116,9 +116,10 @@
 <script setup lang="ts">
   import { reactive, watch, computed, onMounted } from 'vue'
   import { ScmPropertyApi } from '@/modules/scm/category/api/ScmProperty.api'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_SCM_PROPERTY_TYPE, DICT_SCM_ITEM_INPUT_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import type { ScmPropertyDetailResponseVo } from '@/modules/scm/category/type/ScmProperty.type'
-  import type { IamDictionaryEnumInfoResponse } from '@/modules/iam/dictionary/type/IamDictionaryEnum.type'
+  import type { IamDictionaryEnumInfoResponse } from '@/shared/types/DictionaryEnum.type'
 
   const props = defineProps<{
     modelValue: boolean
@@ -126,7 +127,9 @@
   }>()
 
   const emit = defineEmits(['update:modelValue'])
-  const dictEnumStore = useDictionaryEnumStore()
+
+  const { options: propertyTypeOptions, load: loadPropertyTypeOptions } = useEnumOptions(DICT_SCM_PROPERTY_TYPE)
+  const { options: inputTypeOptions, load: loadInputTypeOptions } = useEnumOptions(DICT_SCM_ITEM_INPUT_TYPE)
 
   const state = reactive({
     visible: computed({
@@ -134,8 +137,6 @@
       set: val => emit('update:modelValue', val)
     }),
     loading: false,
-    propertyTypeOptions: [] as IamDictionaryEnumInfoResponse[],
-    inputTypeOptions: [] as IamDictionaryEnumInfoResponse[],
     detailData: {} as ScmPropertyDetailResponseVo
   })
 
@@ -154,7 +155,10 @@
   const getEnumLabel = (options: IamDictionaryEnumInfoResponse[], code?: string): string => {
     if (!code) return '无'
     const item = options.find(o => o.code === code)
-    return item?.message || code
+    if (!item) {
+      throw new Error(`[dictionary] 枚举选项中不存在 code=${code}`)
+    }
+    return item.message
   }
 
   const propertyTypeTag = (type?: string): 'success' | 'warning' | 'info' => {
@@ -165,12 +169,7 @@
   // 加载字典枚举
   const loadEnumData = async () => {
     try {
-      const [propertyTypeData, inputTypeData] = await Promise.all([
-        dictEnumStore.getEnumDataAsync('ScmProperityTypeEnum'),
-        dictEnumStore.getEnumDataAsync('ScmItemInputTypeEnum')
-      ])
-      state.propertyTypeOptions = propertyTypeData
-      state.inputTypeOptions = inputTypeData
+      await Promise.all([loadPropertyTypeOptions(), loadInputTypeOptions()])
     } catch (error) {
       console.error('加载字典枚举失败', error)
     }

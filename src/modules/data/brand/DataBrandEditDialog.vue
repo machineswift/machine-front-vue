@@ -44,7 +44,7 @@
   import { ElMessage } from 'element-plus'
   import { DataBrandApi } from '@/modules/data/brand/api/DataBrand.api'
   import type { FormItemRule } from 'element-plus'
-  import type { DataBrandUpdateRequestVo } from '@/modules/data/types'
+  import type { DataBrandUpdateRequestVo } from '@/modules/data/brand/type/DataBrand.type'
   import DataBrandLogoUpload from '@/modules/data/brand/DataBrandLogoUpload.vue'
 
   const props = defineProps({
@@ -55,7 +55,7 @@
   const emit = defineEmits(['update:modelValue', 'close', 'success'])
   const formRef = ref()
 
-  const DEFAULT_FORM_DATA: DataBrandUpdateRequestVo = {
+  const DEFAULT_FORM_DATA: DataBrandUpdateRequestVo & { code: string; logoUrl: string } = {
     id: '',
     code: '',
     name: '',
@@ -64,7 +64,6 @@
     description: ''
   }
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -92,14 +91,13 @@
     description: [{ max: 512, message: '描述不能超过512个字符', trigger: 'blur' }]
   }
 
-  // 获取详情
   const fetchDetail = async () => {
     try {
       state.loading = true
       const response = await DataBrandApi.detail({ id: props.brandId })
       state.formData = {
         id: response.id,
-        code: response.code,
+        code: response.code || '',
         name: response.name,
         logoMaterialId: response.logoMaterialId || '',
         logoUrl: response.logoUrl || '',
@@ -113,19 +111,16 @@
   }
 
   const handleDialogClosed = () => {
-    // 重置表单数据
     state.formData = { ...DEFAULT_FORM_DATA }
 
     // 彻底重置表单验证状态
     formRef.value?.resetFields()
     formRef.value?.clearValidate()
 
-    // 重置所有加载状态
     state.loading = false
     state.submitting = false
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

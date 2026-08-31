@@ -21,7 +21,7 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { ElTreeV2 } from 'element-plus'
+  import { ElTreeV2, type TreeNodeData } from 'element-plus'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import type { DataMaterialCategorySimpleTreeResponseVo } from '@/modules/data/material/type/DataMaterialCategory.type'
@@ -96,14 +96,14 @@
     }
   }
 
-  const categoryFilterMethod = (query: string, node: DataMaterialCategorySimpleTreeResponseVo) => {
+  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
     if (!query) return true
     return node.name?.toLowerCase().includes(query.toLowerCase()) || false
   }
 
   const handleCategoryCheck = () => {
     if (categoryTreeRef.value) {
-      const ids = TreeDataUtil.getRootNodesFromSelected(categoryTreeOptions.value, categoryTreeRef.value.getCheckedKeys())
+      const ids = TreeDataUtil.getRootNodesFromSelected(categoryTreeOptions.value, categoryTreeRef.value.getCheckedKeys() as string[])
         .map(node => node.id)
         .filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID)
       selectedCategoryIds.value = ids

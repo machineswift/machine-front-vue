@@ -16,7 +16,7 @@
 
   <el-dropdown class="dropdown">
     <span class="el-dropdown-link">
-      {{ currentUser.username }}
+      {{ currentUser?.username }}
       <el-icon class="el-icon--right">
         <arrow-down />
       </el-icon>

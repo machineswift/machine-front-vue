@@ -16,12 +16,12 @@
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="模块">
-            <el-input :model-value="getModuleLabel(state.detailData.module)" disabled />
+            <el-input :model-value="state.detailData.module ? enumStore.getEnumLabel(DICT_MODULE, state.detailData.module) : '-'" disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="实体">
-            <el-input :model-value="getEntityLabel(state.detailData.entity)" disabled />
+            <el-input :model-value="state.detailData.entity ? enumStore.getEnumLabel(DICT_MODULE_ENTITY, state.detailData.entity) : '-'" disabled />
           </el-form-item>
         </el-col>
       </el-row>
@@ -34,7 +34,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="文件类型">
-            <el-input :model-value="state.detailData.fileType ? getFileTypeLabel(state.detailData.fileType) : '-'" disabled />
+            <el-input :model-value="state.detailData.fileType ? enumStore.getEnumLabel(DICT_DATA_FILE_TYPE, state.detailData.fileType) : '-'" disabled />
           </el-form-item>
         </el-col>
       </el-row>
@@ -43,7 +43,7 @@
         <el-col :span="12">
           <el-form-item label="状态">
             <el-tag :type="getDownloadStatusTagType(state.detailData.status)">
-              {{ getStatusText(state.detailData.status) }}
+              {{ state.detailData.status ? enumStore.getEnumLabel(DICT_DATA_DOWNLOAD_STATUS, state.detailData.status) : '无' }}
             </el-tag>
           </el-form-item>
         </el-col>
@@ -98,10 +98,9 @@
   import { ElMessage } from 'element-plus'
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
   import type { QueryDownloadDetailResponseVo } from '@/modules/data/download/type/DataDownload.type'
-  import { DATA_FILE_TYPE_LABEL_MAP } from '@/modules/data/download/type/DataDownload.type'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_DATA_DOWNLOAD_STATUS, DICT_DATA_FILE_TYPE, DICT_MODULE, DICT_MODULE_ENTITY } from '@/shared/constants/DictionaryEnum.constant'
 
-  // 组合式函数
   const enumStore = useDictionaryEnumStore()
 
   const props = defineProps({
@@ -111,7 +110,6 @@
 
   const emit = defineEmits(['update:modelValue', 'close', 'success'])
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -121,11 +119,11 @@
     retrying: false,
     detailData: {
       id: '',
-      status: null as string | null,
+      status: '',
       module: undefined as string | undefined,
       entity: undefined as string | undefined,
       attachmentId: '',
-      fileType: null as string | null,
+      fileType: undefined as string | undefined,
       attachmentOriginalName: '',
       attachmentSize: 0,
       failCause: '',
@@ -163,30 +161,6 @@
     }
   }
 
-  // 获取状态文本
-  const getStatusText = (status: string) => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataDownloadStatusEnum', status)
-    return enumItem?.message || status
-  }
-
-  const getFileTypeLabel = (type: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataFileTypeEnum', type)
-    return enumItem?.message ?? DATA_FILE_TYPE_LABEL_MAP[type] ?? type
-  }
-
-  const getModuleLabel = (code?: string): string => {
-    if (!code) return '-'
-    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEnum', code)
-    return enumItem?.message ?? code
-  }
-
-  const getEntityLabel = (code?: string): string => {
-    if (!code) return '-'
-    const enumItem = enumStore.getEnumItemByCodeSync('ModuleEntityEnum', code)
-    return enumItem?.message ?? code
-  }
-
-  // 获取详情
   const fetchDetail = async () => {
     try {
       state.loading = true
@@ -202,14 +176,13 @@
   }
 
   const handleDialogClosed = () => {
-    // 重置详情数据
     state.detailData = {
       id: '',
-      status: null as string | null,
+      status: '',
       module: undefined as string | undefined,
       entity: undefined as string | undefined,
       attachmentId: '',
-      fileType: null as string | null,
+      fileType: undefined as string | undefined,
       attachmentOriginalName: '',
       attachmentSize: 0,
       failCause: '',
@@ -219,7 +192,6 @@
       updateTime: 0
     }
 
-    // 重置加载状态
     state.loading = false
     state.retrying = false
   }
@@ -229,7 +201,7 @@
     [() => props.modelValue, () => props.downloadId],
     async ([modelValue, downloadId]) => {
       if (modelValue && downloadId) {
-        await Promise.all([enumStore.getEnumDataAsync('ModuleEnum'), enumStore.getEnumDataAsync('ModuleEntityEnum')])
+        await Promise.all([enumStore.getEnumDataAsync(DICT_MODULE), enumStore.getEnumDataAsync(DICT_MODULE_ENTITY)])
         await fetchDetail()
       }
     },

@@ -45,14 +45,8 @@ export const useSettingStore = defineStore(
   },
   {
     persist: {
-      enabled: true,
-      strategies: [
-        {
-          key: 'machine:setting',
-          storage: localStorage,
-          paths: ['isCollapse', 'isRefresh']
-        }
-      ]
+      storage: localStorage,
+      pick: ['isCollapse', 'isRefresh']
     }
   }
 )

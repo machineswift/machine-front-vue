@@ -65,11 +65,11 @@
 </template>
 
 <script setup lang="ts">
+  import { ref, reactive, computed, nextTick, type PropType } from 'vue'
   import Fuse from 'fuse.js'
   import { debounce } from 'lodash-es'
-  import type { ElTreeSelect } from 'element-plus'
+  import type { ElTreeSelect, TreeNodeData } from 'element-plus'
   import { Search, Loading } from '@element-plus/icons-vue'
-  import { ref, reactive, computed, nextTick, type PropType } from 'vue'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
   import type { DataAreaExpandTreeResponseVo } from '@/modules/data/area/type/DataArea.type'
 
@@ -80,7 +80,6 @@
     }
   })
 
-  // 状态管理
   const uiState = reactive({
     visible: false,
     loading: false,
@@ -104,7 +103,6 @@
   const treeSelectRef = ref<InstanceType<typeof ElTreeSelect>>()
   const fuse = ref<Fuse<DataAreaExpandTreeResponseVo>>()
 
-  // 计算属性
   const displayTreeData = computed(() => {
     return uiState.searchText ? treeState.searchResults : props.areaTree ? [props.areaTree] : []
   })
@@ -112,10 +110,12 @@
   const treeProps = {
     label: 'name',
     children: 'children',
-    isLeaf: (data: DataAreaExpandTreeResponseVo) => data.isLeaf ?? !data.hasChildren
+    isLeaf: (data: TreeNodeData) => {
+      const children = (data as { children?: unknown[] }).children
+      return !children || children.length === 0
+    }
   }
 
-  // 方法
   const openDropdown = () => {
     const input = treeSelectRef.value?.$el?.querySelector?.('.el-select__input')
     input?.click()
@@ -147,7 +147,10 @@
     }
   }
 
-  const loadNode = async (node: DataAreaExpandTreeResponseVo, resolve: (data: DataAreaExpandTreeResponseVo[]) => void) => {
+  const loadNode = async (
+    node: { level: number; loading: boolean; data: { id: string; children?: DataAreaExpandTreeResponseVo[] } },
+    resolve: (data: DataAreaExpandTreeResponseVo[]) => void
+  ) => {
     if (node.level === 0) {
       return resolve(props.areaTree ? [props.areaTree] : [])
     }
@@ -197,7 +200,6 @@
     treeState.flatData.push(node)
     if (node.children?.length) {
       node.children.forEach(child => flattenTree(child))
-      node.hasChildren = node.children.length > 0
     }
   }
 
@@ -206,13 +208,11 @@
     form.currentName = row.name
     form.parentId = row.parentId
 
-    // 重置状态
     uiState.searchText = ''
     treeState.searchResults = []
     treeState.cache.clear()
     treeState.flatData = []
 
-    // 初始化树数据
     if (props.areaTree) {
       flattenTree(props.areaTree)
       treeState.cache.set(props.areaTree.id, props.areaTree.children || [])
@@ -225,7 +225,6 @@
   }
 
   const handleDialogClosed = () => {
-    // 重置表单数据
     form.id = ''
     form.currentName = ''
     form.parentId = ''
@@ -237,12 +236,10 @@
     treeState.flatData = []
     treeState.defaultExpandedKeys = []
 
-    // 重置UI状态
     uiState.loading = false
     uiState.dropdownVisible = false
 
-    // 重置树选择器状态
-    treeSelectRef.value?.clear()
+    ;(treeSelectRef.value as unknown as { clear: () => void } | null)?.clear()
   }
 
   const handleSubmit = async () => {

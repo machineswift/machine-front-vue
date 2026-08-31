@@ -1,4 +1,4 @@
-import type { RouteRecordRaw } from 'vue-router'
+import type { RouteRecordRaw, RouteMeta } from 'vue-router'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -14,7 +14,7 @@ declare module 'vue-router' {
   }
 }
 
-export interface ExtendedRouteRecordRaw extends Omit<RouteRecordRaw, 'meta'> {
+export type ExtendedRouteRecordRaw = Omit<RouteRecordRaw, 'meta' | 'children'> & {
   meta?: RouteMeta
   children?: ExtendedRouteRecordRaw[]
 }

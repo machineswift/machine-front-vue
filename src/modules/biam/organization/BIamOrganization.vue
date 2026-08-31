@@ -1,0 +1,855 @@
+<template>
+  <div ref="pageContainerRef" class="organization-page">
+    <!-- 搜索表单区域 -->
+    <el-card ref="searchCardRef" class="box-card-form">
+      <el-form :model="currentTabState.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
+        <div class="form-items-group">
+          <el-form-item label="名称:" prop="name">
+            <el-input v-model="currentTabState.searchForm.name" placeholder="请输入组织名称" clearable :disabled="!currentTabState.searchReady" />
+          </el-form-item>
+          <el-form-item label="编码:" prop="code">
+            <el-input v-model="currentTabState.searchForm.code" placeholder="请输入组织编码,至少3位" clearable :disabled="!currentTabState.searchReady" />
+          </el-form-item>
+        </div>
+
+        <div class="button-group">
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch" :disabled="!currentTabState.searchReady">搜索</el-button>
+            <el-button @click="resetSearch" :disabled="!currentTabState.searchReady">重置</el-button>
+          </el-form-item>
+        </div>
+      </el-form>
+    </el-card>
+
+    <!-- 数据展示区域 -->
+    <el-card v-if="currentTabState.searchReady" ref="boxCardData" class="box-card-data">
+      <el-tabs v-model="state.activeTab" type="card" @tab-change="handleTabChange">
+        <el-tab-pane v-for="tab in state.tabs" :key="tab.code" :label="tab.message" :name="tab.code">
+          <!-- 操作按钮 -->
+          <div class="operation-buttons">
+            <el-button type="primary" @click="handleAdd(null)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE']">添加</el-button>
+          </div>
+
+          <!-- 搜索结果提示 -->
+          <div v-if="currentTabState.showSearchNotice" class="search-notice">
+            <el-alert type="warning" :closable="false">
+              当前显示前50个匹配结果，共找到 {{ currentTabState.matchedCount }} 个匹配项，搜索耗时 {{ currentTabState.searchTimeCost }} 毫秒
+            </el-alert>
+          </div>
+
+          <!-- 数据表格 -->
+          <div :ref="el => setTableContainerRef(el, tab.code)" class="table-wrapper">
+            <el-table-v2
+              v-if="shouldRenderTable"
+              v-model:expanded-row-keys="currentTabState.expandedRowKeys"
+              :columns="tableColumns"
+              :data="currentTabState.displayData"
+              :width="tableWidth"
+              :height="tableHeight"
+              :expand-column-key="expandColumnKey"
+              fixed
+              row-key="id"
+              :estimated-row-height="60"
+              class="organization-table"
+            />
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
+
+    <!-- 对话框组件 -->
+    <BIamOrganizationCreateDialog v-model="currentTabState.dialogVisible.create" :parent-node="currentTabState.currentNode" @success="handleSuccess" />
+    <BIamOrganizationEditDialog
+      v-model="currentTabState.dialogVisible.edit"
+      :organization-id="currentTabState.currentOrganizationId"
+      @success="handleSuccess"
+    />
+    <BIamOrganizationUpdateParentDialog ref="updateParentDialog" :organization-tree="currentTabState.rootNode" @success="handleSuccess" />
+    <BIamOrganizationDetailDialog v-model="currentTabState.dialogVisible.detail" :organization-id="currentTabState.currentOrganizationId" />
+  </div>
+</template>
+
+<script lang="ts" setup>
+  defineOptions({
+    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION'
+  })
+  import { ref, reactive, computed, onMounted, onActivated, watch, h, nextTick, onBeforeUnmount, type ComponentPublicInstance } from 'vue'
+  import Fuse, { type FuseResultMatch } from 'fuse.js'
+  import { ElMessage, ElMessageBox, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElTooltip, ElIcon } from 'element-plus'
+  import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
+  import { useElementSize } from '@vueuse/core'
+  import { hasPermission } from '@/shared/utils/Permission.util'
+  import { BIamOrganizationApi } from '@/modules/biam/organization/api/BIamOrganization.api'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_IAM_ORG_TYPE } from '@/shared/constants/DictionaryEnum.constant'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
+  import type { BIamOrganizationExpandTreeResponseVo } from '@/modules/biam/organization/type/BIamOrganization.type'
+  import type { IamDictionaryEnumInfoResponse } from '@/shared/types/DictionaryEnum.type'
+  import BIamOrganizationCreateDialog from '@/modules/biam/organization/BIamOrganizationCreateDialog.vue'
+  import BIamOrganizationEditDialog from '@/modules/biam/organization/BIamOrganizationEditDialog.vue'
+  import BIamOrganizationDetailDialog from '@/modules/biam/organization/BIamOrganizationDetailDialog.vue'
+  import BIamOrganizationUpdateParentDialog from '@/modules/biam/organization/BIamOrganizationUpdateParentDialog.vue'
+
+  interface TabState {
+    searchForm: {
+      name: string
+      code: string
+    }
+    searchReady: boolean
+    isSearching: boolean
+    matchedCount: number
+    searchTimeCost: number
+    showSearchNotice: boolean
+
+    allData: BIamOrganizationExpandTreeResponseVo[]
+    displayData: BIamOrganizationExpandTreeResponseVo[]
+    expandedRowKeys: string[]
+
+    // 树数据
+    rootNode: BIamOrganizationExpandTreeResponseVo | null
+
+    // 当前选中节点
+    currentNode: BIamOrganizationExpandTreeResponseVo | null
+    currentOrganizationId: string
+
+    // 对话框状态
+    dialogVisible: {
+      create: boolean
+      edit: boolean
+      detail: boolean
+    }
+
+    nameFuse: Fuse<BIamOrganizationExpandTreeResponseVo> | null
+    codeFuse: Fuse<BIamOrganizationExpandTreeResponseVo> | null
+  }
+
+  // 组件配置
+  const tableColumns = [
+    { key: 'id', title: 'ID', dataKey: 'id', width: 200, hidden: true },
+    {
+      key: 'name',
+      title: '名称',
+      dataKey: 'name',
+      width: 160,
+      fixed: true,
+      align: 'center',
+      cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: BIamOrganizationExpandTreeResponseVo }) =>
+        rowData.highlight?.name ? h('span', { innerHTML: rowData.highlight.name }) : cellData
+    },
+    {
+      key: 'code',
+      title: '编码',
+      dataKey: 'code',
+      width: 160,
+      align: 'left',
+      cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: BIamOrganizationExpandTreeResponseVo }) =>
+        rowData.highlight?.code ? h('span', { innerHTML: rowData.highlight.code }) : cellData
+    },
+    { key: 'organizationNumber', title: '组织数', dataKey: 'organizationNumber', width: 100, align: 'center' },
+    { key: 'shopNumber', title: '门店数', dataKey: 'shopNumber', width: 100, align: 'center' },
+    { key: 'userNumber', title: '用户数', dataKey: 'userNumber', width: 100, align: 'center' },
+    { key: 'sort', title: '排序', dataKey: 'sort', width: 160, align: 'center' },
+    { key: 'createName', title: '创建人', dataKey: 'createName', width: 120, align: 'center' },
+    {
+      key: 'createTime',
+      title: '创建时间',
+      dataKey: 'createTime',
+      width: 180,
+      align: 'center',
+      cellRenderer: ({ cellData }: { cellData: string }) => (cellData ? new Date(cellData).toLocaleString() : '-')
+    },
+    { key: 'updateName', title: '修改人', dataKey: 'updateName', width: 120, align: 'center' },
+    {
+      key: 'updateTime',
+      title: '修改时间',
+      dataKey: 'updateTime',
+      width: 180,
+      align: 'center',
+      cellRenderer: ({ cellData }: { cellData: string }) => (cellData ? new Date(cellData).toLocaleString() : '-')
+    },
+    {
+      key: 'operation',
+      title: '操作',
+      width: 200,
+      align: 'center',
+      fixed: 'right',
+      cellRenderer: ({ rowData }: { rowData: BIamOrganizationExpandTreeResponseVo }) => {
+        // 虚拟节点不可操作
+        const isVirtualNode = rowData.code?.includes('org_virtual_node')
+
+        if (isVirtualNode) {
+          return h(
+            ElTooltip,
+            { content: '虚拟节点不可操作', placement: 'top' },
+            {
+              default: () =>
+                h('div', { class: 'table-actions' }, [
+                  h(ElButton, { size: 'small', disabled: true }, () => '详情'),
+                  h(ElButton, { size: 'small', type: 'primary', disabled: true }, () => '编辑'),
+                  h(
+                    ElDropdown,
+                    { trigger: 'click', placement: 'bottom-end', disabled: true },
+                    {
+                      default: () =>
+                        h(ElButton, { size: 'small', type: 'info', disabled: true }, () => [
+                          '更多',
+                          h(ElIcon, { class: 'el-icon--right' }, { default: () => h(ArrowDown) })
+                        ]),
+                      dropdown: () =>
+                        h(ElDropdownMenu, null, () => [
+                          h(ElDropdownItem, { disabled: true }, () => [h(ElIcon, null, { default: () => h(Plus) }), h('span', null, '新增')]),
+                          h(ElDropdownItem, { disabled: true }, () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '修改父节点')]),
+                          h(ElDropdownItem, { disabled: true, divided: true }, () => [h(ElIcon, null, { default: () => h(Delete) }), h('span', null, '删除')])
+                        ])
+                    }
+                  )
+                ])
+            }
+          )
+        }
+
+        return h('div', { class: 'table-actions' }, [
+          h(
+            ElButton,
+            {
+              size: 'small',
+              disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DETAIL']),
+              onClick: () => handleDetail(rowData)
+            },
+            () => '详情'
+          ),
+          h(
+            ElButton,
+            {
+              size: 'small',
+              type: 'primary',
+              disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE']),
+              onClick: () => handleEdit(rowData)
+            },
+            () => '编辑'
+          ),
+          h(
+            ElDropdown,
+            {
+              trigger: 'click',
+              placement: 'bottom-end',
+              onCommand: (command: string) => {
+                const commandMap: Record<string, () => void> = {
+                  add: () => handleAdd(rowData),
+                  changeParent: () => handleChangeParent(rowData),
+                  delete: () => handleDeleteConfirm(rowData)
+                }
+                commandMap[command]?.()
+              }
+            },
+            {
+              default: () =>
+                h(ElButton, { size: 'small', type: 'info' }, () => ['更多', h(ElIcon, { class: 'el-icon--right' }, { default: () => h(ArrowDown) })]),
+              dropdown: () =>
+                h(ElDropdownMenu, null, () => [
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'add',
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Plus) }), h('span', null, '新增')]
+                  ),
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'changeParent',
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE_PARENT'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '修改父节点')]
+                  ),
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'delete',
+                      divided: true,
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DELETE'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Delete) }), h('span', null, '删除')]
+                  )
+                ])
+            }
+          )
+        ])
+      }
+    }
+  ]
+
+  const shouldRenderTable = ref(true)
+  const enumStore = useDictionaryEnumStore()
+  const searchCardRef = ref()
+  const boxCardData = ref()
+  const pageContainerRef = ref<HTMLElement | null>(null)
+  const tableHeight = ref(400)
+  const tableContainerRefMap = new Map<string, HTMLElement>()
+  let resizeObserver: ResizeObserver | null = null
+  let isFirstActivation = true
+  const { width: containerWidth } = useElementSize(boxCardData)
+
+  // 全局状态
+  const state = reactive({
+    tabs: [] as IamDictionaryEnumInfoResponse[],
+    activeTab: '',
+    tabStates: new Map<string, TabState>(),
+    initializedTabs: new Set<string>()
+  })
+
+  // 计算当前tab的状态
+  const currentTabState = computed(() => {
+    if (!state.activeTab) {
+      return createDefaultTabState()
+    }
+
+    if (!state.tabStates.has(state.activeTab)) {
+      state.tabStates.set(state.activeTab, createDefaultTabState())
+    }
+
+    return state.tabStates.get(state.activeTab)!
+  })
+
+  const updateParentDialog = ref<InstanceType<typeof BIamOrganizationUpdateParentDialog>>()
+  const expandColumnKey = ref('name')
+  const tableWidth = computed(() => Math.max(containerWidth.value - 24, 800))
+
+  const resolveElement = (target: unknown): HTMLElement | null => {
+    if (target instanceof HTMLElement) return target
+    if (target && typeof target === 'object' && '$el' in target) {
+      const el = (target as { $el?: Element }).$el
+      return el instanceof HTMLElement ? el : null
+    }
+    return null
+  }
+
+  const setTableContainerRef = (el: Element | ComponentPublicInstance | null, tabCode: string) => {
+    if (el instanceof HTMLElement) {
+      tableContainerRefMap.set(tabCode, el)
+      if (tabCode === state.activeTab) {
+        updateTableHeight()
+      }
+      return
+    }
+    tableContainerRefMap.delete(tabCode)
+  }
+
+  const updateTableHeight = () => {
+    const tableContainer = tableContainerRefMap.get(state.activeTab)
+    if (!tableContainer) return
+    tableHeight.value = Math.max(tableContainer.clientHeight, 260)
+  }
+
+  const setupResizeObserver = () => {
+    const pageContainerEl = pageContainerRef.value
+    const searchCardEl = resolveElement(searchCardRef.value)
+    const dataCardEl = resolveElement(boxCardData.value)
+    if (!pageContainerEl || !searchCardEl || !dataCardEl) return
+
+    resizeObserver = new ResizeObserver(() => {
+      updateTableHeight()
+    })
+
+    resizeObserver.observe(pageContainerEl)
+    resizeObserver.observe(searchCardEl)
+    resizeObserver.observe(dataCardEl)
+  }
+
+  // 创建默认的tab状态
+  const createDefaultTabState = (): TabState => ({
+    searchForm: { name: '', code: '' },
+    searchReady: false,
+    isSearching: false,
+    matchedCount: 0,
+    searchTimeCost: 0,
+    showSearchNotice: false,
+    allData: [],
+    displayData: [],
+    expandedRowKeys: [],
+    rootNode: null,
+    currentNode: null,
+    currentOrganizationId: '',
+    dialogVisible: {
+      create: false,
+      edit: false,
+      detail: false
+    },
+    nameFuse: null,
+    codeFuse: null
+  })
+
+  const fetchTabOptions = async () => {
+    try {
+      state.tabs = await enumStore.getEnumDataAsync(DICT_IAM_ORG_TYPE)
+      if (state.tabs.length > 0) {
+        state.activeTab = state.tabs[0].code
+      }
+    } catch (error) {
+      console.error('获取组织类型枚举失败', error)
+    }
+  }
+
+  const fetchOrganizationTree = async () => {
+    if (!state.activeTab) return
+
+    const tabState = currentTabState.value
+
+    try {
+      tabState.searchReady = false
+      const response = await BIamOrganizationApi.treeExpand({ type: state.activeTab })
+      tabState.rootNode = response
+      tabState.allData = response.children || []
+      tabState.displayData = response.children || []
+      initSearchTools(tabState)
+      tabState.searchReady = true
+      state.initializedTabs.add(state.activeTab)
+    } catch (error) {
+      console.error('获取组织树数据失败', error)
+      ElMessage.error('获取组织数据失败，请稍后重试')
+      tabState.searchReady = false
+    }
+  }
+
+  const initSearchTools = (tabState: TabState) => {
+    const flatData = TreeDataUtil.collectAllNodes(tabState.allData) || []
+
+    tabState.nameFuse = new Fuse(flatData, {
+      keys: ['name'],
+      includeMatches: true,
+      includeScore: true,
+      threshold: 0.1,
+      minMatchCharLength: 1,
+      ignoreLocation: true,
+      distance: 30,
+      findAllMatches: true,
+      tokenize: (text: string) => text.split(/\s+/)
+    })
+
+    tabState.codeFuse = new Fuse(flatData, {
+      keys: ['code'],
+      includeMatches: true,
+      includeScore: true,
+      threshold: 0.3,
+      minMatchCharLength: 3,
+      ignoreLocation: true,
+      distance: 10,
+      findAllMatches: true,
+      tokenize: (text: string) => text.split(/\s+/)
+    })
+  }
+
+  // 高亮匹配文本
+  const highlightMatch = (text: string, matches: readonly FuseResultMatch[] | undefined) => {
+    if (!matches?.length) return text
+
+    let result = text
+    matches.forEach(match => {
+      if (!match.indices?.length) return
+      ;[...match.indices]
+        .sort((a, b) => b[0] - a[0])
+        .forEach(([start, end]) => {
+          const matched = result.substring(start, end + 1)
+          result = `${result.substring(0, start)}<span class="highlight">${matched}</span>${result.substring(end + 1)}`
+        })
+    })
+
+    return result
+  }
+
+  // 执行搜索
+  const performSearch = () => {
+    const tabState = currentTabState.value
+    const { name, code } = tabState.searchForm
+
+    if (!name && !code) {
+      resetSearch()
+      return
+    }
+
+    tabState.isSearching = true
+    const startTime = performance.now()
+    let matchedItems: BIamOrganizationExpandTreeResponseVo[] = []
+    const parentIds = new Set<string>()
+
+    // 名称搜索
+    const nameResults = name && tabState.nameFuse ? tabState.nameFuse.search(name) : []
+    // 编码搜索
+    const codeResults = code && tabState.codeFuse ? tabState.codeFuse.search(code) : []
+
+    // 组合搜索结果
+    if (name && code) {
+      const nameResultIds = new Set(nameResults.map(r => r.item.id))
+      const codeResultIds = new Set(codeResults.map(r => r.item.id))
+
+      // 取交集
+      const intersectionIds = new Set([...nameResultIds].filter(id => codeResultIds.has(id)))
+      tabState.matchedCount = intersectionIds.size
+
+      // 创建合并的结果，包含两个搜索的高亮
+      matchedItems = nameResults
+        .filter(result => intersectionIds.has(result.item.id))
+        .map(nameResult => {
+          const codeResult = codeResults.find(cr => cr.item.id === nameResult.item.id)
+          return {
+            ...nameResult.item,
+            highlight: {
+              name: highlightMatch(nameResult.item.name, nameResult.matches),
+              code: codeResult ? highlightMatch(codeResult.item.code, codeResult.matches) : ''
+            }
+          }
+        })
+    } else if (name) {
+      tabState.matchedCount = nameResults.length
+      matchedItems = nameResults.slice(0, 50).map(result => ({
+        ...result.item,
+        highlight: { name: highlightMatch(result.item.name, result.matches) }
+      }))
+    } else if (code) {
+      tabState.matchedCount = codeResults.length
+      matchedItems = codeResults.slice(0, 50).map(result => ({
+        ...result.item,
+        highlight: { code: highlightMatch(result.item.code || '', result.matches) }
+      }))
+    }
+
+    // 收集所有匹配节点及其父节点ID
+    const matchedIds = new Set(
+      matchedItems.map(item => {
+        let parentId: string | undefined = item.parentId
+        while (parentId) {
+          parentIds.add(parentId)
+          const parent: BIamOrganizationExpandTreeResponseVo | null = TreeDataUtil.findNode(tabState.allData, parentId ?? null)
+          parentId = parent?.parentId
+        }
+        return item.id
+      })
+    )
+
+    // 构建搜索结果树
+    const buildResultTree = (nodes: BIamOrganizationExpandTreeResponseVo[]): BIamOrganizationExpandTreeResponseVo[] => {
+      return nodes
+        .filter(node => matchedIds.has(node.id) || parentIds.has(node.id))
+        .map(node => {
+          const newNode = { ...node }
+          if (matchedIds.has(node.id)) {
+            const matched = matchedItems.find(item => item.id === node.id)
+            if (matched) newNode.highlight = matched.highlight
+          }
+          if (node.children) newNode.children = buildResultTree(node.children)
+          return newNode
+        })
+    }
+
+    tabState.displayData = buildResultTree(tabState.allData)
+    tabState.expandedRowKeys = Array.from(parentIds).slice(0, 50)
+    tabState.searchTimeCost = Math.round(performance.now() - startTime)
+    tabState.showSearchNotice = tabState.matchedCount > 50
+    nextTick(updateTableHeight)
+  }
+
+  // 事件处理
+  const handleSearch = () => {
+    const tabState = currentTabState.value
+    if (tabState.searchForm.code && tabState.searchForm.code.length < 3) {
+      ElMessage.warning('编码至少需要3位字符')
+      return
+    }
+    performSearch()
+  }
+
+  const resetSearch = () => {
+    const tabState = currentTabState.value
+    tabState.searchForm.name = ''
+    tabState.searchForm.code = ''
+    tabState.isSearching = false
+    tabState.matchedCount = 0
+    tabState.searchTimeCost = 0
+    tabState.showSearchNotice = false
+    tabState.displayData = tabState.allData
+    tabState.expandedRowKeys = []
+    nextTick(updateTableHeight)
+  }
+
+  const handleTabChange = async (tabCode: string) => {
+    state.activeTab = tabCode
+    // 如果该类型数据尚未加载，则加载数据
+    if (!state.initializedTabs.has(tabCode)) {
+      await fetchOrganizationTree()
+    } else {
+      // 如果 tab 已初始化，确保 searchReady 为 true（可能之前加载失败导致为 false）
+      const tabState = currentTabState.value
+      if (!tabState.searchReady && tabState.allData.length > 0) {
+        tabState.searchReady = true
+      }
+    }
+
+    //切换强制重新渲染
+    shouldRenderTable.value = false
+    await nextTick(() => {
+      shouldRenderTable.value = true
+    })
+    // 切换 tab 时重置搜索状态，显示所有数据
+    resetSearch()
+    await nextTick()
+    updateTableHeight()
+  }
+
+  const handleDetail = (row: BIamOrganizationExpandTreeResponseVo) => {
+    const tabState = currentTabState.value
+    tabState.currentOrganizationId = row.id
+    tabState.dialogVisible.detail = true
+  }
+
+  const handleAdd = (row: BIamOrganizationExpandTreeResponseVo | null) => {
+    const tabState = currentTabState.value
+    tabState.currentNode = row || tabState.rootNode
+    tabState.dialogVisible.create = true
+  }
+
+  const handleEdit = (row: BIamOrganizationExpandTreeResponseVo) => {
+    const tabState = currentTabState.value
+    tabState.currentOrganizationId = row.id
+    tabState.dialogVisible.edit = true
+  }
+
+  const handleChangeParent = (row: BIamOrganizationExpandTreeResponseVo) => {
+    updateParentDialog.value?.open({
+      id: row.id,
+      name: row.name,
+      parentId: row.parentId
+    })
+  }
+
+  const handleDelete = async (row: { id: string }) => {
+    try {
+      await BIamOrganizationApi.destroy({ id: row.id })
+      handleSuccess()
+    } catch (error) {
+      console.error('删除组织失败', error)
+    }
+  }
+
+  const handleDeleteConfirm = async (row: { id: string; name: string }) => {
+    try {
+      await ElMessageBox.confirm(`确定要删除此组织 "${row.name}" 吗? 此操作不可恢复！`, '警告', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      await handleDelete(row)
+    } catch (error) {
+      if (error !== 'cancel') {
+        console.error('删除组织失败', error)
+      }
+    }
+  }
+
+  const handleSuccess = () => {
+    const tabState = currentTabState.value
+    Object.keys(tabState.dialogVisible).forEach(key => {
+      tabState.dialogVisible[key as keyof typeof tabState.dialogVisible] = false
+    })
+    fetchOrganizationTree()
+  }
+
+  // 监听器
+  watch(
+    () => currentTabState.value.searchForm,
+    ({ name, code }) => {
+      if (!name && !code && currentTabState.value.isSearching) {
+        resetSearch()
+      }
+    },
+    { deep: true }
+  )
+
+  onMounted(async () => {
+    await fetchTabOptions()
+    await fetchOrganizationTree()
+    await nextTick()
+    setupResizeObserver()
+    updateTableHeight()
+  })
+
+  onActivated(async () => {
+    if (isFirstActivation) {
+      isFirstActivation = false
+      return
+    }
+    await fetchOrganizationTree()
+  })
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
+    tableContainerRefMap.clear()
+  })
+</script>
+
+<style scoped lang="scss">
+  .organization-page {
+    height: 100%;
+    min-height: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
+  .box-card-form {
+    margin: 0;
+    flex-shrink: 0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+    .search-form {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+
+      .form-items-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .el-form-item {
+        margin-bottom: 0;
+
+        .el-input {
+          width: 200px;
+        }
+      }
+
+      .button-group {
+        margin-left: auto;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .box-card-data {
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+    :deep(.el-card__body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      padding: 12px;
+    }
+
+    :deep(.el-tabs) {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    :deep(.el-tabs__content) {
+      flex: 1;
+      min-height: 0;
+    }
+
+    :deep(.el-tab-pane) {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .operation-buttons {
+      margin-bottom: 10px;
+    }
+
+    .search-notice {
+      margin-bottom: 10px;
+    }
+
+    .table-wrapper {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
+  /* 高亮样式 */
+  :deep(.highlight) {
+    background-color: #fffb8f;
+    color: #000;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
+  // 操作按钮样式 - 需要深度选择器以应用到 JSX 组件
+  :deep(.table-actions) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    .el-button {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    .el-dropdown {
+      margin-left: 2px;
+    }
+  }
+
+  // 优化表格行高，增加上下间距，添加边框
+  .organization-table {
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+
+    :deep(.el-virtual-scroll__item) {
+      padding: 4px 0;
+    }
+
+    :deep(.el-table-v2__row) {
+      height: 48px;
+    }
+
+    :deep(.el-table-v2__cell) {
+      padding: 4px 8px;
+      border-right: 1px solid var(--el-border-color);
+      border-bottom: 1px solid var(--el-border-color);
+    }
+
+    :deep(.el-table-v2__header-row) {
+      .el-table-v2__header-cell {
+        border-right: 1px solid var(--el-border-color);
+        border-bottom: 1px solid var(--el-border-color);
+      }
+    }
+
+    :deep(.el-table-v2__row:last-child) {
+      .el-table-v2__cell {
+        border-bottom: none;
+      }
+    }
+
+    :deep(.el-table-v2__cell:last-child) {
+      border-right: none;
+    }
+
+    :deep(.el-table-v2__header-cell:last-child) {
+      border-right: none;
+    }
+  }
+</style>

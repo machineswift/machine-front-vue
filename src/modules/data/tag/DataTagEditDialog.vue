@@ -56,7 +56,6 @@
     description: ''
   }
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -77,7 +76,6 @@
     description: [{ max: 512, message: '描述不能超过512个字符', trigger: 'blur' }]
   }
 
-  // 获取标签数据
   const fetchData = async () => {
     try {
       state.loading = true
@@ -95,7 +93,6 @@
     }
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

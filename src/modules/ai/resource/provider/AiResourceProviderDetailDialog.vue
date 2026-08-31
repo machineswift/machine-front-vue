@@ -13,7 +13,7 @@
     <el-form :model="state.detailData" label-width="120px" v-loading="state.loading">
       <el-form-item label="厂商">
         <el-select v-model="state.detailData.provider" placeholder="请选择厂商" disabled style="width: 100%">
-          <el-option v-for="option in state.providerOptions" :key="option.code" :label="option.message" :value="option.code" />
+          <el-option v-for="option in providerOptions" :key="option.code" :label="option.message" :value="option.code" />
         </el-select>
       </el-form-item>
 
@@ -73,10 +73,11 @@
 <script setup lang="ts">
   import { computed, watch, reactive } from 'vue'
   import { AiResourceProviderApi } from '@/modules/ai/resource/provider/api/AiResourceProvider.api'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_AI_PROVIDER } from '@/shared/constants/DictionaryEnum.constant'
   import type { AiResourceProviderDetailResponseVo } from '@/modules/ai/resource/provider/type/AiResourceProvider.type'
 
-  const enumStore = useDictionaryEnumStore()
+  const { options: providerOptions, load: loadProviderOptions } = useEnumOptions(DICT_AI_PROVIDER)
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
@@ -105,8 +106,6 @@
     }),
     loading: false,
 
-    providerOptions: [] as Array<{ code: string; message: string }>,
-
     detailData: { ...DEFAULT_DETAIL }
   })
 
@@ -134,7 +133,7 @@
     [() => props.modelValue, () => props.providerId],
     async ([modelValue, providerId]) => {
       if (modelValue && providerId) {
-        state.providerOptions = await enumStore.getEnumDataAsync('AiProviderEnum')
+        await loadProviderOptions()
         await fetchData()
       }
     },

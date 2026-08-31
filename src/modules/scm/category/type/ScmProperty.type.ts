@@ -1,8 +1,5 @@
-// 属性类型枚举
-export type ScmProperityTypeEnum = 'KEY' | 'SALE' | 'SPEC'
-
-// 输入方式枚举
-export type ScmItemInputTypeEnum = 'SELECT' | 'INPUT'
+// 属性类型/输入方式枚举由后端字典维护（ScmProperityTypeEnum / ScmItemInputTypeEnum），
+// 前端不定义枚举，通过 useDictionaryEnumStore.getEnumDataAsync 动态加载选项，此处仅存 code 字符串
 
 // 属性值列表响应
 export interface ScmPropertyValueListResponseVo {
@@ -16,9 +13,9 @@ export interface ScmPropertyValueListResponseVo {
 export interface ScmPropertyCreateRequestVo {
   code: string
   name: string
-  propertyType: ScmProperityTypeEnum
+  propertyType: string
   isRequired: boolean
-  inputType: ScmItemInputTypeEnum
+  inputType: string
   isMultiple: boolean
   isSearch: boolean
   features?: string
@@ -29,7 +26,7 @@ export interface ScmPropertyUpdateRequestVo {
   id: string
   name: string
   isRequired: boolean
-  inputType: ScmItemInputTypeEnum
+  inputType: string
   isMultiple: boolean
   isSearch: boolean
   features?: string
@@ -41,8 +38,8 @@ export interface ScmPropertyQueryPageRequestVo {
   size?: number
   code?: string
   name?: string
-  propertyType?: ScmProperityTypeEnum
-  inputType?: ScmItemInputTypeEnum
+  propertyType?: string
+  inputType?: string
   isSearch?: boolean
 }
 
@@ -51,9 +48,9 @@ export interface ScmPropertyDetailResponseVo {
   id: string
   code: string
   name: string
-  propertyType: ScmProperityTypeEnum
+  propertyType: string
   isRequired: boolean
-  inputType: ScmItemInputTypeEnum
+  inputType: string
   isMultiple: boolean
   isSearch: boolean
   features: string
@@ -71,8 +68,8 @@ export interface ScmPropertySimpleListResponseVo {
   id: string
   code: string
   name: string
-  propertyType: ScmProperityTypeEnum
-  inputType: ScmItemInputTypeEnum
+  propertyType: string
+  inputType: string
 }
 
 // 属性列表响应（完整版，应用于属性库管理菜单）
@@ -80,9 +77,9 @@ export interface ScmPropertyListResponseVo {
   id: string
   code: string
   name: string
-  propertyType: ScmProperityTypeEnum
+  propertyType: string
   isRequired: boolean
-  inputType: ScmItemInputTypeEnum
+  inputType: string
   isMultiple: boolean
   isSearch: boolean
   features: string

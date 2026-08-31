@@ -21,7 +21,7 @@
 
       <el-form-item label="门店地址" prop="addressInfo">
         <el-select v-model="state.formData.addressInfo.countryCode" placeholder="请选择国家" change="" clear="" clearable>
-          <el-option v-for="option in state.countryCodeOptions" :key="option.code" :label="option.message" :value="option.code" />
+          <el-option v-for="option in countryCodeOptions" :key="option.code" :label="option.message" :value="option.code" />
         </el-select>
         <el-tooltip :disabled="!!state.formData.addressInfo.countryCode" content="请先选择国家" placement="top">
           <div style="display: block; width: 100%">
@@ -65,8 +65,9 @@
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormItemRule } from 'element-plus'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_DATA_COUNTRY } from '@/shared/constants/DictionaryEnum.constant'
   import { DataShopApi } from '@/modules/data/shop/api/DataShop.api'
-  import type { DataShopUpdateRequestVo } from '@/modules/data/shop/type/DataShop.type'
   import type { AddressInfoDto } from '@/shared/types/CommonData.type'
   import type { DataAreaSimpleTreeResponseVo, DataAreaTreeSimpleResponseVo } from '@/modules/data/area/type/DataArea.type'
   import { DataAreaApi } from '@/modules/data/area/api/DataArea.api'
@@ -79,9 +80,11 @@
 
   const formRef = ref<FormInstance>()
   const enumStore = useDictionaryEnumStore()
+
+  const { options: countryCodeOptions, load: loadCountryCodeOptions } = useEnumOptions(DICT_DATA_COUNTRY)
+
   const emit = defineEmits(['update:modelValue', 'close', 'success'])
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -89,7 +92,6 @@
     }),
     loading: false,
     submitting: false,
-    countryCodeOptions: [] as Array<{ code: string; message: string }>,
     areaTreeOptions: new Map<string, DataAreaSimpleTreeResponseVo[]>(),
     areaSelected: [] as string[],
     areaProps: {
@@ -117,7 +119,7 @@
       latitude: 0,
       longitude: 0,
       description: ''
-    } as DataShopUpdateRequestVo
+    }
   })
 
   // 计算当前省市区的状态
@@ -132,11 +134,11 @@
       }
 
       if (!state.areaTreeOptions.has(countryCode)) {
-        const response = await DataAreaApi.treeSimple({ countryCode })
-        state.areaTreeOptions.set(countryCode, response.children)
+        const response = await DataAreaApi.treeSimple({ country: countryCode })
+        state.areaTreeOptions.set(countryCode, response.children ?? [])
       }
 
-      state.formData.addressInfo.country = getAreaCountryLabel(countryCode)
+      state.formData.addressInfo.country = await enumStore.getEnumLabelAsync(DICT_DATA_COUNTRY, countryCode)
       currentAreaTreeOptions.value = state.areaTreeOptions.get(countryCode)!
     },
     { immediate: false }
@@ -175,12 +177,6 @@
     description: [{ max: 512, message: '描述不能超过512个字符', trigger: 'blur' }]
   }
 
-  const getAreaCountryLabel = (code: string): string => {
-    const enumItem = enumStore.getEnumItemByCodeSync('DataCountryEnum', code)
-    return enumItem?.message || code
-  }
-
-  // 获取门店数据
   const fetchData = async () => {
     try {
       state.loading = true
@@ -223,22 +219,21 @@
     }
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true
       await formRef.value?.validate()
 
       // 设置省市区信息
-      const province: DataAreaTreeSimpleResponseVo = TreeDataUtil.findNode(currentAreaTreeOptions.value, state.areaSelected[0], { mode: 'bfs' })
+      const province: DataAreaTreeSimpleResponseVo | null = TreeDataUtil.findNode(currentAreaTreeOptions.value, state.areaSelected[0], { mode: 'bfs' })
       if (province) {
         state.formData.addressInfo.province = province.name
         state.formData.addressInfo.provinceCode = province.code
-        const city: DataAreaTreeSimpleResponseVo = TreeDataUtil.findNode(province.children, state.areaSelected[1], { mode: 'bfs' })
-        state.formData.addressInfo.city = city.name
-        state.formData.addressInfo.cityCode = city.code
+        const city = TreeDataUtil.findNode(province.children ?? [], state.areaSelected[1], { mode: 'bfs' })
         if (city) {
-          const area = TreeDataUtil.findNode(city.children, state.areaSelected[2], { mode: 'bfs' })
+          state.formData.addressInfo.city = city.name
+          state.formData.addressInfo.cityCode = city.code
+          const area = TreeDataUtil.findNode(city.children ?? [], state.areaSelected[2], { mode: 'bfs' })
           if (area) {
             state.formData.addressInfo.area = area.name
             state.formData.addressInfo.areaCode = area.code
@@ -256,7 +251,6 @@
     }
   }
 
-  // 处理关闭事件
   const handleClose = () => {
     emit('close')
   }
@@ -272,8 +266,7 @@
     [() => props.modelValue, () => props.shopId],
     async ([modelValue, shopId]) => {
       if (modelValue && shopId) {
-        // 枚举选项
-        state.countryCodeOptions = enumStore.getEnumDataSync('DataCountryEnum')
+        await loadCountryCodeOptions()
         await fetchData()
       }
     },

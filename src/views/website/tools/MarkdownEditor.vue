@@ -174,6 +174,32 @@
   </div>
 </template>
 
+<script lang="ts">
+  import DOMPurify from 'dompurify'
+
+  // ===== DOMPurify 全局钩子（模块加载时注册一次） =====
+  // DOMPurify 默认会剥离所有内联事件处理器（onclick 等）。
+  // 这里仅对“复制代码”按钮保留其固定的内联 onclick，其余内联事件一律被清除。
+  const copyBtnOnClick = new WeakMap<Element, string>()
+
+  const preserveCopyBtnOnClick = (node: Node): void => {
+    if (node instanceof Element && node.classList.contains('code-copy-btn')) {
+      const onclick = node.getAttribute('onclick')
+      if (onclick) copyBtnOnClick.set(node, onclick)
+    }
+  }
+
+  const restoreCopyBtnOnClick = (node: Node): void => {
+    if (node instanceof Element && copyBtnOnClick.has(node)) {
+      node.setAttribute('onclick', copyBtnOnClick.get(node) as string)
+      copyBtnOnClick.delete(node)
+    }
+  }
+
+  DOMPurify.addHook('beforeSanitizeAttributes', preserveCopyBtnOnClick)
+  DOMPurify.addHook('afterSanitizeAttributes', restoreCopyBtnOnClick)
+</script>
+
 <script setup lang="ts">
   import { ref, computed, watch, onMounted, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
@@ -584,7 +610,7 @@ Content-Type: application/json
   mermaid.initialize({
     startOnLoad: false,
     theme: 'dark',
-    securityLevel: 'loose',
+    securityLevel: 'strict', // 严格模式：禁用 HTML 标签与点击事件，防止 XSS
     fontFamily: 'inherit',
     maxTextSize: 100000
   })
@@ -664,10 +690,14 @@ Content-Type: application/json
 
   const renderedHtml = computed(() => {
     try {
-      return marked.parse(content.value, {
+      const html = marked.parse(content.value, {
         gfm: true,
         breaks: true,
         renderer: mdRenderer
+      } as unknown as Parameters<typeof marked.parse>[1]) as string
+      // 使用 DOMPurify 净化 Markdown 渲染结果，防止 XSS
+      return DOMPurify.sanitize(html, {
+        USE_PROFILES: { html: true }
       })
     } catch {
       return '<p style="color:red">\u6e32\u67d3\u9519\u8bef</p>'
@@ -684,7 +714,7 @@ Content-Type: application/json
       const nodes = container.querySelectorAll('.mermaid:not([data-processed])')
       if (nodes.length === 0) return
       await mermaid.run({
-        nodes: nodes as unknown as Element[],
+        nodes: Array.from(nodes) as HTMLElement[],
         suppressErrors: true
       })
       // 为工具栏按钮绑定事件

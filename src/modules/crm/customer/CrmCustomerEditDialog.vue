@@ -25,7 +25,7 @@
 
       <el-form-item label="性别" prop="gender">
         <el-select v-model="state.formData.gender" placeholder="请选择性别">
-          <el-option v-for="option in state.customerGenders" :key="option.code" :label="option.message" :value="option.code" />
+          <el-option v-for="option in customerGenders" :key="option.code" :label="option.message" :value="option.code" />
         </el-select>
       </el-form-item>
     </el-form>
@@ -38,10 +38,11 @@
 </template>
 
 <script setup lang="ts">
+  import { reactive, watch, computed, ref } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormItemRule } from 'element-plus'
-  import { reactive, watch, computed, ref } from 'vue'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_GENDER } from '@/shared/constants/DictionaryEnum.constant'
   import { CrmCustomerApi } from '@/modules/crm/customer/api/CrmCustomer.api'
   import type { CrmCustomerUpdateRequestVo } from '@/modules/crm/customer/type/CrmCustomer.type'
 
@@ -51,8 +52,10 @@
   })
 
   const formRef = ref()
-  const enumStore = useDictionaryEnumStore()
   const emit = defineEmits(['update:modelValue', 'success'])
+
+  // 性别枚举选项
+  const { options: customerGenders, load: loadGenderOptions } = useEnumOptions(DICT_GENDER)
 
   const DEFAULT_FORM_DATA: CrmCustomerUpdateRequestVo = {
     id: '',
@@ -60,7 +63,6 @@
     gender: 'UNDEFINED'
   }
 
-  // 统一状态管理
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
@@ -68,10 +70,8 @@
     }),
     loading: false,
     submitting: false,
-    customerGenders: [] as Array<{ code: string; message: string }>,
     formData: { ...DEFAULT_FORM_DATA },
-    identityCardNumber: '',
-    enumInitialized: false
+    identityCardNumber: ''
   })
 
   // 表单验证规则
@@ -87,15 +87,10 @@
     gender: [{ required: true, message: '请选择性别', trigger: 'change' }]
   }
 
-  // 初始化枚举数据
-  const initEnumData = () => {
-    if (!state.enumInitialized) {
-      state.customerGenders = enumStore.getEnumDataSync('GenderEnum')
-      state.enumInitialized = true
-    }
+  const initEnumData = async () => {
+    await loadGenderOptions()
   }
 
-  // 获取客户数据
   const fetchData = async () => {
     try {
       state.loading = true
@@ -142,7 +137,6 @@
     { immediate: false }
   )
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true
@@ -162,15 +156,12 @@
   }
 
   const handleDialogClosed = () => {
-    // 重置表单数据
     state.formData = { ...DEFAULT_FORM_DATA }
     // 重置身份证号显示
     state.identityCardNumber = ''
 
-    // 重置表单验证状态
     formRef.value?.resetFields()
 
-    // 重置所有加载状态
     state.loading = false
     state.submitting = false
   }

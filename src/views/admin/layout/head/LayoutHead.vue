@@ -13,23 +13,29 @@
     <!-- 标签页栏 -->
     <div class="head_tabs">
       <LayoutTabs></LayoutTabs>
-      <el-dropdown trigger="click" @command="handleTabMenuCommand" placement="bottom-end">
-        <el-button class="tab-menu-btn" circle text>
-          <div class="three-dots-vertical">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </el-button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="close">关闭</el-dropdown-item>
-            <el-dropdown-item command="closeOthers">关闭其他标签页</el-dropdown-item>
-            <el-dropdown-item command="closeLeft">关闭左侧标签页</el-dropdown-item>
-            <el-dropdown-item command="closeRight">关闭右侧标签页</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+
+      <!-- 标签页工具栏：更多操作 -->
+      <div class="tab-toolbar">
+        <el-dropdown trigger="click" @command="handleTabMenuCommand" placement="bottom-end">
+          <el-button class="tab-tool-btn" circle text>
+            <div class="three-dots-vertical">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="togglePin">固定 / 取消固定</el-dropdown-item>
+              <el-dropdown-item divided command="close">关闭当前</el-dropdown-item>
+              <el-dropdown-item command="closeOthers">关闭其他标签页</el-dropdown-item>
+              <el-dropdown-item command="closeLeft">关闭左侧标签页</el-dropdown-item>
+              <el-dropdown-item command="closeRight">关闭右侧标签页</el-dropdown-item>
+              <el-dropdown-item divided command="closeAll">关闭全部标签页</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
     </div>
   </div>
 </template>
@@ -49,6 +55,9 @@
    */
   const handleTabMenuCommand = (command: string) => {
     switch (command) {
+      case 'togglePin':
+        handleTogglePin()
+        break
       case 'close':
         handleCloseCurrent()
         break
@@ -61,6 +70,38 @@
       case 'closeRight':
         handleCloseRight()
         break
+      case 'closeAll':
+        handleCloseAll()
+        break
+    }
+  }
+
+  /**
+   * 固定/取消固定当前标签页
+   */
+  const handleTogglePin = () => {
+    const activeTabPath = tabStore.activeTabPath
+    if (activeTabPath) {
+      tabStore.toggleFixed(activeTabPath)
+    }
+  }
+
+  /**
+   * 关闭全部标签页（保留固定标签）
+   */
+  const handleCloseAll = () => {
+    const toClose = tabStore.tabs.filter(tab => !tab.fixed).map(tab => tab.fullPath)
+
+    // 从右往左关闭，避免索引变化问题
+    toClose.reverse().forEach(fullPath => {
+      tabStore.closeTab(fullPath)
+    })
+
+    // 跳转到剩余的第一个标签（通常为首页）
+    const firstTab = tabStore.tabs[0]
+    if (firstTab) {
+      tabStore.setActiveTab(firstTab.fullPath)
+      router.push({ path: firstTab.path, query: firstTab.query })
     }
   }
 
@@ -88,8 +129,7 @@
       if (nextTab) {
         router.push({
           path: nextTab.path,
-          query: nextTab.query,
-          params: nextTab.params
+          query: nextTab.query
         })
       } else if (tabStore.tabs.length === 0) {
         // 如果没有标签页了，跳转到首页
@@ -125,8 +165,7 @@
         tabStore.setActiveTab(activeTabPath)
         router.push({
           path: activeTab.path,
-          query: activeTab.query,
-          params: activeTab.params
+          query: activeTab.query
         })
       }
     }
@@ -226,59 +265,69 @@
       align-items: center;
       position: relative;
 
-      .tab-menu-btn {
+      .tab-toolbar {
         position: absolute;
-        right: 12px;
+        right: 8px;
         top: 50%;
         transform: translateY(-50%);
         z-index: 10;
         flex-shrink: 0;
-        width: 18px;
-        height: 36px;
-        padding: 0;
         display: flex;
         align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        border: 2px solid var(--el-border-color);
-        transition: all 0.2s;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        gap: 2px;
+        padding-left: 10px;
+        border-left: 2px solid var(--el-border-color);
+        background: var(--el-bg-color);
 
-        &:hover {
-          border-color: var(--el-border-color-darker);
-          border-width: 3px;
-          transform: translateY(-50%) scale(1.05);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        &:active {
-          transform: translateY(-50%) scale(0.95);
-        }
-      }
-
-      .three-dots-vertical {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 2.5px;
-        width: 10px;
-        height: 14px;
-
-        span {
-          width: 3px;
-          height: 3px;
-          border-radius: 50%;
-          border: 1px solid var(--el-border-color-darker);
-          display: block;
+        .tab-tool-btn {
+          width: 18px;
+          height: 36px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          border: 2px solid transparent;
           transition: all 0.2s;
-        }
-      }
+          cursor: pointer;
+          color: var(--el-text-color-secondary);
 
-      .tab-menu-btn:hover .three-dots-vertical span {
-        border-width: 1.5px;
-        transform: scale(1.2);
+          &:hover {
+            border-color: var(--el-border-color-darker);
+            border-width: 2px;
+            transform: scale(1.05);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            color: var(--el-text-color-primary);
+          }
+
+          &:active {
+            transform: scale(0.95);
+          }
+        }
+
+        .three-dots-vertical {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2.5px;
+          width: 10px;
+          height: 14px;
+
+          span {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            border: 1px solid var(--el-border-color-darker);
+            display: block;
+            transition: all 0.2s;
+          }
+        }
+
+        .tab-tool-btn:hover .three-dots-vertical span {
+          border-width: 1.5px;
+          transform: scale(1.2);
+        }
       }
     }
   }

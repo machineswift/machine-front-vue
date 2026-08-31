@@ -1,7 +1,12 @@
 import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 import type { AddressInfoDto } from '@/shared/types/CommonData.type'
-import type { IamOrganizationDto } from '@/modules/iam/organization/type/IamOrganization.type'
-import type { LabelOptionDto } from '@/modules/data/label/type/DataLabelOption.type'
+import type { BIamOrganizationDto } from '@/modules/biam/organization/type/BIamOrganization.type'
+export interface LabelOptionDto {
+  id: string
+  name: string
+  code?: string
+  labelId?: string
+}
 
 export interface DataShopDto {
   id: string
@@ -89,6 +94,12 @@ export interface DataShopDisinfectingContractResponseVo {
 /**
  * 门头照
  */
+export interface DataShopFrontPhotoDto {
+  impendingReminderRule: number
+  storeFrontMaterialIdList: string[]
+  frontDeskMaterialIdList: string[]
+}
+
 export interface DataShopFrontPhotoResponseVo {
   certificateStatus: number
   temporaryShopFrontPhoto: DataShopFrontPhotoDto
@@ -164,7 +175,7 @@ export interface DataShopDetailResponseVo {
   latitude: number
   longitude: number
   description: string
-  organizationList: IamOrganizationDto[]
+  organizationList: BIamOrganizationDto[]
   labelOptionList: LabelOptionDto[]
   createName?: string
   createBy?: string
@@ -187,14 +198,14 @@ export interface DataShopCertificateResponseVo {
 
 // 门店分页查询接口请求参数
 export interface DataShopQueryPageRequestVo extends PageRequest {
-  code: string
-  name: string
-  businessStatusSet: string[]
-  operationStatusSet: string[]
-  physicalStatusSet: string[]
-  countryCode: string
-  areaCodeSet: string[]
-  organizationType: string
+  code?: string
+  name?: string
+  businessStatusSet?: string[]
+  operationStatusSet?: string[]
+  physicalStatusSet?: string[]
+  countryCode?: string
+  areaCodeSet?: string[]
+  organizationType?: string
   organizationIdSet?: string[]
   labelOptionIdSet?: string[]
 }

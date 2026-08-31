@@ -25,7 +25,7 @@
 
       <el-form-item label="性别" prop="gender">
         <el-select v-model="state.form.gender" placeholder="请选择性别">
-          <el-option v-for="option in state.memberGenders" :key="option.code" :label="option.message" :value="option.code" />
+          <el-option v-for="option in memberGenders" :key="option.code" :label="option.message" :value="option.code" />
         </el-select>
       </el-form-item>
 
@@ -53,7 +53,8 @@
   import { reactive, computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormItemRule } from 'element-plus'
-  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { useEnumOptions } from '@/shared/composables/useEnumOptions'
+  import { DICT_GENDER } from '@/shared/constants/DictionaryEnum.constant'
   import { CrmMemberApi } from '@/modules/crm/member/api/CrmMember.api'
   import type { CrmMemberCreateRequestVo } from '@/modules/crm/member/type/CrmMember.type'
 
@@ -62,17 +63,17 @@
   })
 
   const emit = defineEmits(['update:modelValue', 'success'])
-  const enumStore = useDictionaryEnumStore()
   const formRef = ref<FormInstance>()
 
-  // 统一状态管理
+  // 性别枚举选项
+  const { options: memberGenders, load: loadGenderOptions } = useEnumOptions(DICT_GENDER)
+
   const state = reactive({
     dialogVisible: computed({
       get: () => props.modelValue,
       set: val => emit('update:modelValue', val)
     }),
     submitting: false,
-    memberGenders: [] as Array<{ code: string; message: string }>,
     form: {
       email: '',
       phone: '',
@@ -81,8 +82,7 @@
       birthYear: undefined as number | undefined,
       birthMonth: undefined as number | undefined,
       birthDay: undefined as number | undefined
-    } as CrmMemberCreateRequestVo,
-    initialized: false
+    } as CrmMemberCreateRequestVo
   })
 
   // 表单验证规则
@@ -138,12 +138,8 @@
     birthDay: [{ validator: validateBirthDay, trigger: 'blur' }]
   }
 
-  // 初始化枚举数据
-  const initEnumData = () => {
-    if (!state.initialized) {
-      state.memberGenders = enumStore.getEnumDataSync('GenderEnum')
-      state.initialized = true
-    }
+  const initEnumData = async () => {
+    await loadGenderOptions()
   }
 
   // 监听对话框显示状态，在打开时初始化枚举数据
@@ -158,7 +154,6 @@
   )
 
   const handleDialogClosed = () => {
-    // 重置表单数据
     state.form = {
       email: '',
       phone: '',
@@ -169,14 +164,11 @@
       birthDay: undefined
     }
 
-    // 重置表单验证状态
     formRef.value?.resetFields()
 
-    // 重置提交状态
     state.submitting = false
   }
 
-  // 提交表单
   const submitForm = async () => {
     try {
       state.submitting = true

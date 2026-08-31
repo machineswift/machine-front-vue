@@ -33,7 +33,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { CircleCheckFilled, CircleCloseFilled, Loading } from '@element-plus/icons-vue'
   import { useIamUserStore } from '@/shared/stores/IamUser.store'
-  import type { IamAuthLoginResponseVo } from '@/modules/iam/auth/type/IamAuth.type'
+  import type { BIamAuthLoginResponseVo } from '@/modules/biam/authentication/type/BIamAuthenticationCaptcha.type'
 
   const route = useRoute()
   const router = useRouter()
@@ -44,7 +44,7 @@
   const autoRedirectTimer = ref<number>()
 
   // 验证必要的查询参数
-  const validateQueryParams = (): IamAuthLoginResponseVo => {
+  const validateQueryParams = (): BIamAuthLoginResponseVo => {
     if (!route.query.access_token) {
       throw new Error(route.query.message?.toString() || '缺少访问令牌')
     }

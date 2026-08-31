@@ -85,12 +85,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ElMessage } from 'element-plus'
   import { reactive, ref, watch } from 'vue'
+  import { ElMessage } from 'element-plus'
   import { useIamUserStore } from '@/shared/stores/IamUser.store'
-  import type { IamAuthUsernameLoginRequestVo } from '@/modules/iam/auth/type/IamAuth.type'
-  import { IamAuthApi } from '@/modules/iam/auth/api/IamAuth.api'
-  import { IamAuth2Api } from '@/modules/iam/auth/api/IamAuth2.api'
+  import type { BIamAuthUsernameLoginRequestVo } from '@/modules/biam/authentication/type/BIamAuthenticationCaptcha.type'
+  import { BIamAuthenticationCaptchaApi } from '@/modules/biam/authentication/api/BIamAuthenticationCaptcha.api'
+  import { BIamAuthenticationThirdPartyApi } from '@/modules/biam/authentication/api/BIamAuthenticationThirdParty.api'
 
   const props = defineProps<{ visible: boolean }>()
   const emit = defineEmits<{ 'update:visible': [v: boolean]; 'login-success': [] }>()
@@ -100,7 +100,7 @@
   const loginFormRef = ref()
   const loading = ref(false)
 
-  const loginFormModel = reactive<IamAuthUsernameLoginRequestVo>({ username: '', password: '', captcha: '', userKey: '' })
+  const loginFormModel = reactive<BIamAuthUsernameLoginRequestVo>({ username: '', password: '', captcha: '', userKey: '' })
 
   const loginFormRules = reactive({
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -113,7 +113,7 @@
 
   const getPicCaptcha = async () => {
     try {
-      const data = await IamAuthApi.getPictureCaptcha()
+      const data = await BIamAuthenticationCaptchaApi.getPictureCaptcha()
       if (data.captchaImg) captchaImg.value = data.captchaImg
       if (data.userKey) loginFormModel.userKey = data.userKey
     } catch {
@@ -125,7 +125,7 @@
     try {
       await loginFormRef.value.validate()
       loading.value = true
-      const authInfo = await IamAuthApi.loginByUsername(loginFormModel)
+      const authInfo = await BIamAuthenticationCaptchaApi.loginByUsername(loginFormModel)
       if (!(await userStore.login(authInfo))) {
         ElMessage.error('用户菜单权限加载失败，请检查账号权限配置')
         return
@@ -141,7 +141,7 @@
   }
 
   const handleGiteeLogin = () => {
-    IamAuth2Api.gitee()
+    BIamAuthenticationThirdPartyApi.gitee()
     ElMessage.success('正在跳转 Gitee 登录...')
   }
 

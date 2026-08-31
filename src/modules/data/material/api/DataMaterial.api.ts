@@ -2,6 +2,7 @@ import request from '@/shared/utils/Request.util'
 import { ADMIN_API_BASE_URL } from '@/shared/constants/Common.constant'
 import type { IdRequest, IdResponse } from '@/shared/types/Common.type'
 import type {
+  DataMaterialUploadParams,
   DataMaterialCreateRequestVo,
   DataMaterialUpdateRequestVo,
   DataMaterialUpdateCategoryRequestVo,
@@ -9,6 +10,13 @@ import type {
   DataMaterialDetailResponseVo,
   DataMaterialExpandPageResponse
 } from '../type/DataMaterial.type'
+
+const upload = async (params: DataMaterialUploadParams): Promise<IdResponse> => {
+  return request.upload<IdResponse>(ADMIN_API_BASE_URL + 'admin/data/file_center/material/upload', params.file, {
+    storageType: params.storageType,
+    materIalType: params.materIalType
+  })
+}
 
 const create = async (params: DataMaterialCreateRequestVo): Promise<IdResponse> => {
   return request.post<IdResponse>(ADMIN_API_BASE_URL + 'admin/data/file_center/material/create', params, { timeout: 1800000 })
@@ -39,6 +47,7 @@ const getDownloadUrl = async (params: IdRequest): Promise<string> => {
 }
 
 export const DataMaterialApi = {
+  upload,
   create,
   update,
   updateCategory,

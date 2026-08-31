@@ -33,7 +33,7 @@
           :height="320"
           node-key="id"
           highlight-current
-          @node-click="handleNodeClick"
+          @node-click="(data: TreeNodeData) => handleNodeClick(data as ScmFrontCategoryTreeSimpleResponseVo)"
           class="category-tree"
           :default-expanded-keys="state.defaultExpandedKeys"
         >
@@ -71,8 +71,8 @@
 </template>
 
 <script setup lang="ts">
-  import { ElTreeV2, ElMessage } from 'element-plus'
   import { reactive, ref, nextTick, type PropType } from 'vue'
+  import { ElTreeV2, ElMessage, type TreeNodeData } from 'element-plus'
   import { Search, FolderOpened } from '@element-plus/icons-vue'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
   import type { ScmFrontCategoryTreeSimpleResponseVo } from '@/modules/scm/category/type/ScmFrontCategory.type'
@@ -177,7 +177,7 @@
   /**
    * 树节点过滤方法
    */
-  const categoryFilterMethod = (query: string, node: ScmFrontCategoryTreeSimpleResponseVo) => {
+  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
     if (!query) return true
     return node.name?.toLowerCase().includes(query.toLowerCase()) || node.code?.toLowerCase().includes(query.toLowerCase()) || false
   }

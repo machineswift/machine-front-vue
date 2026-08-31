@@ -21,8 +21,8 @@ export interface CustomRequestConfig extends AxiosRequestConfig {
   _retry?: boolean
 }
 
-type RequestParams = Record<string, unknown> | URLSearchParams
-type RequestData = Record<string, unknown> | FormData
+type RequestParams = object | URLSearchParams
+type RequestData = object | FormData
 
 export const getBaseUrl = (): string => {
   const serverHost = import.meta.env.MODE === 'development' ? import.meta.env.VITE_SERVER_DEV : import.meta.env.VITE_SERVER_PROD
@@ -85,10 +85,10 @@ class RequestUtil {
     )
 
     this.instance.interceptors.response.use(
-      (response: AxiosResponse<BaseResponse>) => {
+      ((response: AxiosResponse<BaseResponse>) => {
         const res = response.data
         return res.data
-      },
+      }) as Parameters<typeof this.instance.interceptors.response.use>[0],
       async (error: AxiosError) => {
         const originalRequest = error.config as CustomRequestConfig
 

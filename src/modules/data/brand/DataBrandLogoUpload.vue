@@ -34,7 +34,7 @@
   import { UploadFilled } from '@element-plus/icons-vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import type { UploadFile, UploadRawFile, UploadFiles } from 'element-plus'
-  import type { DataMaterialUploadParams } from '@/modules/data/types'
+  import type { DataMaterialUploadParams } from '@/modules/data/material/type/DataMaterial.type'
 
   const props = defineProps({
     modelMaterialId: { type: String, default: '' },
@@ -62,8 +62,8 @@
       const detail = await DataMaterialApi.detail({ id: response.id })
 
       emit('update:modelMaterialId', response.id)
-      emit('update:modelImageUrl', detail.url)
-      imageUrl.value = detail.url
+      emit('update:modelImageUrl', detail.url || '')
+      imageUrl.value = detail.url || ''
 
       ElMessage.success('LOGO上传成功')
       return true
@@ -101,7 +101,6 @@
     return true
   }
 
-  // 获取详情
   const fetchData = async () => {
     try {
       uploading.value = true

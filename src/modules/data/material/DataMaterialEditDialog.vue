@@ -5,7 +5,7 @@
         <el-input v-model="form.title" placeholder="请输入素材标题" />
       </el-form-item>
       <el-form-item label="文件类型">
-        <el-tag size="small">{{ getFileTypeLabel(detailData.fileType) }}</el-tag>
+        <el-tag size="small">{{ detailData.fileType ? enumStore.getEnumLabel(DICT_DATA_FILE_TYPE, detailData.fileType) : '无' }}</el-tag>
       </el-form-item>
       <el-form-item label="当前附件">
         <div v-if="detailData.attachmentId || currentAttachmentId" class="attachment-preview">
@@ -70,12 +70,13 @@
 <script setup lang="ts">
   import { ref, watch, nextTick } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { ElTreeV2 } from 'element-plus'
+  import { ElTreeV2, type TreeNodeData } from 'element-plus'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_DATA_FILE_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import type { DataMaterialDetailResponseVo, DataMaterialUpdateRequestVo } from '@/modules/data/material/type/DataMaterial.type'
   import type { DataMaterialCategorySimpleTreeResponseVo } from '@/modules/data/material/type/DataMaterialCategory.type'
 
@@ -90,7 +91,6 @@
   const emit = defineEmits(['update:modelValue', 'success'])
 
   const enumStore = useDictionaryEnumStore()
-  const getFileTypeLabel = (code?: string) => (code ? enumStore.getEnumItemByCodeSync('DataFileTypeEnum', code)?.message || code : '无')
 
   const formRef = ref()
   const replaceFileInputRef = ref<HTMLInputElement>()
@@ -155,14 +155,14 @@
     }
   }
 
-  const categoryFilterMethod = (query: string, node: DataMaterialCategorySimpleTreeResponseVo) => {
+  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
     if (!query) return true
     return node.name?.toLowerCase().includes(query.toLowerCase()) || false
   }
 
   const handleCategoryCheck = () => {
     if (categoryTreeRef.value) {
-      form.value.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(categoryTreeOptions.value, categoryTreeRef.value.getCheckedKeys())
+      form.value.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(categoryTreeOptions.value, categoryTreeRef.value.getCheckedKeys() as string[])
         .map(node => node.id)
         .filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID)
     }

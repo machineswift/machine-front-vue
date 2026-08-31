@@ -243,9 +243,12 @@
     font-size: 13px;
     line-height: 1.6;
     user-select: none;
+    width: max-content;
+    min-width: 100%;
   }
   .tree-node {
     position: relative;
+    min-width: max-content;
   }
   .node-row {
     display: flex;
