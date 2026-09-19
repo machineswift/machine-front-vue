@@ -1,15 +1,14 @@
 <template>
-  <el-dialog v-model="visible" title="修改分类" width="520px" :close-on-click-modal="false" @closed="handleClosed">
-    <el-alert title="请选择该素材所属的分类" type="info" show-icon :closable="false" style="margin-bottom: 16px" />
-    <el-input v-model="categoryQuery" placeholder="请输入分类名称" @input="onCategoryQueryChanged" style="margin-bottom: 10px" />
-    <el-tree-v2
-      ref="categoryTreeRef"
-      :data="categoryTreeOptions"
-      :props="categoryProps"
-      :filter-method="categoryFilterMethod"
-      @check="handleCategoryCheck"
-      show-checkbox
+  <el-dialog v-model="visible" title="修改分类" width="640px" top="8vh" :close-on-click-modal="false" @closed="handleClosed">
+    <TreeCheckPanel
+      ref="categoryPanelRef"
+      v-model="selectedCategoryIds"
+      :roots="categoryTreeOptions"
       :height="300"
+      tip="请选择该素材所属的分类"
+      :icon="FolderOpened"
+      placeholder="输入分类名称或编码搜索"
+      empty-tags-text="暂无所属分类"
     />
     <template #footer>
       <el-button @click="visible = false">取消</el-button>
@@ -21,11 +20,11 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { ElTreeV2, type TreeNodeData } from 'element-plus'
+  import { FolderOpened } from '@element-plus/icons-vue'
+  import TreeCheckPanel from '@/shared/components/TreeCheckPanel.vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import type { DataMaterialCategorySimpleTreeResponseVo } from '@/modules/data/material/type/DataMaterialCategory.type'
-  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
 
   /** 未分类虚拟节点 id，与后端一致，该节点不可选为分类 */
   const DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID = 'data_material_category_virtual_node'
@@ -37,15 +36,13 @@
 
   const emit = defineEmits(['update:modelValue', 'success'])
 
-  const categoryTreeRef = ref<InstanceType<typeof ElTreeV2>>()
+  const categoryPanelRef = ref<InstanceType<typeof TreeCheckPanel>>()
   const visible = ref(false)
   const loading = ref(false)
-  const categoryQuery = ref('')
   const selectedCategoryIds = ref<string[]>([])
   const materialDetail = ref<{ title?: string; attachmentId?: string }>({})
 
   const categoryTreeOptions = ref<(DataMaterialCategorySimpleTreeResponseVo & { disabled?: boolean })[]>([])
-  const categoryProps = { value: 'id', label: 'name', children: 'children', disabled: 'disabled' }
 
   /** 递归为虚拟节点设置 disabled，禁止选择为分类 */
   const setVirtualNodeDisabled = (nodes: (DataMaterialCategorySimpleTreeResponseVo & { disabled?: boolean })[]): void => {
@@ -79,34 +76,9 @@
       const res = await DataMaterialApi.detail({ id: props.materialId })
       materialDetail.value = { title: res?.title, attachmentId: res?.attachmentId }
       selectedCategoryIds.value = [...(res?.categoryIdSet || [])].filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID)
-      if (categoryTreeRef.value) {
-        categoryTreeRef.value.setCheckedKeys(selectedCategoryIds.value)
-      }
+      categoryPanelRef.value?.setCheckedKeys(selectedCategoryIds.value)
     } catch (error) {
       console.error('获取素材分类失败', error)
-    }
-  }
-
-  const onCategoryQueryChanged = () => {
-    if (categoryTreeRef.value) {
-      categoryTreeRef.value.filter(categoryQuery.value.trim())
-    }
-    if (categoryQuery.value.trim() === '') {
-      categoryTreeRef.value?.setExpandedKeys([])
-    }
-  }
-
-  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
-    if (!query) return true
-    return node.name?.toLowerCase().includes(query.toLowerCase()) || false
-  }
-
-  const handleCategoryCheck = () => {
-    if (categoryTreeRef.value) {
-      const ids = TreeDataUtil.getRootNodesFromSelected(categoryTreeOptions.value, categoryTreeRef.value.getCheckedKeys() as string[])
-        .map(node => node.id)
-        .filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID)
-      selectedCategoryIds.value = ids
     }
   }
 
@@ -130,18 +102,19 @@
   }
 
   const handleClosed = () => {
-    categoryQuery.value = ''
     selectedCategoryIds.value = []
     materialDetail.value = {}
+    categoryPanelRef.value?.reset()
   }
 
   watch(
     () => props.modelValue,
-    val => {
+    async val => {
       visible.value = val
       if (val) {
-        fetchCategoryTree()
-        fetchMaterialDetail()
+        // 先加载树再回显勾选，避免落在未渲染的节点上
+        await fetchCategoryTree()
+        await fetchMaterialDetail()
       }
     },
     { immediate: false }

@@ -7,7 +7,7 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="50%"
+    width="720px"
     top="8vh"
   >
     <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">

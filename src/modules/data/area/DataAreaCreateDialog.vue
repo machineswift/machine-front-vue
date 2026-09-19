@@ -7,8 +7,8 @@
     :show-close="false"
     :destroy-on-close="true"
     @close="handleDialogClosed"
-    width="80%"
-    top="5vh"
+    width="600px"
+    top="8vh"
   >
     <el-form ref="formRef" :model="state.formData" :rules="rules" label-width="100px" label-position="right">
       <el-form-item label="区域名称" prop="name">

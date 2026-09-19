@@ -7,7 +7,7 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="50%"
+    width="720px"
     top="8vh"
   >
     <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
@@ -62,29 +62,16 @@
       <el-divider content-position="left">关联后台分类</el-divider>
 
       <el-form-item label="后台分类">
-        <div class="back-category-selector">
-          <el-input v-model="state.backCategoryQuery" placeholder="搜索后台分类" size="small" clearable @input="onBackCategoryQueryChanged" />
-          <el-tree
-            ref="backCategoryTreeRef"
-            :data="state.backCategoryTreeData"
-            :props="{ label: 'name', children: 'children' }"
-            node-key="id"
-            show-checkbox
-            :filter-node-method="backCategoryFilterMethod"
-            default-expand-all
-            class="back-category-tree"
-            @check="syncSelectedNames"
-          />
-          <div class="selected-tags">
-            <span class="selected-label">已选：</span>
-            <template v-if="state.selectedBackCategoryNames.length">
-              <el-tag v-for="name in state.selectedBackCategoryNames" :key="name" size="small">
-                {{ name }}
-              </el-tag>
-            </template>
-            <span v-else class="empty-hint">暂无关联后台分类</span>
-          </div>
-        </div>
+        <TreeCheckPanel
+          ref="backCategoryPanelRef"
+          v-model="state.selectedBackCategoryIds"
+          :roots="state.backCategoryTreeData"
+          :height="260"
+          placeholder="输入后台分类名称或编码搜索"
+          :icon="FolderOpened"
+          :closable-tags="false"
+          empty-tags-text="暂无关联后台分类"
+        />
       </el-form-item>
     </el-form>
 
@@ -96,10 +83,10 @@
 
 <script setup lang="ts">
   import { reactive, watch, computed, ref, nextTick } from 'vue'
-  import { ElTree, type TreeNodeData } from 'element-plus'
+  import { FolderOpened } from '@element-plus/icons-vue'
+  import TreeCheckPanel from '@/shared/components/TreeCheckPanel.vue'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
   import { ScmBackCategoryApi } from '@/modules/scm/category/api/ScmBackCategory.api'
-  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { ScmFrontCategoryDetailResponseVo } from '@/modules/scm/category/type/ScmFrontCategory.type'
   import type { ScmBackCategoryTreeSimpleResponseVo } from '@/modules/scm/category/type/ScmBackCategory.type'
 
@@ -118,12 +105,10 @@
     loading: false,
     detailData: {} as ScmFrontCategoryDetailResponseVo,
     backCategoryTreeData: [] as ScmBackCategoryTreeSimpleResponseVo[],
-    backCategoryQuery: '',
-    selectedBackCategoryIds: [] as string[],
-    selectedBackCategoryNames: [] as string[]
+    selectedBackCategoryIds: [] as string[]
   })
 
-  const backCategoryTreeRef = ref<InstanceType<typeof ElTree>>()
+  const backCategoryPanelRef = ref<InstanceType<typeof TreeCheckPanel>>()
 
   const formatTime = (timestamp?: number) => {
     if (!timestamp) return '无'
@@ -147,54 +132,23 @@
 
       state.backCategoryTreeData = backTree.children || (backTree.id ? [backTree] : [])
       state.selectedBackCategoryIds = res.backCategoryIdSet || []
-      state.selectedBackCategoryNames = resolveNames(state.selectedBackCategoryIds)
     } catch (error) {
       console.error('获取类目详情失败', error)
       state.detailData = {} as ScmFrontCategoryDetailResponseVo
     } finally {
       state.loading = false
-      // 等骨架屏隐藏、tree渲染完成后勾选
+      // 等骨架屏隐藏后再回显勾选
       await nextTick()
-      backCategoryTreeRef.value?.setCheckedKeys(state.selectedBackCategoryIds)
+      backCategoryPanelRef.value?.setCheckedKeys(state.selectedBackCategoryIds)
     }
-  }
-
-  /** 后台分类树搜索过滤 */
-  const onBackCategoryQueryChanged = (val: string) => {
-    if (backCategoryTreeRef.value) {
-      backCategoryTreeRef.value.filter(val.trim())
-    }
-  }
-
-  /** 缓存搜索关键字，避免每节点重复 toLowerCase */
-  let cachedQuery = ''
-  const backCategoryFilterMethod = (value: string, data: TreeNodeData) => {
-    if (!value) return true
-    cachedQuery = value.toLowerCase()
-    return data.name?.toLowerCase().includes(cachedQuery) || false
-  }
-
-  /** 根据 ID 列表解析对应的后台分类名称 */
-  const resolveNames = (ids: string[]): string[] => {
-    if (!ids.length || !state.backCategoryTreeData.length) return []
-    const allNodes = TreeDataUtil.collectAllNodes(state.backCategoryTreeData)
-    return ids.map(id => allNodes.find(n => n.id === id)?.name).filter(Boolean) as string[]
-  }
-
-  const syncSelectedNames = () => {
-    if (!backCategoryTreeRef.value) return
-    const checkedKeys = backCategoryTreeRef.value.getCheckedKeys(false) as string[]
-    state.selectedBackCategoryIds = checkedKeys
-    state.selectedBackCategoryNames = resolveNames(checkedKeys)
   }
 
   const handleDialogClosed = () => {
     state.detailData = {} as ScmFrontCategoryDetailResponseVo
     state.loading = false
     state.selectedBackCategoryIds = []
-    state.selectedBackCategoryNames = []
     state.backCategoryTreeData = []
-    state.backCategoryQuery = ''
+    backCategoryPanelRef.value?.reset()
   }
 
   watch([() => props.modelValue, () => props.categoryId], async ([modelValue, categoryId]) => {
@@ -207,37 +161,5 @@
 <style lang="scss" scoped>
   .el-row {
     width: 100%;
-  }
-
-  .back-category-selector {
-    width: 100%;
-  }
-
-  .back-category-tree {
-    margin-top: 8px;
-    max-height: 240px;
-    overflow-y: auto;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    padding: 8px;
-  }
-
-  .selected-tags {
-    margin-top: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .selected-label {
-    font-size: 12px;
-    color: #909399;
-    flex-shrink: 0;
-  }
-
-  .empty-hint {
-    font-size: 12px;
-    color: #c0c4cc;
   }
 </style>

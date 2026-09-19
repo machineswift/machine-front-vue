@@ -23,7 +23,7 @@ const pageExpand = async (params: DataDownloadPageRequestVo): Promise<DataDataDo
 const downloadFile = async (params: IdRequest, fileName: string): Promise<void> => {
   const userStore = useIamUserStore()
   const token = await userStore.getValidToken()
-  const fullUrl = `${getBaseUrl()}${ADMIN_API_BASE_URL}manage/data/file_center/download/download_file`
+  const fullUrl = `${getBaseUrl()}${ADMIN_API_BASE_URL}admin/data/file_center/download/download_file`
 
   const response = await fetch(fullUrl, {
     method: 'POST',

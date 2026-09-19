@@ -7,8 +7,8 @@
     :show-close="false"
     :destroy-on-close="true"
     @close="handleDialogClosed"
-    width="80%"
-    top="5vh"
+    width="600px"
+    top="8vh"
   >
     <el-skeleton :loading="state.loading" animated>
       <template #template>

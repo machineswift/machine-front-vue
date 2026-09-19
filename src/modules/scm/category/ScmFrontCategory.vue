@@ -1,19 +1,20 @@
 <template>
-  <div ref="pageContainerRef" class="front-category-page">
+  <div class="front-category-page">
     <!-- 搜索卡片 -->
-    <el-card ref="searchCardRef" class="box-card-form">
+    <el-card class="box-card-form">
       <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
         <div class="form-items-group">
           <el-form-item label="名称:" prop="name">
             <el-input v-model="state.searchForm.name" placeholder="请输入类目名称" clearable />
           </el-form-item>
           <el-form-item label="编码:" prop="code">
-            <el-input v-model="state.searchForm.code" placeholder="请输入类目编码" clearable />
+            <el-input v-model="state.searchForm.code" placeholder="请输入类目编码,至少3位" clearable />
           </el-form-item>
         </div>
 
         <div class="button-group">
           <el-form-item>
+            <span class="search-limit-hint">结果{{ state.resultShown }}/{{ state.resultTotal }}条</span>
             <el-button type="primary" @click="handleSearch">搜索</el-button>
             <el-button @click="resetSearch">重置</el-button>
           </el-form-item>
@@ -22,107 +23,39 @@
     </el-card>
 
     <!-- 数据表格 -->
-    <el-card ref="dataCardRef" class="box-card-data">
+    <el-card class="box-card-data">
       <!-- 操作按钮 -->
       <div class="operation-buttons">
-        <el-button type="primary" @click="showCreateDialog(null)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:FRONT_CATEGORY:CREATE']">新增</el-button>
+        <el-button type="primary" @click="showCreateDialog(null)" v-hasPermission="[PERMISSION_CODE.create]">新增</el-button>
       </div>
 
       <!-- 表格区域 -->
-      <div v-show="tableHeightReady" style="flex: 1; min-height: 0">
-        <el-table
+      <div ref="tableWrapperRef" class="table-wrapper">
+        <el-table-v2
+          v-show="tableHeightReady"
+          v-model:expanded-row-keys="state.expandedRowKeys"
+          :columns="tableColumns"
           :data="state.tableDataToShow"
-          row-key="id"
+          :width="tableWidth"
           :height="tableHeight"
-          style="width: 100%"
-          border
+          :expand-column-key="expandColumnKey"
+          :indent-size="16"
+          :icon-size="14"
+          :row-height="44"
+          fixed
+          row-key="id"
+          class="front-category-table"
           v-loading="state.loading"
-          :expand-row-keys="state.expandedRowKeys"
-          :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-          highlight-current-row
-          @row-click="handleRowClick"
         >
-          <el-table-column prop="name" label="名称" width="280" align="left" fixed show-overflow-tooltip>
-            <template #default="{ row }">
-              <span :class="{ 'highlight-text': shouldHighlight(row) }">
-                {{ row.name }}
-              </span>
-            </template>
-          </el-table-column>
+          <template #empty>
+            <div class="table-empty">暂无数据</div>
+          </template>
+        </el-table-v2>
 
-          <el-table-column prop="code" label="编码" width="160" show-overflow-tooltip>
-            <template #default="{ row }">
-              <span :class="{ 'highlight-text': shouldHighlight(row) }">
-                {{ row.code || '-' }}
-              </span>
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="frontCategoryNumber" label="前台分类数" width="110" align="center" />
-
-          <el-table-column prop="backCategoryNumber" label="后台分类数" width="130" align="center">
-            <template #default="{ row }">
-              <span v-if="(row.backCategoryNumber ?? 0) > 0" class="link-number" @click.stop="handleShowBackCategories(row)">
-                {{ row.backCategoryNumber }}
-              </span>
-              <span v-else>0</span>
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="sort" label="排序" width="90" align="center" />
-
-          <el-table-column prop="createName" label="创建人" width="120" show-overflow-tooltip />
-
-          <el-table-column prop="createTime" label="创建时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
-          </el-table-column>
-
-          <el-table-column prop="updateName" label="更新人" width="120" show-overflow-tooltip />
-
-          <el-table-column prop="updateTime" label="更新时间" align="center" width="170">
-            <template #default="{ row }">{{ formatTime(row.updateTime) }}</template>
-          </el-table-column>
-
-          <el-table-column label="操作" width="260" align="center" fixed="right">
-            <template #default="{ row }">
-              <div class="table-actions">
-                <el-button size="small" @click.stop="showDetailDialog(row.id)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:FRONT_CATEGORY:DETAIL']">
-                  详情
-                </el-button>
-                <el-button size="small" type="primary" @click.stop="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:FRONT_CATEGORY:UPDATE']">
-                  编辑
-                </el-button>
-                <el-dropdown trigger="click" @command="onDropdownCommand($event, row)" placement="bottom-end">
-                  <el-button size="small" type="info" @click.stop>
-                    更多
-                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="create" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:SCM:FRONT_CATEGORY:CREATE'])">
-                        <el-icon><Plus /></el-icon>
-                        <span>新增子类目</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:SCM:FRONT_CATEGORY:UPDATE_PARENT'])">
-                        <el-icon><Connection /></el-icon>
-                        <span>移动类目</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:SCM:FRONT_CATEGORY:DELETE'])">
-                        <el-icon><Delete /></el-icon>
-                        <span>删除</span>
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <!-- 骨架屏占位 -->
-      <div v-show="!tableHeightReady" class="table-placeholder">
-        <el-skeleton :rows="8" animated />
+        <!-- 骨架屏占位 -->
+        <div v-show="!tableHeightReady" class="table-placeholder">
+          <el-skeleton :rows="8" animated />
+        </div>
       </div>
     </el-card>
 
@@ -147,33 +80,20 @@
       :show-close="false"
       :destroy-on-close="true"
       @closed="handleBackCategoryDialogClosed"
-      width="600px"
-      top="20vh"
+      width="640px"
+      top="8vh"
     >
       <div class="detail-section">
-        <div class="back-category-selector">
-          <el-input v-model="state.backCategoryQuery" placeholder="搜索后台分类" size="small" clearable @input="onBackCategoryQueryChanged" />
-          <el-tree
-            ref="backCategoryTreeRef"
-            :data="state.backCategoryTreeData"
-            :props="{ label: 'name', children: 'children' }"
-            node-key="id"
-            show-checkbox
-            :filter-node-method="backCategoryFilterMethod"
-            default-expand-all
-            class="back-category-tree"
-            @check="syncSelectedNames"
-          />
-          <div class="selected-tags">
-            <span class="selected-label">已选：</span>
-            <template v-if="state.selectedBackCategoryNames.length">
-              <el-tag v-for="name in state.selectedBackCategoryNames" :key="name" size="small">
-                {{ name }}
-              </el-tag>
-            </template>
-            <span v-else class="empty-hint">暂无关联后台分类</span>
-          </div>
-        </div>
+        <TreeCheckPanel
+          ref="backCategoryPanelRef"
+          v-model="state.selectedBackCategoryIds"
+          :roots="state.backCategoryTreeData"
+          :height="260"
+          placeholder="输入后台分类名称或编码搜索"
+          :icon="FolderOpened"
+          :closable-tags="false"
+          empty-tags-text="暂无关联后台分类"
+        />
       </div>
 
       <template #footer>
@@ -188,14 +108,18 @@
     name: 'MANAGE_APP:SCM:CATEGORY:FRONT'
   })
 
-  import { ref, reactive, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'
-  import { ElMessageBox, ElTree, type TreeNodeData } from 'element-plus'
-  import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
+  import { ref, reactive, computed, onMounted, onActivated, nextTick, h, watch, markRaw, type VNode } from 'vue'
+  import Fuse, { type FuseResultMatch } from 'fuse.js'
+  import { ElMessage, ElMessageBox, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus'
+  import { ArrowDown, Plus, Connection, Delete, FolderOpened } from '@element-plus/icons-vue'
+  import { useElementSize } from '@vueuse/core'
   import { hasPermission } from '@/shared/utils/Permission.util'
+  import TreeCheckPanel from '@/shared/components/TreeCheckPanel.vue'
   import { ScmFrontCategoryApi } from '@/modules/scm/category/api/ScmFrontCategory.api'
   import { ScmBackCategoryApi } from '@/modules/scm/category/api/ScmBackCategory.api'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { ScmFrontCategoryTreeExpandResponseVo } from '@/modules/scm/category/type/ScmFrontCategory.type'
+  import type { HighlightRange } from '@/shared/types/Common.type'
   import type { ScmBackCategoryTreeSimpleResponseVo } from '@/modules/scm/category/type/ScmBackCategory.type'
   import ScmFrontCategoryCreateDialog from '@/modules/scm/category/ScmFrontCategoryCreateDialog.vue'
   import ScmFrontCategoryEditDialog from '@/modules/scm/category/ScmFrontCategoryEditDialog.vue'
@@ -204,73 +128,68 @@
 
   const searchFormRef = ref()
   const updateParentDialogRef = ref()
-  const searchCardRef = ref()
-  const dataCardRef = ref()
-  const pageContainerRef = ref<HTMLElement | null>(null)
+  const tableWrapperRef = ref<HTMLElement | null>(null)
 
-  // 表格高度
-  const tableHeight = ref<number>(0)
-  const tableHeightReady = ref<boolean>(false)
-  let resizeObserver: ResizeObserver | null = null
-  let isFirstCalculation = true
+  // 树形展开所在列
+  const expandColumnKey = 'name'
+
+  // 表格尺寸取自真实容器：容器尚未完成布局时先展示骨架屏，避免首帧尺寸抖动
+  const { width: tableWrapperWidth, height: tableWrapperHeight } = useElementSize(tableWrapperRef)
+  const tableWidth = computed(() => Math.max(tableWrapperWidth.value, 320))
+  const tableHeight = computed(() => Math.max(tableWrapperHeight.value, 260))
+  const tableHeightReady = computed(() => tableWrapperHeight.value > 0 && tableWrapperWidth.value > 0)
+
   let isFirstActivation = true
 
-  const resolveCardElement = (target: unknown): HTMLElement | null => {
-    if (target instanceof HTMLElement) return target
-    if (target && typeof target === 'object' && '$el' in target) {
-      const el = (target as { $el?: Element }).$el
-      return el instanceof HTMLElement ? el : null
-    }
-    return null
+  /** 权限编码集中定义，避免散落在各个渲染函数中 */
+  const PERMISSION_CODE = {
+    detail: 'MANAGE_APP:SCM:CATEGORY:FRONT:DETAIL',
+    create: 'MANAGE_APP:SCM:CATEGORY:FRONT:CREATE',
+    update: 'MANAGE_APP:SCM:CATEGORY:FRONT:UPDATE',
+    updateParent: 'MANAGE_APP:SCM:CATEGORY:FRONT:UPDATE_PARENT',
+    delete: 'MANAGE_APP:SCM:CATEGORY:FRONT:DELETE'
   }
 
-  const updateTableHeight = async () => {
-    await nextTick()
-    const dataCardEl = resolveCardElement(dataCardRef.value)
-    if (!dataCardEl) return
-    const cardBody = dataCardEl.querySelector('.el-card__body')
-    if (!(cardBody instanceof HTMLElement)) return
-    const newHeight = Math.max(260, cardBody.clientHeight)
-
-    if (tableHeight.value !== newHeight) {
-      tableHeight.value = newHeight
-    }
-
-    if (isFirstCalculation && tableHeight.value > 0) {
-      tableHeightReady.value = true
-      isFirstCalculation = false
-    }
+  // 单元格渲染函数会被虚拟表格频繁调用，权限结果提前算好（权限变化时自动重算）
+  const permission = {
+    detail: computed(() => hasPermission([PERMISSION_CODE.detail])),
+    create: computed(() => hasPermission([PERMISSION_CODE.create])),
+    update: computed(() => hasPermission([PERMISSION_CODE.update])),
+    updateParent: computed(() => hasPermission([PERMISSION_CODE.updateParent])),
+    delete: computed(() => hasPermission([PERMISSION_CODE.delete]))
   }
 
-  const setupResizeObserver = () => {
-    const pageContainerEl = pageContainerRef.value
-    const searchCardEl = resolveCardElement(searchCardRef.value)
-    const dataCardEl = resolveCardElement(dataCardRef.value)
-    if (!pageContainerEl || !searchCardEl || !dataCardEl) return
-
-    resizeObserver = new ResizeObserver(() => {
-      updateTableHeight()
-    })
-
-    resizeObserver.observe(pageContainerEl)
-    resizeObserver.observe(searchCardEl)
-    resizeObserver.observe(dataCardEl)
+  const renderHighlight = (text: string, ranges: HighlightRange[]): Array<string | VNode> => {
+    const nodes: Array<string | VNode> = []
+    let cursor = 0
+    for (const [start, end] of ranges) {
+      if (start > cursor) nodes.push(text.slice(cursor, start))
+      nodes.push(h('span', { class: 'highlight' }, text.slice(start, end + 1)))
+      cursor = end + 1
+    }
+    if (cursor < text.length) nodes.push(text.slice(cursor))
+    return nodes
   }
 
   // 状态
   const state = reactive({
     loading: false,
-    totalCount: 0,
+    isSearching: false,
     searchForm: {
       name: '',
       code: ''
     },
+    loadedCount: 0,
+    resultShown: 0,
+    resultTotal: 0,
     currentId: '',
     currentRow: null as ScmFrontCategoryTreeExpandResponseVo | null,
     expandedRowKeys: [] as string[],
     tableData: [] as ScmFrontCategoryTreeExpandResponseVo[],
     tableDataToShow: [] as ScmFrontCategoryTreeExpandResponseVo[],
     treeData: null as ScmFrontCategoryTreeExpandResponseVo | null,
+    flatData: [] as ScmFrontCategoryTreeExpandResponseVo[],
+    nameFuse: null as Fuse<ScmFrontCategoryTreeExpandResponseVo> | null,
     dialogs: {
       create: { visible: false },
       edit: { visible: false },
@@ -278,125 +197,306 @@
       backCategory: { visible: false }
     },
     backCategoryTreeData: [] as ScmBackCategoryTreeSimpleResponseVo[],
-    backCategoryQuery: '',
-    selectedBackCategoryIds: [] as string[],
-    selectedBackCategoryNames: [] as string[]
+    selectedBackCategoryIds: [] as string[]
   })
 
-  const backCategoryTreeRef = ref<InstanceType<typeof ElTree>>()
+  const backCategoryPanelRef = ref<InstanceType<typeof TreeCheckPanel>>()
 
   const formatTime = (timestamp?: number): string => (timestamp ? new Date(timestamp).toLocaleString() : '-')
+
+  const tableColumns = [
+    {
+      key: 'name',
+      title: '名称',
+      dataKey: 'name',
+      width: 280,
+      fixed: true,
+      align: 'left',
+      cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: ScmFrontCategoryTreeExpandResponseVo }) =>
+        cellData && rowData.highlight?.name?.length ? h('span', null, renderHighlight(cellData, rowData.highlight.name)) : cellData
+    },
+    {
+      key: 'code',
+      title: '编码',
+      dataKey: 'code',
+      width: 160,
+      align: 'left',
+      cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: ScmFrontCategoryTreeExpandResponseVo }) =>
+        cellData && rowData.highlight?.code?.length ? h('span', null, renderHighlight(cellData, rowData.highlight.code)) : cellData || '-'
+    },
+    { key: 'frontCategoryNumber', title: '前台分类数', dataKey: 'frontCategoryNumber', width: 110, align: 'center' },
+    {
+      key: 'backCategoryNumber',
+      title: '后台分类数',
+      dataKey: 'backCategoryNumber',
+      width: 130,
+      align: 'center',
+      cellRenderer: ({ rowData }: { rowData: ScmFrontCategoryTreeExpandResponseVo }) =>
+        (rowData.backCategoryNumber ?? 0) > 0
+          ? h('span', { class: 'link-number', onClick: () => handleShowBackCategories(rowData) }, String(rowData.backCategoryNumber))
+          : '0'
+    },
+    { key: 'sort', title: '排序', dataKey: 'sort', width: 90, align: 'center' },
+    { key: 'createName', title: '创建人', dataKey: 'createName', width: 120, align: 'center' },
+    {
+      key: 'createTime',
+      title: '创建时间',
+      dataKey: 'createTime',
+      width: 170,
+      align: 'center',
+      cellRenderer: ({ cellData }: { cellData: number }) => formatTime(cellData)
+    },
+    { key: 'updateName', title: '更新人', dataKey: 'updateName', width: 120, align: 'center' },
+    {
+      key: 'updateTime',
+      title: '更新时间',
+      dataKey: 'updateTime',
+      width: 170,
+      align: 'center',
+      cellRenderer: ({ cellData }: { cellData: number }) => formatTime(cellData)
+    },
+    {
+      key: 'operation',
+      title: '操作',
+      width: 260,
+      align: 'center',
+      fixed: 'right',
+      cellRenderer: ({ rowData }: { rowData: ScmFrontCategoryTreeExpandResponseVo }) =>
+        h('div', { class: 'table-actions' }, [
+          h(ElButton, { size: 'small', disabled: !permission.detail.value, onClick: () => showDetailDialog(rowData.id) }, () => '详情'),
+          h(ElButton, { size: 'small', type: 'primary', disabled: !permission.update.value, onClick: () => showEditDialog(rowData) }, () => '编辑'),
+          h(
+            ElDropdown,
+            {
+              trigger: 'click',
+              placement: 'bottom-end',
+              onCommand: (command: string | number | object) => onDropdownCommand(String(command), rowData)
+            },
+            {
+              default: () =>
+                h(ElButton, { size: 'small', type: 'info' }, () => ['更多', h(ElIcon, { class: 'el-icon--right' }, { default: () => h(ArrowDown) })]),
+              dropdown: () =>
+                h(ElDropdownMenu, null, () => [
+                  h(ElDropdownItem, { command: 'create', disabled: !permission.create.value }, () => [
+                    h(ElIcon, null, { default: () => h(Plus) }),
+                    h('span', null, '新增子类目')
+                  ]),
+                  h(ElDropdownItem, { command: 'updateParent', disabled: !permission.updateParent.value }, () => [
+                    h(ElIcon, null, { default: () => h(Connection) }),
+                    h('span', null, '移动类目')
+                  ]),
+                  h(ElDropdownItem, { command: 'delete', divided: true, disabled: !permission.delete.value }, () => [
+                    h(ElIcon, null, { default: () => h(Delete) }),
+                    h('span', null, '删除')
+                  ])
+                ])
+            }
+          )
+        ])
+    }
+  ]
 
   const setDefaultExpandedRows = (nodes: ScmFrontCategoryTreeExpandResponseVo[]) => {
     // 默认展开第一级
     state.expandedRowKeys = nodes.map(node => node.id)
   }
 
-  const collectParentIds = (nodes: ScmFrontCategoryTreeExpandResponseVo[], targetId: string): string[] => {
-    const result: string[] = []
+  type SearchFieldKey = 'name' | 'code'
 
-    const findParent = (nodeList: ScmFrontCategoryTreeExpandResponseVo[], target: string): boolean => {
-      for (const node of nodeList) {
-        if (node.id === target) return true
-
-        if (node.children?.length) {
-          if (findParent(node.children, target)) {
-            result.push(node.id)
-            return true
-          }
-        }
-      }
-      return false
-    }
-
-    findParent(nodes, targetId)
-    return result
+  /** 单字段命中：节点 + 该字段需高亮的区间 */
+  interface FieldHit {
+    item: ScmFrontCategoryTreeExpandResponseVo
+    ranges: HighlightRange[]
   }
 
-  const handleSearch = () => {
-    if (!hasSearchCriteria()) {
-      resetTableDisplay()
+  const SEARCH_RESULT_LIMIT = 256
+
+  /** 建索引（仅名称使用模糊匹配；编码是标识符，走精确包含匹配） */
+  const createFuseIndex = (flatData: ScmFrontCategoryTreeExpandResponseVo[], keys: string[], threshold: number, minMatchCharLength: number, distance: number) =>
+    new Fuse(flatData, {
+      keys,
+      includeMatches: true,
+      includeScore: true,
+      threshold,
+      minMatchCharLength,
+      ignoreLocation: true,
+      distance,
+      findAllMatches: true,
+      tokenize: (text: string) => text.split(/\s+/)
+    })
+
+  const initSearchTools = () => {
+    const flatData = markRaw(TreeDataUtil.collectAllNodes(state.tableData))
+    state.flatData = flatData
+
+    // 未搜索时表格展示全部数据，结果与总数相同
+    state.loadedCount = flatData.length
+    state.resultShown = flatData.length
+    state.resultTotal = flatData.length
+
+    state.nameFuse = createFuseIndex(flatData, ['name'], 0.1, 1, 30)
+  }
+
+  /** 收集并合并命中区间（升序、互不重叠），渲染时直接拼接文本节点 */
+  const getHighlightRanges = (matches: readonly FuseResultMatch[] | undefined): HighlightRange[] => {
+    if (!matches?.length) return []
+
+    const ranges: HighlightRange[] = []
+    matches.forEach(match => match.indices?.forEach(([start, end]) => ranges.push([start, end])))
+    if (!ranges.length) return []
+
+    ranges.sort((a, b) => a[0] - b[0])
+    const merged: HighlightRange[] = [ranges[0]]
+    for (let i = 1; i < ranges.length; i++) {
+      const current = ranges[i]
+      const last = merged[merged.length - 1]
+      if (current[0] <= last[1] + 1) {
+        if (current[1] > last[1]) last[1] = current[1]
+      } else {
+        merged.push(current)
+      }
+    }
+    return merged
+  }
+
+  /** 编码命中区间：按“包含”逐段定位（大小写不敏感） */
+  const collectSubstringRanges = (text: string, query: string): HighlightRange[] => {
+    const ranges: HighlightRange[] = []
+    const target = query.toLowerCase()
+    if (!target) return ranges
+
+    const source = text.toLowerCase()
+    let from = 0
+    while (from <= source.length - target.length) {
+      const index = source.indexOf(target, from)
+      if (index === -1) break
+      ranges.push([index, index + target.length - 1])
+      from = index + target.length
+    }
+    return ranges
+  }
+
+  const performSearch = () => {
+    const { name, code } = state.searchForm
+
+    if (!name && !code) {
+      resetSearch()
       return
     }
 
-    const { matchedIds, parentIds } = findMatchingNodes()
-    updateExpandedRows(matchedIds, parentIds)
-    updateTableDisplay(matchedIds, parentIds)
-  }
+    state.isSearching = true
 
-  const hasSearchCriteria = () => {
-    return Object.values(state.searchForm).some(value => Boolean(value))
-  }
-
-  const findMatchingNodes = () => {
-    const matchedIds = new Set<string>()
-    const parentIds = new Set<string>()
-
-    const findMatches = (nodes: ScmFrontCategoryTreeExpandResponseVo[]) => {
-      nodes.forEach(node => {
-        const isMatched = Object.entries(state.searchForm).some(([key, value]) => {
-          if (!value) return false
-          const nodeValue = node[key as keyof typeof node]
-          return nodeValue && String(nodeValue).toLowerCase().includes(value.toLowerCase())
-        })
-
-        if (isMatched) {
-          matchedIds.add(node.id)
-          collectParentIds(state.tableData, node.id).forEach(id => parentIds.add(id))
-        }
-
-        if (node.children?.length) {
-          findMatches(node.children)
-        }
+    const fieldHits: Array<{ key: SearchFieldKey; hits: FieldHit[] }> = []
+    if (name) {
+      fieldHits.push({
+        key: 'name',
+        hits: (state.nameFuse?.search(name) ?? []).map(result => ({ item: result.item, ranges: getHighlightRanges(result.matches) }))
+      })
+    }
+    if (code) {
+      // 编码是标识符，按“包含”精确匹配（模糊匹配会把 0001 命中到 0000）
+      const keyword = code.toLowerCase()
+      fieldHits.push({
+        key: 'code',
+        hits: state.flatData
+          .filter(node => node.code?.toLowerCase().includes(keyword))
+          .map(node => ({ item: node, ranges: collectSubstringRanges(node.code ?? '', code) }))
       })
     }
 
-    findMatches(state.tableData)
-    return { matchedIds, parentIds }
-  }
+    // 多字段取交集：以首个已填字段为基准，用其余字段的命中 id 集合逐一过滤
+    const [primary, ...restFields] = fieldHits
+    const restIdSets = restFields.map(field => new Set(field.hits.map(hit => hit.item.id)))
+    const allHits = primary.hits.filter(hit => restIdSets.every(idSet => idSet.has(hit.item.id)))
 
-  const updateExpandedRows = (matchedIds: Set<string>, parentIds: Set<string>) => {
-    state.expandedRowKeys = Array.from(new Set([...matchedIds, ...parentIds]))
-  }
+    state.resultTotal = allHits.length
+    const hits = allHits.slice(0, SEARCH_RESULT_LIMIT)
+    state.resultShown = hits.length
 
-  const updateTableDisplay = (matchedIds: Set<string>, parentIds: Set<string>) => {
-    const allExpandedIds = new Set([...matchedIds, ...parentIds])
+    const rangesById = new Map<string, Partial<Record<SearchFieldKey, HighlightRange[]>>>()
+    fieldHits.forEach(({ key, hits: fieldHitList }) => {
+      fieldHitList.forEach(hit => {
+        const entry = rangesById.get(hit.item.id) ?? {}
+        entry[key] = hit.ranges
+        rangesById.set(hit.item.id, entry)
+      })
+    })
 
-    const filterNodes = (nodes: ScmFrontCategoryTreeExpandResponseVo[]): ScmFrontCategoryTreeExpandResponseVo[] => {
-      return nodes
-        .filter(node => allExpandedIds.has(node.id))
-        .map(node => ({
-          ...node,
-          children: node.children?.length ? filterNodes(node.children) : undefined
-        }))
+    const matchedItems = hits.map(hit => {
+      const entry = rangesById.get(hit.item.id) ?? {}
+      return {
+        ...hit.item,
+        highlight: {
+          name: entry.name ?? [],
+          code: entry.code ?? []
+        }
+      }
+    })
+
+    // 先建 id→父id 索引，再向上回溯命中项的全部祖先（避免在循环里反复遍历整棵树）
+    const parentIdMap = new Map<string, string>()
+    const collectParentIdMap = (nodes: ScmFrontCategoryTreeExpandResponseVo[]) => {
+      for (const node of nodes) {
+        if (!node.children?.length) continue
+        for (const child of node.children) {
+          parentIdMap.set(child.id, node.id)
+        }
+        collectParentIdMap(node.children)
+      }
+    }
+    collectParentIdMap(state.tableData)
+
+    const matchedIds = new Set<string>()
+    const parentIds = new Set<string>()
+    matchedItems.forEach(item => {
+      matchedIds.add(item.id)
+      let parentId: string | undefined = item.parentId
+      while (parentId) {
+        if (parentIds.has(parentId)) break
+        parentIds.add(parentId)
+        parentId = parentIdMap.get(parentId)
+      }
+    })
+
+    // 构建搜索结果树：只保留命中项及其祖先，祖先用于承载层级
+    const matchedMap = new Map(matchedItems.map(item => [item.id, item]))
+    const buildResultTree = (nodes: ScmFrontCategoryTreeExpandResponseVo[]): ScmFrontCategoryTreeExpandResponseVo[] => {
+      const result: ScmFrontCategoryTreeExpandResponseVo[] = []
+      for (const node of nodes) {
+        const isMatched = matchedIds.has(node.id)
+        if (!isMatched && !parentIds.has(node.id)) continue
+
+        const newNode = { ...node }
+        if (isMatched) {
+          const matched = matchedMap.get(node.id)
+          if (matched) newNode.highlight = matched.highlight
+        }
+        if (node.children) newNode.children = buildResultTree(node.children)
+        result.push(newNode)
+      }
+      return result
     }
 
-    state.tableDataToShow = filterNodes(state.tableData)
+    // 命中多少个就展开多少个父节点，不截断（否则深层命中会被折叠隐藏）
+    state.tableDataToShow = markRaw(buildResultTree(state.tableData))
+    state.expandedRowKeys = Array.from(parentIds)
   }
 
-  const shouldHighlight = (row: ScmFrontCategoryTreeExpandResponseVo) => {
-    if (!hasSearchCriteria()) return false
-
-    return Object.entries(state.searchForm).some(([key, value]) => {
-      if (!value) return false
-      const rowValue = row[key as keyof typeof row]
-      return rowValue && String(rowValue).toLowerCase().includes(value.toLowerCase())
-    })
+  const handleSearch = () => {
+    if (state.searchForm.code && state.searchForm.code.length < 3) {
+      ElMessage.warning('编码至少需要3位字符')
+      return
+    }
+    performSearch()
   }
 
   const resetSearch = () => {
     searchFormRef.value?.resetFields()
-    resetTableDisplay()
-  }
-
-  const resetTableDisplay = () => {
+    state.isSearching = false
     state.tableDataToShow = state.tableData
     setDefaultExpandedRows(state.tableData)
-  }
-
-  // 行点击
-  const handleRowClick = (row: ScmFrontCategoryTreeExpandResponseVo) => {
-    state.currentRow = row
+    state.resultShown = state.loadedCount
+    state.resultTotal = state.loadedCount
   }
 
   // 对话框操作
@@ -439,8 +539,7 @@
   }
 
   // 下拉菜单命令
-  const onDropdownCommand = (command: string | number | object, row: ScmFrontCategoryTreeExpandResponseVo) => {
-    const cmd = String(command)
+  const onDropdownCommand = (command: string, row: ScmFrontCategoryTreeExpandResponseVo) => {
     const commandMap: Record<string, () => void> = {
       create: () => showCreateDialog(row),
       updateParent: () => showUpdateParentDialog(row),
@@ -454,19 +553,7 @@
           .catch(() => {})
       }
     }
-    commandMap[cmd]?.()
-  }
-
-  // 统计总数
-  const countTotalNodes = (nodes: ScmFrontCategoryTreeExpandResponseVo[]): number => {
-    let count = 0
-    for (const node of nodes) {
-      count++
-      if (node.children?.length) {
-        count += countTotalNodes(node.children)
-      }
-    }
-    return count
+    commandMap[command]?.()
   }
 
   /** 点击后台分类数：加载关联数据并打开独立弹窗 */
@@ -479,49 +566,18 @@
 
       state.backCategoryTreeData = backTree.children || (backTree.id ? [backTree] : [])
       state.selectedBackCategoryIds = detail.backCategoryIdSet || []
-      state.selectedBackCategoryNames = resolveNames(state.selectedBackCategoryIds)
 
       await nextTick()
-      backCategoryTreeRef.value?.setCheckedKeys(state.selectedBackCategoryIds)
+      backCategoryPanelRef.value?.setCheckedKeys(state.selectedBackCategoryIds)
     } catch (error) {
       console.error('获取关联后台分类失败', error)
     }
   }
 
-  /** 后台分类树搜索过滤 */
-  const onBackCategoryQueryChanged = (val: string) => {
-    if (backCategoryTreeRef.value) {
-      backCategoryTreeRef.value.filter(val.trim())
-    }
-  }
-
-  /** 缓存搜索关键字，避免每节点重复 toLowerCase */
-  let cachedQuery = ''
-  const backCategoryFilterMethod = (value: string, data: TreeNodeData) => {
-    if (!value) return true
-    cachedQuery = value.toLowerCase()
-    return data.name?.toLowerCase().includes(cachedQuery) || false
-  }
-
-  /** 根据 ID 列表解析对应的后台分类名称 */
-  const resolveNames = (ids: string[]): string[] => {
-    if (!ids.length || !state.backCategoryTreeData.length) return []
-    const allNodes = TreeDataUtil.collectAllNodes(state.backCategoryTreeData)
-    return ids.map(id => allNodes.find(n => n.id === id)?.name).filter(Boolean) as string[]
-  }
-
-  const syncSelectedNames = () => {
-    if (!backCategoryTreeRef.value) return
-    const checkedKeys = backCategoryTreeRef.value.getCheckedKeys(false) as string[]
-    state.selectedBackCategoryIds = checkedKeys
-    state.selectedBackCategoryNames = resolveNames(checkedKeys)
-  }
-
   const handleBackCategoryDialogClosed = () => {
     state.backCategoryTreeData = []
-    state.backCategoryQuery = ''
     state.selectedBackCategoryIds = []
-    state.selectedBackCategoryNames = []
+    backCategoryPanelRef.value?.reset()
   }
 
   /** 请求去重 Promise，防止并发重复调用 */
@@ -534,10 +590,10 @@
       state.loading = true
       fetchPromise = ScmFrontCategoryApi.treeExpand()
         .then(res => {
-          state.treeData = res
-          state.tableData = res.children || []
-          state.tableDataToShow = res.children || []
-          state.totalCount = countTotalNodes(state.tableData)
+          state.treeData = markRaw(res)
+          state.tableData = markRaw(res.children || [])
+          state.tableDataToShow = state.tableData
+          initSearchTools()
           setDefaultExpandedRows(state.tableData)
         })
         .catch(error => {
@@ -550,11 +606,19 @@
     }
   }
 
+  watch(
+    () => state.searchForm,
+    ({ name, code }) => {
+      if (!name && !code && state.isSearching) {
+        resetSearch()
+      }
+    },
+    { deep: true }
+  )
+
   onMounted(async () => {
     await fetchCategoryTree()
     await nextTick()
-    setupResizeObserver()
-    await updateTableHeight()
   })
 
   onActivated(async () => {
@@ -563,11 +627,6 @@
       return
     }
     await fetchCategoryTree()
-  })
-
-  onBeforeUnmount(() => {
-    resizeObserver?.disconnect()
-    resizeObserver = null
   })
 </script>
 
@@ -607,6 +666,12 @@
         align-items: center;
         margin-left: auto;
 
+        .search-limit-hint {
+          margin-right: 12px;
+          color: var(--el-text-color-secondary);
+          font-size: 12px;
+        }
+
         .el-form-item {
           margin-bottom: 0;
         }
@@ -628,7 +693,7 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      padding: 12px 16px;
+      padding: 12px;
       overflow: hidden;
     }
   }
@@ -638,7 +703,14 @@
     flex-shrink: 0;
   }
 
-  .link-number {
+  .table-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* 后台分类数链接（cellRenderer 内创建，需用 :deep 命中） */
+  :deep(.link-number) {
     color: var(--el-color-primary);
     cursor: pointer;
     font-weight: 600;
@@ -688,18 +760,52 @@
   }
 
   .table-placeholder {
-    flex: 1;
-    padding: 20px;
+    padding: 10px 0;
   }
 
-  .table-actions {
+  .table-empty {
+    color: var(--el-text-color-secondary);
+    font-size: 14px;
+  }
+
+  .front-category-table {
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+
+    :deep(.el-table-v2__header-cell),
+    :deep(.el-table-v2__row-cell) {
+      padding: 0 8px;
+      border-right: 1px solid var(--el-border-color);
+    }
+  }
+
+  /* 命中区间高亮（cellRenderer 内创建，需用 :deep 命中） */
+  :deep(.highlight) {
+    background-color: #fffb8f;
+    color: #000;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
+  /* 操作按钮样式 - 需要深度选择器以应用到 JSX 组件 */
+  :deep(.table-actions) {
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 4px;
-  }
+    gap: 2px;
 
-  .highlight-text {
-    color: #409eff;
-    font-weight: 500;
+    .el-button {
+      margin: 0;
+      margin-right: 2px;
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+    .el-dropdown {
+      margin-left: 2px;
+    }
   }
 </style>

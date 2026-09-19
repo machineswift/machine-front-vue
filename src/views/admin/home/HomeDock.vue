@@ -9,16 +9,9 @@
     @dragleave="handleDragLeave"
     @drop.prevent="handleDrop"
   >
-    <div
-      class="home-dock-item home-dock-item-fixed home-dock-item-search"
-      :data-code="HOME_SEARCH_ITEM.code"
-      :style="itemOffsetStyle(HOME_SEARCH_ITEM.code)"
-      @mouseenter="showTooltip($event, HOME_SEARCH_ITEM)"
-      @mouseleave="hideTooltip"
-    >
+    <div class="home-dock-item home-dock-item-fixed home-dock-item-search" :data-code="HOME_SEARCH_ITEM.code" :style="itemOffsetStyle(HOME_SEARCH_ITEM.code)">
       <HomeAppIcon
         :app="HOME_SEARCH_ITEM"
-        :show-title="false"
         :draggable="false"
         :active="searchActive"
         :magnify="magnifyOf(HOME_SEARCH_ITEM.code)"
@@ -29,16 +22,9 @@
       />
     </div>
 
-    <div
-      class="home-dock-item home-dock-item-fixed"
-      :data-code="HOME_APP_ITEM.code"
-      :style="itemOffsetStyle(HOME_APP_ITEM.code)"
-      @mouseenter="showTooltip($event, HOME_APP_ITEM)"
-      @mouseleave="hideTooltip"
-    >
+    <div class="home-dock-item home-dock-item-fixed" :data-code="HOME_APP_ITEM.code" :style="itemOffsetStyle(HOME_APP_ITEM.code)">
       <HomeAppIcon
         :app="HOME_APP_ITEM"
-        :show-title="false"
         :draggable="false"
         :active="isActive(HOME_APP_ITEM)"
         :magnify="magnifyOf(HOME_APP_ITEM.code)"
@@ -59,34 +45,10 @@
       @start="handleSortStart"
       @end="handleSortEnd"
     >
-      <div
-        v-for="app in dockApps"
-        :key="app.code"
-        class="home-dock-item"
-        :data-code="app.code"
-        :style="itemOffsetStyle(app.code)"
-        @mouseenter="showTooltip($event, app)"
-        @mouseleave="hideTooltip"
-      >
-        <HomeAppIcon
-          :app="app"
-          :show-title="false"
-          :draggable="false"
-          :active="isActive(app)"
-          :magnify="magnifyOf(app.code)"
-          :size="48"
-          @click="handleOpen(app)"
-        />
+      <div v-for="app in dockApps" :key="app.code" class="home-dock-item" :data-code="app.code" :style="itemOffsetStyle(app.code)">
+        <HomeAppIcon :app="app" :draggable="false" :active="isActive(app)" :magnify="magnifyOf(app.code)" :size="48" @click="handleOpen(app)" />
       </div>
     </Draggable>
-
-    <Teleport to="body">
-      <Transition name="home-tooltip">
-        <div v-if="tooltipVisible" class="home-dock-tooltip" :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }">
-          {{ tooltipTitle }}
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
@@ -131,10 +93,7 @@
 
   const handleOpen = (app: HomeAppItem) => emit('open', app)
 
-  const handleSearchClick = () => {
-    hideTooltip()
-    emit('search')
-  }
+  const handleSearchClick = () => emit('search')
 
   const isActive = (app: HomeAppItem) => {
     if (!props.currentCode) return false
@@ -204,9 +163,6 @@
     magnifyRaf = requestAnimationFrame(() => {
       magnifyRaf = 0
       applyMagnify(lastPointerX)
-      if (tooltipVisible.value && hoveredCode.value) {
-        scheduleTooltipPosition()
-      }
     })
   }
 
@@ -218,7 +174,6 @@
 
   const handlePointerLeave = () => {
     magnifying.value = false
-    hideTooltip()
     resetMagnify()
   }
 
@@ -310,61 +265,12 @@
     dragCode = ''
   }
 
-  const tooltipVisible = ref(false)
-  const tooltipTitle = ref('')
-  const tooltipX = ref(0)
-  const tooltipY = ref(0)
-  const hoveredCode = ref('')
-  let tooltipTimer: ReturnType<typeof setTimeout> | undefined
-  let tooltipRaf = 0
-
-  const showTooltip = (_event: MouseEvent, app: HomeAppItem) => {
-    hoveredCode.value = app.code
-    tooltipTitle.value = app.title
-    clearTimeout(tooltipTimer)
-    tooltipTimer = setTimeout(() => {
-      tooltipVisible.value = true
-      updateTooltipPosition(app.code)
-    }, 80)
-  }
-
-  const hideTooltip = () => {
-    hoveredCode.value = ''
-    cancelAnimationFrame(tooltipRaf)
-    tooltipRaf = 0
-    clearTimeout(tooltipTimer)
-    tooltipVisible.value = false
-  }
-
-  /** 根据图标（放大后的）实际位置定位提示 */
-  const updateTooltipPosition = (code: string) => {
-    const item = dockEl.value?.querySelector<HTMLElement>(`.home-dock-item[data-code="${code}"]`)
-    if (!item) return
-    const tile = item.querySelector('.home-app-tile') as HTMLElement | null
-    const rect = (tile || item).getBoundingClientRect()
-    tooltipX.value = rect.left + rect.width / 2
-    tooltipY.value = rect.top
-  }
-
-  /** 提示位置跟随放大后的图标 */
-  const scheduleTooltipPosition = () => {
-    if (tooltipRaf) return
-    tooltipRaf = requestAnimationFrame(() => {
-      tooltipRaf = 0
-      if (tooltipVisible.value && hoveredCode.value) {
-        updateTooltipPosition(hoveredCode.value)
-      }
-    })
-  }
-
   onUnmounted(() => {
     window.removeEventListener('dragover', handleDragMove, true)
     window.removeEventListener('mousemove', handleDragMove, true)
     window.removeEventListener('dragend', handleSortEnd, true)
     window.removeEventListener('resize', refreshSlots)
-    cancelAnimationFrame(tooltipRaf)
     cancelAnimationFrame(magnifyRaf)
-    clearTimeout(tooltipTimer)
   })
 </script>
 
@@ -398,7 +304,7 @@
       align-items: flex-end;
       justify-content: center;
       width: 62px;
-      height: 54px;
+      height: 68px;
       will-change: transform;
       cursor: pointer;
 
@@ -432,6 +338,19 @@
     transform-origin: bottom center;
   }
 
+  /* 程序坞图标名称常驻显示（不再是悬停提示） */
+  .home-dock :deep(.home-app) {
+    max-width: 100%;
+  }
+
+  .home-dock :deep(.home-app-title) {
+    max-width: 100%;
+    font-size: 11px;
+    line-height: 1.2;
+    color: rgb(255 255 255 / 88%);
+    text-shadow: 0 1px 3px rgb(0 0 0 / 45%);
+  }
+
   /* 鼠标移动过程中使用短过渡，让放大跟手更丝滑 */
   .home-dock.is-magnifying :deep(.home-app-tile) {
     transition: transform 0.05s linear !important;
@@ -445,35 +364,5 @@
   /* 移出程序坞时图标平滑归位（拖拽排序期间不干预 Sortable） */
   .home-dock:not(.is-magnifying):not(.is-sorting) .home-dock-item {
     transition: transform 0.18s cubic-bezier(0.34, 1.3, 0.64, 1);
-  }
-
-  /* 图标名称提示 */
-  .home-dock-tooltip {
-    position: fixed;
-    z-index: 3100;
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgb(28 28 30 / 88%);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    color: #fff;
-    font-size: 12px;
-    white-space: nowrap;
-    pointer-events: none;
-    transform: translate(-50%, -100%) translateY(-14px);
-    box-shadow: 0 6px 16px rgb(0 0 0 / 32%);
-  }
-
-  .home-tooltip-enter-active,
-  .home-tooltip-leave-active {
-    transition:
-      opacity 0.15s ease,
-      transform 0.15s ease;
-  }
-
-  .home-tooltip-enter-from,
-  .home-tooltip-leave-to {
-    opacity: 0;
-    transform: translate(-50%, -100%) translateY(-4px);
   }
 </style>

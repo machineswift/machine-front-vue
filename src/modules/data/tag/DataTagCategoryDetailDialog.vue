@@ -7,7 +7,7 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="50%"
+    width="720px"
     top="8vh"
   >
     <el-tabs type="border-card" v-loading="state.loading" class="el-tabs-card">

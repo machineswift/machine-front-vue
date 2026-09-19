@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="编辑素材" width="560px" :close-on-click-modal="false" @closed="handleClosed">
+  <el-dialog v-model="visible" title="编辑素材" width="600px" top="8vh" :close-on-click-modal="false" @closed="handleClosed">
     <el-form ref="formRef" :model="form" label-width="100px" :rules="rules" v-loading="loading">
       <el-form-item label="素材标题" prop="title">
         <el-input v-model="form.title" placeholder="请输入素材标题" />
@@ -45,19 +45,14 @@
         </div>
       </el-form-item>
       <el-form-item label="所属分类" prop="categoryIdSet">
-        <div class="category-select-block">
-          <el-alert title="请选择该素材所属的分类" type="info" show-icon :closable="false" class="category-alert" />
-          <el-input v-model="categoryQuery" placeholder="请输入分类名称" @input="onCategoryQueryChanged" class="category-query-input" />
-          <el-tree-v2
-            ref="categoryTreeRef"
-            :data="categoryTreeOptions"
-            :props="categoryProps"
-            :filter-method="categoryFilterMethod"
-            @check="handleCategoryCheck"
-            show-checkbox
-            :height="220"
-          />
-        </div>
+        <TreeCheckPanel
+          ref="categoryPanelRef"
+          v-model="form.categoryIdSet"
+          :roots="categoryTreeOptions"
+          :height="220"
+          tip="请选择该素材所属的分类"
+          :icon="FolderOpened"
+        />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -68,13 +63,13 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch, nextTick } from 'vue'
+  import { ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { ElTreeV2, type TreeNodeData } from 'element-plus'
+  import { FolderOpened } from '@element-plus/icons-vue'
+  import TreeCheckPanel from '@/shared/components/TreeCheckPanel.vue'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
-  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { DICT_DATA_FILE_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import type { DataMaterialDetailResponseVo, DataMaterialUpdateRequestVo } from '@/modules/data/material/type/DataMaterial.type'
@@ -103,11 +98,8 @@
   const attachmentPreviewUrl = ref('')
   const isPreviewLoading = ref(false)
   const categoryTreeOptions = ref<(DataMaterialCategorySimpleTreeResponseVo & { disabled?: boolean })[]>([])
-  const categoryTreeRef = ref<InstanceType<typeof ElTreeV2>>()
-  const categoryQuery = ref('')
-  const categoryProps = { value: 'id', label: 'name', children: 'children', disabled: 'disabled' }
+  const categoryPanelRef = ref<InstanceType<typeof TreeCheckPanel>>()
 
-  /** 递归为虚拟节点设置 disabled，禁止选择为分类 */
   const setVirtualNodeDisabled = (nodes: (DataMaterialCategorySimpleTreeResponseVo & { disabled?: boolean })[]): void => {
     if (!nodes?.length) return
     for (const node of nodes) {
@@ -146,32 +138,8 @@
     }
   }
 
-  const onCategoryQueryChanged = () => {
-    if (categoryTreeRef.value) {
-      categoryTreeRef.value.filter(categoryQuery.value.trim())
-    }
-    if (categoryQuery.value.trim() === '') {
-      categoryTreeRef.value?.setExpandedKeys([])
-    }
-  }
-
-  const categoryFilterMethod = (query: string, node: TreeNodeData) => {
-    if (!query) return true
-    return node.name?.toLowerCase().includes(query.toLowerCase()) || false
-  }
-
-  const handleCategoryCheck = () => {
-    if (categoryTreeRef.value) {
-      form.value.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(categoryTreeOptions.value, categoryTreeRef.value.getCheckedKeys() as string[])
-        .map(node => node.id)
-        .filter(id => id !== DATA_MATERIAL_CATEGORY_VIRTUAL_NODE_ID)
-    }
-  }
-
   const syncCategoryTreeCheckedKeys = (ids: string[]) => {
-    nextTick(() => {
-      categoryTreeRef.value?.setCheckedKeys(ids || [])
-    })
+    categoryPanelRef.value?.setCheckedKeys(ids || [])
   }
 
   const loadAttachmentPreview = async (materialId: string) => {
@@ -303,7 +271,7 @@
       previewObjectUrl = ''
     }
     attachmentPreviewUrl.value = ''
-    categoryQuery.value = ''
+    categoryPanelRef.value?.reset()
     currentAttachmentId.value = ''
     isAttachmentChanged.value = false
     if (replaceFileInputRef.value) replaceFileInputRef.value.value = ''
@@ -360,15 +328,6 @@
     height: 0;
     opacity: 0;
     overflow: hidden;
-  }
-  .category-select-block {
-    width: 100%;
-  }
-  .category-alert {
-    margin-bottom: 12px;
-  }
-  .category-query-input {
-    margin-bottom: 10px;
   }
   .attachment-loading {
     color: var(--el-text-color-secondary);

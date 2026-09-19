@@ -7,8 +7,8 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="80%"
-    top="5vh"
+    width="800px"
+    top="8vh"
   >
     <div class="permission-create-container">
       <el-form ref="formRef" :model="state.formData" :rules="rules" label-width="100px" label-position="right">

@@ -7,8 +7,8 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="80%"
-    top="5vh"
+    width="600px"
+    top="8vh"
   >
     <el-form :model="state.formData" :rules="rules" label-width="100px" ref="formRef" v-loading="state.loading">
       <el-form-item label="ID" prop="id" v-if="false">

@@ -1,4 +1,4 @@
-import type { TreeNode } from '@/shared/types/Common.type'
+import type { HighlightRange, TreeNode } from '@/shared/types/Common.type'
 
 export interface ScmBackCategoryCreateRequestVo {
   parentId: string
@@ -44,4 +44,6 @@ export interface ScmBackCategoryTreeExpandResponseVo extends TreeNode<ScmBackCat
   updateName: string
   updateBy: string
   updateTime: number
+  /** 搜索命中区间（渲染时再生成高亮节点，存储区间可避免 HTML 拼接与 XSS） */
+  highlight?: { name?: HighlightRange[]; code?: HighlightRange[] }
 }

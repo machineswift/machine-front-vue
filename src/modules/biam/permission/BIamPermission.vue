@@ -17,6 +17,7 @@
 
         <div class="button-group">
           <el-form-item>
+            <span class="search-limit-hint">结果{{ state.resultShown }}/{{ state.resultTotal }}条</span>
             <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:TREE_EXPAND']">搜索</el-button>
             <el-button @click="resetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:TREE_EXPAND']">重置</el-button>
           </el-form-item>
@@ -26,108 +27,26 @@
 
     <!-- 数据表格 -->
     <el-card ref="dataCardRef" class="box-card-data">
-      <!-- 表格区域：初始不显示，等高度计算完成后再显示 -->
-      <div v-show="tableHeightReady" style="flex: 1; min-height: 0">
-        <el-table
+      <div v-show="tableHeightReady" class="table-wrapper">
+        <el-table-v2
+          v-model:expanded-row-keys="state.expandedRowKeys"
+          :columns="tableColumns"
           :data="state.tableDataToShow"
-          row-key="id"
+          :width="tableWidth"
           :height="tableHeight"
-          style="width: 100%"
-          border
+          :expand-column-key="expandColumnKey"
+          :indent-size="16"
+          :icon-size="14"
+          :row-height="44"
+          fixed
+          row-key="id"
+          class="permission-table"
           v-loading="state.loading"
-          :expand-row-keys="state.expandedRowKeys"
-          :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         >
-          <el-table-column prop="name" label="名称" width="240" align="left" fixed>
-            <template #default="{ row }">
-              <span v-if="row.icon" class="permission-icon">
-                <el-icon v-if="row.icon.startsWith('el-icon')">
-                  <component :is="row.icon" />
-                </el-icon>
-                <SvgIcon v-else :name="row.icon" width="15" height="15" />
-              </span>
-              <span :class="{ 'highlight-text': shouldHighlight(row) }">
-                {{ row.name }}
-              </span>
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="code" label="编码" width="180">
-            <template #default="{ row }">
-              <span :class="{ 'highlight-text': shouldHighlight(row) }">
-                {{ row.code }}
-              </span>
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="resourceType" label="类型" width="120">
-            <template #default="{ row }">
-              <el-tag :type="getResourceTypeTag(row.resourceType)">
-                {{ row.resourceType ? enumStore.getEnumLabel(DICT_IAM_PERMISSION_RESOURCE_TYPE, row.resourceType) : '-' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="icon" label="图标" width="180" align="center">
-            <template #default="{ row }">
-              <span :class="{ 'highlight-text': shouldHighlight(row) }">
-                {{ row.icon }}
-              </span>
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="sort" label="排序" width="80" align="center" />
-          <el-table-column prop="createName" label="创建人" width="180" align="center" />
-
-          <el-table-column prop="createTime" label="创建时间" width="180" align="center">
-            <template #default="{ row }">
-              {{ formatTime(row.createTime) }}
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="updateName" label="修改人" width="180" align="center" />
-
-          <el-table-column prop="updateTime" label="更新时间" width="180" align="center">
-            <template #default="{ row }">
-              {{ formatTime(row.updateTime) }}
-            </template>
-          </el-table-column>
-
-          <el-table-column label="操作" width="200" align="center" fixed="right">
-            <template #default="{ row }">
-              <div class="table-actions">
-                <el-button size="small" @click="showDetailDialog(row.id)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:DETAIL']">
-                  详情
-                </el-button>
-                <el-button size="small" type="primary" @click="showEditDialog(row)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE']">
-                  编辑
-                </el-button>
-                <el-dropdown trigger="click" @command="onPermissionDropdownCommand($event, row)" placement="bottom-end">
-                  <el-button size="small" type="info">
-                    更多
-                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="create" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:CREATE'])">
-                        <el-icon><Plus /></el-icon>
-                        <span>新增</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE_PARENT'])">
-                        <el-icon><Connection /></el-icon>
-                        <span>修改父节点</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:DELETE'])">
-                        <el-icon><Delete /></el-icon>
-                        <span>删除</span>
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
+          <template #empty>
+            <div class="table-empty">暂无数据</div>
+          </template>
+        </el-table-v2>
       </div>
 
       <!-- 骨架屏占位 -->
@@ -148,12 +67,15 @@
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:permission'
   })
-  import { ref, reactive, onMounted, onActivated, onBeforeUnmount, nextTick } from 'vue'
-  import { ElMessageBox } from 'element-plus'
+  import { ref, reactive, onMounted, onActivated, onBeforeUnmount, nextTick, h, watch, markRaw, defineComponent, resolveComponent, type VNode } from 'vue'
+  import Fuse, { type FuseResultMatch } from 'fuse.js'
+  import { ElMessage, ElMessageBox, ElTag, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus'
   import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import { BIamPermissionApi } from '@/modules/biam/permission/api/BIamPermission.api'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { BIamPermissionTreeExpandResponseVo } from '@/modules/biam/permission/type/BIamPermission.type'
+  import type { HighlightRange } from '@/shared/types/Common.type'
   import BIamPermissionCreateDialog from '@/modules/biam/permission/BIamPermissionCreateDialog.vue'
   import BIamPermissionEditDialog from '@/modules/biam/permission/BIamPermissionEditDialog.vue'
   import BIamPermissionUpdateParentDialog from '@/modules/biam/permission/BIamPermissionUpdateParentDialog.vue'
@@ -162,7 +84,10 @@
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { DICT_IAM_PERMISSION_RESOURCE_TYPE, DICT_IAM_DATA_PERMISSION_SCOPE_TYPE } from '@/shared/constants/DictionaryEnum.constant'
 
-  const RESOURCE_TYPE_TAG_MAP: Record<string, string> = {
+  /** el-tag 支持的 type 取值 */
+  type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
+
+  const RESOURCE_TYPE_TAG_MAP: Record<string, TagType> = {
     APP: 'primary',
     MODULE: 'success',
     DIRECTORY: 'info',
@@ -177,9 +102,12 @@
   const dataCardRef = ref()
   const pageContainerRef = ref<HTMLElement | null>(null)
 
-  // 表格高度 - 初始为0，等计算完成后再显示
+  // 表格尺寸 - 初始为0，等计算完成后再显示
   const tableHeight = ref<number>(0)
+  const tableWidth = ref<number>(0)
   const tableHeightReady = ref<boolean>(false)
+  // 树形展开所在列
+  const expandColumnKey = 'name'
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
   let isFirstActivation = true
@@ -193,21 +121,21 @@
     return null
   }
 
-  const updateTableHeight = async () => {
+  const updateTableSize = async () => {
     await nextTick()
     const dataCardEl = resolveCardElement(dataCardRef.value)
     if (!dataCardEl) return
     const cardBody = dataCardEl.querySelector('.el-card__body')
     if (!(cardBody instanceof HTMLElement)) return
-    // 保障最小高度，避免在极小视口下表格不可用
-    const newHeight = Math.max(260, cardBody.clientHeight)
 
-    if (tableHeight.value !== newHeight) {
-      tableHeight.value = newHeight
-    }
+    // 去掉卡片的 12px 内边距，保障表格恰好铺满内容区（最小尺寸避免极小视口下不可用）
+    const contentHeight = cardBody.clientHeight - 24
+    const contentWidth = cardBody.clientWidth - 24
+    tableHeight.value = Math.max(260, contentHeight)
+    tableWidth.value = Math.max(320, contentWidth)
 
-    // 首次计算完成后显示表格
-    if (isFirstCalculation && tableHeight.value > 0) {
+    // 首次拿到真实尺寸后再显示表格（容器若被隐藏，尺寸变化时 ResizeObserver 会再次触发）
+    if (isFirstCalculation && contentHeight > 0 && contentWidth > 0) {
       tableHeightReady.value = true
       isFirstCalculation = false
     }
@@ -220,7 +148,7 @@
     if (!pageContainerEl || !searchCardEl || !dataCardEl) return
 
     resizeObserver = new ResizeObserver(() => {
-      updateTableHeight()
+      updateTableSize()
     })
 
     resizeObserver.observe(pageContainerEl)
@@ -231,17 +159,25 @@
   // 组件状态
   const state = reactive({
     loading: false,
+    isSearching: false,
     searchForm: {
       name: '',
       code: '',
       icon: ''
     },
+    loadedCount: 0,
+    resultShown: 0,
+    resultTotal: 0,
     currentId: '',
     currentRow: null as BIamPermissionTreeExpandResponseVo | null,
     expandedRowKeys: [] as string[],
     tableData: [] as BIamPermissionTreeExpandResponseVo[],
     tableDataToShow: [] as BIamPermissionTreeExpandResponseVo[],
     treeData: null as BIamPermissionTreeExpandResponseVo | null,
+    /** 扁平化节点（编码按“包含”匹配时需遍历全量节点） */
+    flatData: [] as BIamPermissionTreeExpandResponseVo[],
+    nameFuse: null as Fuse<BIamPermissionTreeExpandResponseVo> | null,
+    iconFuse: null as Fuse<BIamPermissionTreeExpandResponseVo> | null,
     dialogs: {
       create: { visible: false },
       edit: { visible: false },
@@ -250,111 +186,223 @@
     }
   })
 
+  type SearchFieldKey = 'name' | 'code' | 'icon'
+
+  /** 单字段命中：节点 + 该字段需高亮的区间 */
+  interface FieldHit {
+    item: BIamPermissionTreeExpandResponseVo
+    ranges: HighlightRange[]
+  }
+
+  const SEARCH_RESULT_LIMIT = 256
+
+  /** 建索引（仅名称/图标使用模糊匹配；编码是标识符，走精确包含匹配） */
+  const createFuseIndex = (flatData: BIamPermissionTreeExpandResponseVo[], keys: string[], threshold: number, minMatchCharLength: number, distance: number) =>
+    new Fuse(flatData, {
+      keys,
+      includeMatches: true,
+      includeScore: true,
+      threshold,
+      minMatchCharLength,
+      ignoreLocation: true,
+      distance,
+      findAllMatches: true,
+      tokenize: (text: string) => text.split(/\s+/)
+    })
+
+  const initSearchTools = () => {
+    const flatData = markRaw(TreeDataUtil.collectAllNodes(state.tableData))
+    state.flatData = flatData
+
+    // 未搜索时表格展示全部数据，结果与总数相同
+    state.loadedCount = flatData.length
+    state.resultShown = flatData.length
+    state.resultTotal = flatData.length
+
+    state.nameFuse = createFuseIndex(flatData, ['name'], 0.1, 1, 30)
+    state.iconFuse = createFuseIndex(flatData, ['icon'], 0.1, 1, 30)
+  }
+
+  const getHighlightRanges = (matches: readonly FuseResultMatch[] | undefined): HighlightRange[] => {
+    if (!matches?.length) return []
+
+    const ranges: HighlightRange[] = []
+    matches.forEach(match => match.indices?.forEach(([start, end]) => ranges.push([start, end])))
+    if (!ranges.length) return []
+
+    ranges.sort((a, b) => a[0] - b[0])
+    const merged: HighlightRange[] = [ranges[0]]
+    for (let i = 1; i < ranges.length; i++) {
+      const current = ranges[i]
+      const last = merged[merged.length - 1]
+      if (current[0] <= last[1] + 1) {
+        if (current[1] > last[1]) last[1] = current[1]
+      } else {
+        merged.push(current)
+      }
+    }
+    return merged
+  }
+
+  /** 编码命中区间：按“包含”逐段定位（大小写不敏感） */
+  const collectSubstringRanges = (text: string, query: string): HighlightRange[] => {
+    const ranges: HighlightRange[] = []
+    const target = query.toLowerCase()
+    if (!target) return ranges
+
+    const source = text.toLowerCase()
+    let from = 0
+    while (from <= source.length - target.length) {
+      const index = source.indexOf(target, from)
+      if (index === -1) break
+      ranges.push([index, index + target.length - 1])
+      from = index + target.length
+    }
+    return ranges
+  }
+
+  const renderHighlight = (text: string, ranges: HighlightRange[]): Array<string | VNode> => {
+    const nodes: Array<string | VNode> = []
+    let cursor = 0
+    for (const [start, end] of ranges) {
+      if (start > cursor) nodes.push(text.slice(cursor, start))
+      nodes.push(h('span', { class: 'highlight' }, text.slice(start, end + 1)))
+      cursor = end + 1
+    }
+    if (cursor < text.length) nodes.push(text.slice(cursor))
+    return nodes
+  }
+
   // 表格操作
   const setDefaultExpandedRows = (nodes: BIamPermissionTreeExpandResponseVo[]) => {
     state.expandedRowKeys = nodes.map(node => node.id)
   }
 
-  const collectParentIds = (nodes: BIamPermissionTreeExpandResponseVo[], targetId: string): string[] => {
-    const result: string[] = []
+  const performSearch = () => {
+    const { name, code, icon } = state.searchForm
 
-    const findParent = (nodeList: BIamPermissionTreeExpandResponseVo[], target: string): boolean => {
-      for (const node of nodeList) {
-        if (node.id === target) return true
-
-        if (node.children?.length) {
-          if (findParent(node.children, target)) {
-            result.push(node.id)
-            return true
-          }
-        }
-      }
-      return false
-    }
-
-    findParent(nodes, targetId)
-    return result
-  }
-
-  const handleSearch = () => {
-    if (!hasSearchCriteria()) {
-      resetTableDisplay()
+    if (!name && !code && !icon) {
+      resetSearch()
       return
     }
 
-    const { matchedIds, parentIds } = findMatchingNodes()
-    updateExpandedRows(matchedIds, parentIds)
-    updateTableDisplay(matchedIds, parentIds)
-  }
+    state.isSearching = true
 
-  const hasSearchCriteria = () => {
-    return Object.values(state.searchForm).some(value => Boolean(value))
-  }
-
-  const findMatchingNodes = () => {
-    const matchedIds = new Set<string>()
-    const parentIds = new Set<string>()
-
-    const findMatches = (nodes: BIamPermissionTreeExpandResponseVo[]) => {
-      nodes.forEach(node => {
-        const isMatched = Object.entries(state.searchForm).some(([key, value]) => {
-          if (!value) return false
-          const nodeValue = node[key as keyof typeof node]
-          return nodeValue && String(nodeValue).toLowerCase().includes(value.toLowerCase())
-        })
-
-        if (isMatched) {
-          matchedIds.add(node.id)
-          collectParentIds(state.tableData, node.id).forEach(id => parentIds.add(id))
-        }
-
-        if (node.children?.length) {
-          findMatches(node.children)
-        }
+    const fieldHits: Array<{ key: SearchFieldKey; hits: FieldHit[] }> = []
+    if (name) {
+      fieldHits.push({
+        key: 'name',
+        hits: (state.nameFuse?.search(name) ?? []).map(result => ({ item: result.item, ranges: getHighlightRanges(result.matches) }))
+      })
+    }
+    if (code) {
+      // 编码是标识符，按“包含”精确匹配（模糊匹配会把 0001 命中到 0000）
+      const keyword = code.toLowerCase()
+      fieldHits.push({
+        key: 'code',
+        hits: state.flatData
+          .filter(node => node.code?.toLowerCase().includes(keyword))
+          .map(node => ({ item: node, ranges: collectSubstringRanges(node.code ?? '', code) }))
+      })
+    }
+    if (icon) {
+      fieldHits.push({
+        key: 'icon',
+        hits: (state.iconFuse?.search(icon) ?? []).map(result => ({ item: result.item, ranges: getHighlightRanges(result.matches) }))
       })
     }
 
-    findMatches(state.tableData)
-    return { matchedIds, parentIds }
-  }
+    const [primary, ...restFields] = fieldHits
+    const restIdSets = restFields.map(field => new Set(field.hits.map(hit => hit.item.id)))
+    const allHits = primary.hits.filter(hit => restIdSets.every(idSet => idSet.has(hit.item.id)))
 
-  const updateExpandedRows = (matchedIds: Set<string>, parentIds: Set<string>) => {
-    state.expandedRowKeys = Array.from(new Set([...matchedIds, ...parentIds]))
-  }
+    state.resultTotal = allHits.length
+    const hits = allHits.slice(0, SEARCH_RESULT_LIMIT)
+    state.resultShown = hits.length
 
-  const updateTableDisplay = (matchedIds: Set<string>, parentIds: Set<string>) => {
-    const allExpandedIds = new Set([...matchedIds, ...parentIds])
+    const rangesById = new Map<string, Partial<Record<SearchFieldKey, HighlightRange[]>>>()
+    fieldHits.forEach(({ key, hits: fieldHitList }) => {
+      fieldHitList.forEach(hit => {
+        const entry = rangesById.get(hit.item.id) ?? {}
+        entry[key] = hit.ranges
+        rangesById.set(hit.item.id, entry)
+      })
+    })
 
-    const filterNodes = (nodes: BIamPermissionTreeExpandResponseVo[]): BIamPermissionTreeExpandResponseVo[] => {
-      return nodes
-        .filter(node => allExpandedIds.has(node.id))
-        .map(node => ({
-          ...node,
-          children: node.children?.length ? filterNodes(node.children) : undefined
-        }))
+    const matchedItems = hits.map(hit => {
+      const entry = rangesById.get(hit.item.id) ?? {}
+      return {
+        ...hit.item,
+        highlight: {
+          name: entry.name ?? [],
+          code: entry.code ?? [],
+          icon: entry.icon ?? []
+        }
+      }
+    })
+
+    const parentIdMap = new Map<string, string>()
+    const collectParentIdMap = (nodes: BIamPermissionTreeExpandResponseVo[]) => {
+      for (const node of nodes) {
+        if (!node.children?.length) continue
+        for (const child of node.children) {
+          parentIdMap.set(child.id, node.id)
+        }
+        collectParentIdMap(node.children)
+      }
+    }
+    collectParentIdMap(state.tableData)
+
+    const matchedIds = new Set<string>()
+    const parentIds = new Set<string>()
+    matchedItems.forEach(item => {
+      matchedIds.add(item.id)
+      let parentId: string | undefined = item.parentId
+      while (parentId) {
+        if (parentIds.has(parentId)) break
+        parentIds.add(parentId)
+        parentId = parentIdMap.get(parentId)
+      }
+    })
+
+    // 构建搜索结果树
+    const matchedMap = new Map(matchedItems.map(item => [item.id, item]))
+    const buildResultTree = (nodes: BIamPermissionTreeExpandResponseVo[]): BIamPermissionTreeExpandResponseVo[] => {
+      const result: BIamPermissionTreeExpandResponseVo[] = []
+      for (const node of nodes) {
+        const isMatched = matchedIds.has(node.id)
+        if (!isMatched && !parentIds.has(node.id)) continue
+
+        const newNode = { ...node }
+        if (isMatched) {
+          const matched = matchedMap.get(node.id)
+          if (matched) newNode.highlight = matched.highlight
+        }
+        if (node.children) newNode.children = buildResultTree(node.children)
+        result.push(newNode)
+      }
+      return result
     }
 
-    state.tableDataToShow = filterNodes(state.tableData)
+    state.tableDataToShow = markRaw(buildResultTree(state.tableData))
+    state.expandedRowKeys = Array.from(parentIds)
   }
 
-  const shouldHighlight = (row: BIamPermissionTreeExpandResponseVo) => {
-    if (!hasSearchCriteria()) return false
-
-    return Object.entries(state.searchForm).some(([key, value]) => {
-      if (!value) return false
-      const rowValue = row[key as keyof typeof row]
-      return rowValue && String(rowValue).toLowerCase().includes(value.toLowerCase())
-    })
+  const handleSearch = () => {
+    if (state.searchForm.code && state.searchForm.code.length < 3) {
+      ElMessage.warning('编码至少需要3位字符')
+      return
+    }
+    performSearch()
   }
 
   const resetSearch = () => {
     searchFormRef.value?.resetFields()
-    resetTableDisplay()
-  }
-
-  const resetTableDisplay = () => {
+    state.isSearching = false
     state.tableDataToShow = state.tableData
     setDefaultExpandedRows(state.tableData)
+    state.resultShown = state.loadedCount
+    state.resultTotal = state.loadedCount
   }
 
   // 对话框操作
@@ -391,11 +439,156 @@
     return timestamp ? new Date(timestamp).toLocaleString() : '-'
   }
 
-  const getResourceTypeTag = (type?: string | null) => {
+  const getResourceTypeTag = (type?: string | null): TagType => {
     if (!type) return 'info'
-    // 枚举 code 与传入 type 一致，直接按 tag map 取类型即可，无需依赖枚举字典是否已加载
     return RESOURCE_TYPE_TAG_MAP[type] || 'info'
   }
+
+  const PermissionIcon = defineComponent({
+    name: 'PermissionIcon',
+    props: {
+      icon: { type: String, required: true }
+    },
+    setup(props) {
+      return () => {
+        if (props.icon.startsWith('el-icon')) {
+          return h(ElIcon, null, { default: () => h(resolveComponent(props.icon)) })
+        }
+        return h(SvgIcon, { name: props.icon, width: '15', height: '15' })
+      }
+    }
+  })
+
+  const tableColumns = [
+    {
+      key: 'name',
+      title: '名称',
+      dataKey: 'name',
+      width: 240,
+      fixed: true,
+      align: 'left',
+      cellRenderer: ({ rowData }: { rowData: BIamPermissionTreeExpandResponseVo }) =>
+        h('span', null, [
+          rowData.icon ? h('span', { class: 'permission-icon' }, [h(PermissionIcon, { icon: rowData.icon })]) : null,
+          rowData.highlight?.name?.length ? h('span', null, renderHighlight(rowData.name, rowData.highlight.name)) : rowData.name
+        ])
+    },
+    {
+      key: 'code',
+      title: '编码',
+      dataKey: 'code',
+      width: 320,
+      cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: BIamPermissionTreeExpandResponseVo }) =>
+        cellData && rowData.highlight?.code?.length ? h('span', null, renderHighlight(cellData, rowData.highlight.code)) : cellData
+    },
+    {
+      key: 'resourceType',
+      title: '类型',
+      dataKey: 'resourceType',
+      width: 120,
+      cellRenderer: ({ rowData }: { rowData: BIamPermissionTreeExpandResponseVo }) =>
+        h(ElTag, { type: getResourceTypeTag(rowData.resourceType) }, () =>
+          rowData.resourceType ? enumStore.getEnumLabel(DICT_IAM_PERMISSION_RESOURCE_TYPE, rowData.resourceType) : '-'
+        )
+    },
+    {
+      key: 'icon',
+      title: '图标',
+      dataKey: 'icon',
+      width: 180,
+      align: 'center',
+      cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: BIamPermissionTreeExpandResponseVo }) =>
+        cellData && rowData.highlight?.icon?.length ? h('span', null, renderHighlight(cellData, rowData.highlight.icon)) : cellData
+    },
+    { key: 'sort', title: '排序', dataKey: 'sort', width: 80, align: 'center' },
+    { key: 'createName', title: '创建人', dataKey: 'createName', width: 180, align: 'center' },
+    {
+      key: 'createTime',
+      title: '创建时间',
+      dataKey: 'createTime',
+      width: 180,
+      align: 'center',
+      cellRenderer: ({ cellData }: { cellData: number }) => formatTime(cellData)
+    },
+    { key: 'updateName', title: '修改人', dataKey: 'updateName', width: 180, align: 'center' },
+    {
+      key: 'updateTime',
+      title: '更新时间',
+      dataKey: 'updateTime',
+      width: 180,
+      align: 'center',
+      cellRenderer: ({ cellData }: { cellData: number }) => formatTime(cellData)
+    },
+    {
+      key: 'operation',
+      title: '操作',
+      width: 200,
+      align: 'center',
+      fixed: 'right',
+      cellRenderer: ({ rowData }: { rowData: BIamPermissionTreeExpandResponseVo }) =>
+        h('div', { class: 'table-actions' }, [
+          h(
+            ElButton,
+            {
+              size: 'small',
+              disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:DETAIL']),
+              onClick: () => showDetailDialog(rowData.id)
+            },
+            () => '详情'
+          ),
+          h(
+            ElButton,
+            {
+              size: 'small',
+              type: 'primary',
+              disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE']),
+              onClick: () => showEditDialog(rowData)
+            },
+            () => '编辑'
+          ),
+          h(
+            ElDropdown,
+            {
+              trigger: 'click',
+              placement: 'bottom-end',
+              onCommand: (command: string | number | object) => onPermissionDropdownCommand(command, rowData)
+            },
+            {
+              default: () =>
+                h(ElButton, { size: 'small', type: 'info' }, () => ['更多', h(ElIcon, { class: 'el-icon--right' }, { default: () => h(ArrowDown) })]),
+              dropdown: () =>
+                h(ElDropdownMenu, null, () => [
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'create',
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:CREATE'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Plus) }), h('span', null, '新增')]
+                  ),
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'updateParent',
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE_PARENT'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '修改父节点')]
+                  ),
+                  h(
+                    ElDropdownItem,
+                    {
+                      command: 'delete',
+                      divided: true,
+                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:DELETE'])
+                    },
+                    () => [h(ElIcon, null, { default: () => h(Delete) }), h('span', null, '删除')]
+                  )
+                ])
+            }
+          )
+        ])
+    }
+  ]
 
   const handleDelete = async (row: { id: string }) => {
     try {
@@ -406,18 +599,15 @@
     }
   }
 
-  /** 处理权限下拉菜单命令 */
   const onPermissionDropdownCommand = (command: string | number | object, row: BIamPermissionTreeExpandResponseVo) => {
     handlePermissionDropdownCommand(String(command), row)
   }
 
-  /** 处理权限下拉菜单命令 */
   const handlePermissionDropdownCommand = (command: string, row: BIamPermissionTreeExpandResponseVo) => {
     const commandMap: Record<string, () => void> = {
       create: () => showCreateDialog(row),
       updateParent: () => showUpdateParentDialog(row),
       delete: () => {
-        // 使用 ElMessageBox 替代 el-popconfirm，因为在下拉菜单中无法使用 el-popconfirm
         ElMessageBox.confirm('确定要删除此权限吗？', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
@@ -437,9 +627,10 @@
     try {
       state.loading = true
       const res = await BIamPermissionApi.treeExpand({ id: 'machine' })
-      state.treeData = res
-      state.tableData = res.children || []
-      state.tableDataToShow = res.children || []
+      state.treeData = markRaw(res)
+      state.tableData = markRaw(res.children || [])
+      state.tableDataToShow = state.tableData
+      initSearchTools()
       setDefaultExpandedRows(state.tableData)
     } catch (error) {
       console.error('获取权限树失败', error)
@@ -448,12 +639,22 @@
     }
   }
 
+  watch(
+    () => state.searchForm,
+    ({ name, code, icon }) => {
+      if (!name && !code && !icon && state.isSearching) {
+        resetSearch()
+      }
+    },
+    { deep: true }
+  )
+
   onMounted(async () => {
     await Promise.all([enumStore.getEnumDataAsync(DICT_IAM_PERMISSION_RESOURCE_TYPE), enumStore.getEnumDataAsync(DICT_IAM_DATA_PERMISSION_SCOPE_TYPE)])
     await fetchPermissionTree()
     await nextTick()
     setupResizeObserver()
-    await updateTableHeight()
+    await updateTableSize()
   })
 
   onActivated(async () => {
@@ -462,6 +663,7 @@
       return
     }
     await fetchPermissionTree()
+    await updateTableSize()
   })
 
   onBeforeUnmount(() => {
@@ -516,6 +718,12 @@
       .button-group {
         margin-left: auto;
         white-space: nowrap;
+
+        .search-limit-hint {
+          margin-right: 12px;
+          color: var(--el-text-color-secondary);
+          font-size: 12px;
+        }
       }
     }
   }
@@ -536,6 +744,11 @@
       padding: 12px;
     }
 
+    .table-wrapper {
+      flex: 1;
+      min-height: 0;
+    }
+
     .table-placeholder {
       flex: 1;
       padding: 10px 0;
@@ -554,7 +767,8 @@
     }
   }
 
-  .permission-icon {
+  /* 名称列图标（渲染函数内创建，需用 :deep 命中） */
+  :deep(.permission-icon) {
     margin-right: 8px;
     vertical-align: middle;
 
@@ -565,25 +779,37 @@
     }
   }
 
-  .el-table {
-    :deep(.el-table__cell) {
-      padding: 8px 0;
+  .permission-table {
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+
+    :deep(.el-table-v2__header-cell),
+    :deep(.el-table-v2__row-cell) {
+      padding: 0 8px;
+      border-right: 1px solid var(--el-border-color);
     }
   }
 
-  .highlight-text {
-    background-color: #fffb8f;
-    padding: 2px 4px;
-    border-radius: 3px;
+  .table-empty {
+    color: var(--el-text-color-secondary);
+    font-size: 14px;
   }
 
-  .table-actions {
+  :deep(.highlight) {
+    background-color: #fffb8f;
+    color: #000;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
+  :deep(.table-actions) {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 2px;
 
-    :deep(.el-button) {
+    .el-button {
       margin: 0;
       margin-right: 2px;
 
@@ -592,7 +818,7 @@
       }
     }
 
-    :deep(.el-dropdown) {
+    .el-dropdown {
       margin-left: 2px;
     }
   }

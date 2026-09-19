@@ -111,7 +111,7 @@
               <el-tag>{{ enumStore.getEnumLabel(DICT_MODULE_ENTITY, row.moduleEntity) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="moduleEntityId" label="实体ID" align="center" width="120" />
+          <el-table-column prop="moduleEntityId" label="实体ID" align="center" width="280" />
           <el-table-column prop="operateType" label="操作分类" align="center" width="100">
             <template #default="{ row }">
               <el-tag>{{ enumStore.getEnumLabel(DICT_ACTION_TYPE, row.operateType) }}</el-tag>

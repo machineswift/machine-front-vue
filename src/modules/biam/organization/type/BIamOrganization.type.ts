@@ -1,4 +1,4 @@
-import type { TreeNode } from '@/shared/types/Common.type'
+import type { HighlightRange, TreeNode } from '@/shared/types/Common.type'
 import type { DataShopDto } from '@/modules/data/shop/type/DataShop.type'
 
 export interface BIamOrganizationDto {
@@ -62,8 +62,8 @@ export interface BIamOrganizationExpandTreeResponseVo extends TreeNode<BIamOrgan
   updateName: string
   updateBy: string
   updateTime: number
-  /** 搜索高亮片段 */
-  highlight?: { name?: string; code?: string }
+  /** 搜索命中区间（渲染时再生成高亮节点，存储区间可避免 HTML 拼接与 XSS） */
+  highlight?: { name?: HighlightRange[]; code?: HighlightRange[] }
 }
 
 export interface BIamOrganizationWithShopTreeResponseVo extends TreeNode<BIamOrganizationWithShopTreeResponseVo> {

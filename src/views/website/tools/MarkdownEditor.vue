@@ -610,6 +610,9 @@ Content-Type: application/json
   mermaid.initialize({
     startOnLoad: false,
     theme: 'dark',
+    // mermaid 12 起默认使用 ELK 布局与 neo 外观；显式指定以保持原有渲染效果
+    layout: 'dagre',
+    look: 'classic',
     securityLevel: 'strict', // 严格模式：禁用 HTML 标签与点击事件，防止 XSS
     fontFamily: 'inherit',
     maxTextSize: 100000

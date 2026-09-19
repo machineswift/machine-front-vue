@@ -33,3 +33,16 @@ export interface TreeNode<T extends TreeNode<T>> {
   sort: number
   children?: T[]
 }
+
+export type HighlightRange = [number, number]
+
+/** 树工具函数的通用节点约束：只要求 id / children */
+export interface TreeLikeNode<T> {
+  id: string
+  children?: T[]
+}
+
+export interface TreePickerNode extends TreeLikeNode<TreePickerNode> {
+  name: string
+  code?: string
+}

@@ -8,7 +8,7 @@
     :destroy-on-close="true"
     @close="handleDialogClosed"
     width="640px"
-    top="10vh"
+    top="8vh"
   >
     <el-form ref="formRef" :model="state.formData" :rules="rules" label-width="100px" label-position="right">
       <el-form-item label="编码" prop="code">

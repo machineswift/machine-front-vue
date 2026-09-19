@@ -1,11 +1,11 @@
-import type { TreeNode } from '@/shared/types/Common.type'
+import type { TreeLikeNode } from '@/shared/types/Common.type'
 
 export class TreeDataUtil {
   /**
    * 遍历树结构，收集所有节点（支持单个节点或节点数组）
    * @returns 所有节点的扁平化数组（children会被清空）
    */
-  public static collectAllNodes<T extends TreeNode<T>>(root: T | T[] | null): T[] {
+  public static collectAllNodes<T extends TreeLikeNode<T>>(root: T | T[] | null): T[] {
     if (!root) return []
 
     // 统一处理数组和单节点的情况
@@ -35,7 +35,7 @@ export class TreeDataUtil {
   /**
    * 查找指定ID的节点（支持DFS/BFS，支持单节点或节点数组）
    */
-  public static findNode<T extends TreeNode<T>>(root: T | T[] | null, id: string | null, options: { mode?: 'dfs' | 'bfs' } = { mode: 'dfs' }): T | null {
+  public static findNode<T extends TreeLikeNode<T>>(root: T | T[] | null, id: string | null, options: { mode?: 'dfs' | 'bfs' } = { mode: 'dfs' }): T | null {
     // 处理空值
     if (!root || !id) return null
 
@@ -65,7 +65,7 @@ export class TreeDataUtil {
   /**
    * 获取所有选中节点中的根节点
    */
-  public static getRootNodesFromSelected<T extends TreeNode<T>>(root: T | T[] | null, selectedIds: string[]): T[] {
+  public static getRootNodesFromSelected<T extends TreeLikeNode<T>>(root: T | T[] | null, selectedIds: string[]): T[] {
     if (!root || !selectedIds || selectedIds.length === 0) {
       return []
     }
@@ -108,7 +108,7 @@ export class TreeDataUtil {
   /**
    * 获取指定节点的所有子节点ID（包括自身）
    */
-  public static getAllChildrenIdsIncludingSelf<T extends TreeNode<T>>(treeData: T | T[], nodeIds: string[]): string[] {
+  public static getAllChildrenIdsIncludingSelf<T extends TreeLikeNode<T>>(treeData: T | T[], nodeIds: string[]): string[] {
     const result: string[] = []
     const nodes = Array.isArray(treeData) ? treeData : [treeData]
 
@@ -145,7 +145,7 @@ export class TreeDataUtil {
   /**
    * 获取指定节点集合的所有父级节点（包括根节点）
    */
-  public static getAllParentNodes<T extends TreeNode<T>>(root: T | T[] | null, targetIds: string[]): T[] {
+  public static getAllParentNodes<T extends TreeLikeNode<T>>(root: T | T[] | null, targetIds: string[]): T[] {
     if (!root || !targetIds || targetIds.length === 0) {
       return []
     }
@@ -199,7 +199,7 @@ export class TreeDataUtil {
   /**
    * 获取给定ID集合中所有最后一层的节点ID（没有子节点的节点）
    */
-  public static getBottomLevelIds<T extends TreeNode<T>>(root: T | T[] | null, ids: string[]): string[] {
+  public static getBottomLevelIds<T extends TreeLikeNode<T>>(root: T | T[] | null, ids: string[]): string[] {
     if (!root || !ids || ids.length === 0) {
       return []
     }

@@ -8,7 +8,7 @@
     :destroy-on-close="true"
     @closed="handleDialogClosed"
     width="600px"
-    top="20vh"
+    top="8vh"
   >
     <el-skeleton :loading="state.loading" animated>
       <template #template>
@@ -41,9 +41,7 @@
 
     <template #footer>
       <el-button @click="state.visible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:UPDATE']">
-        确认
-      </el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SCM:CATEGORY:BACK:UPDATE']">确认</el-button>
     </template>
   </el-dialog>
 </template>

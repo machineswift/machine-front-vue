@@ -70,6 +70,7 @@
   </el-dialog>
 
   <BIamRoleEditPermissionDrawer
+    v-if="state.currentMenuPermissionNode"
     v-model="state.drawer"
     :node="state.currentMenuPermissionNode!"
     :organization-type-options="organizationTypeOptions"

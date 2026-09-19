@@ -243,7 +243,10 @@ class RequestUtil {
   }
 
   public request<T = unknown>(config: CustomRequestConfig): Promise<T> {
-    return config.retry ? this.requestWithRetry<T>(config) : this.instance.request<BaseResponse<T>, T>(config)
+    if (config.retry) {
+      return this.requestWithRetry<T>(config)
+    }
+    return this.instance.request<BaseResponse<T>, T>(config) as unknown as Promise<T>
   }
 
   public get<T = unknown>(url: string, params?: RequestParams, config?: Omit<CustomRequestConfig, 'params' | 'method'>): Promise<T> {

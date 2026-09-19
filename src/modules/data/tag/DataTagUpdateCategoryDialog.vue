@@ -7,8 +7,8 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="80%"
-    top="5vh"
+    width="600px"
+    top="8vh"
   >
     <el-form :model="state.form" :rules="rules" label-width="100px" ref="formRef" v-loading="state.loading">
       <el-form-item label="标签名称:">
@@ -16,15 +16,7 @@
       </el-form-item>
 
       <el-form-item label="分类" prop="categoryId">
-        <el-tree-select
-          v-model="state.form.categoryId"
-          :data="state.categoryTreeOptions"
-          :props="categoryProps"
-          placeholder="请选择分类"
-          check-strictly
-          :render-after-expand="false"
-          style="width: 100%"
-        />
+        <TreePickerPanel v-model="state.form.categoryId" :roots="state.categoryTreeOptions" :icon="FolderOpened" placeholder="输入分类名称或编码搜索" />
       </el-form-item>
     </el-form>
 
@@ -41,6 +33,8 @@
   import { reactive, computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormItemRule } from 'element-plus'
+  import { FolderOpened } from '@element-plus/icons-vue'
+  import TreePickerPanel from '@/shared/components/TreePickerPanel.vue'
   import { DataTagApi } from '@/modules/data/tag/api/DataTag.api'
   import { DataTagCategoryApi } from '@/modules/data/tag/api/DataTagCategory.api'
   import type { DataTagUpdateCategoryRequestVo } from '@/modules/data/tag/type/DataTag.type'
@@ -70,12 +64,6 @@
       categoryId: ''
     } as DataTagUpdateCategoryRequestVo
   })
-
-  const categoryProps = {
-    value: 'id',
-    label: 'name',
-    children: 'children'
-  }
 
   // 表单验证规则
   const validateCategoryId = (_rule: FormItemRule, value: string) => {

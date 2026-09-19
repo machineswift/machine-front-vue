@@ -1,19 +1,25 @@
 <template>
-  <el-dialog v-model="state.dialogVisible" title="修改父分类" :close-on-click-modal="false" :destroy-on-close="true" @closed="handleDialogClosed" width="480px">
+  <el-dialog
+    v-model="state.dialogVisible"
+    title="修改父分类"
+    :close-on-click-modal="false"
+    :destroy-on-close="true"
+    @closed="handleDialogClosed"
+    width="600px"
+    top="8vh"
+  >
     <el-form :model="state.form" label-width="90px" ref="formRef" v-loading="state.loading">
       <el-form-item label="当前分类:">
         <el-input v-model="state.categoryName" disabled />
       </el-form-item>
       <el-form-item label="新父分类:" prop="parentId">
-        <el-tree-select
+        <TreePickerPanel
           v-model="state.form.parentId"
-          :data="state.categoryTreeOptions"
-          :props="categoryProps"
-          placeholder="请选择父分类"
-          check-strictly
-          :render-after-expand="false"
-          style="width: 100%"
-          :filter-node-method="filterNode"
+          :roots="state.categoryTreeOptions"
+          :exclude-id="state.form.id"
+          exclude-message="不能选择当前分类或其下级分类作为父分类"
+          :icon="FolderOpened"
+          placeholder="输入分类名称或编码搜索"
         />
       </el-form-item>
     </el-form>
@@ -23,6 +29,7 @@
         type="primary"
         @click="submitForm"
         :loading="state.submitting"
+        :disabled="!state.form.parentId"
         v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE_PARENT']"
       >
         确定
@@ -35,6 +42,8 @@
   import { reactive, computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import type { FormInstance } from 'element-plus'
+  import { FolderOpened } from '@element-plus/icons-vue'
+  import TreePickerPanel from '@/shared/components/TreePickerPanel.vue'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import type {
     DataMaterialCategoryUpdateParentRequestVo,
@@ -62,54 +71,25 @@
     form: { id: '', parentId: '' } as DataMaterialCategoryUpdateParentRequestVo
   })
 
-  const categoryProps = { value: 'id', label: 'name', children: 'children' }
-
-  const isDescendant = (node: DataMaterialCategorySimpleTreeResponseVo, ancestorId: string): boolean => {
-    if (node.id === ancestorId) return true
-    if (node.children?.length) return node.children.some(child => isDescendant(child, ancestorId))
-    return false
-  }
-
-  const filterNode = (value: string, data: DataMaterialCategorySimpleTreeResponseVo): boolean => {
-    if (!value) return true
-    if (data.id === state.form.id) return false
-    return !isDescendant(data, state.form.id)
-  }
-
-  const removeNodeAndChildren = (nodes: DataMaterialCategorySimpleTreeResponseVo[], nodeId: string): DataMaterialCategorySimpleTreeResponseVo[] => {
-    return nodes
-      .filter(node => node.id !== nodeId)
-      .map(node => ({
-        ...node,
-        children: node.children ? removeNodeAndChildren(node.children, nodeId) : []
-      }))
-  }
-
   const loadCategoryTree = async () => {
     try {
       state.loading = true
       const response = await DataMaterialCategoryApi.treeSimple()
       const root = response as unknown as DataMaterialCategorySimpleTreeResponseVo & { children?: DataMaterialCategorySimpleTreeResponseVo[] }
       const children = root?.children || (root?.id ? [root] : [])
-      if (state.form.id && root?.id && state.form.id === root.id) {
-        state.categoryTreeOptions = []
-      } else {
-        let treeData: DataMaterialCategorySimpleTreeResponseVo[] =
-          root?.id && root?.name
-            ? [
-                {
-                  id: root.id,
-                  parentId: root.parentId ?? '',
-                  name: root.name,
-                  code: root.code ?? '',
-                  sort: root.sort ?? 0,
-                  children
-                }
-              ]
-            : children
-        if (state.form.id) treeData = removeNodeAndChildren(treeData, state.form.id)
-        state.categoryTreeOptions = treeData
-      }
+      state.categoryTreeOptions =
+        root?.id && root?.name
+          ? [
+              {
+                id: root.id,
+                parentId: root.parentId ?? '',
+                name: root.name,
+                code: root.code ?? '',
+                sort: root.sort ?? 0,
+                children
+              }
+            ]
+          : children
     } catch (error) {
       console.error('加载分类树失败', error)
       ElMessage.error('加载分类树失败')

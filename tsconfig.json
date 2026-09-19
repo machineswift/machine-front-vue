@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "noEmit": true,
     "jsx": "preserve",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
@@ -9,8 +10,12 @@
       "vite/client"
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@/modules/*": ["./src/modules/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@/modules/*": [
+        "./src/modules/*"
+      ]
     }
   },
   "include": [

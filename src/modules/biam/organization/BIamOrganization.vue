@@ -14,6 +14,7 @@
 
         <div class="button-group">
           <el-form-item>
+            <span class="search-limit-hint">结果{{ currentTabState.resultShown }}/{{ currentTabState.resultTotal }}条</span>
             <el-button type="primary" @click="handleSearch" :disabled="!currentTabState.searchReady">搜索</el-button>
             <el-button @click="resetSearch" :disabled="!currentTabState.searchReady">重置</el-button>
           </el-form-item>
@@ -27,14 +28,7 @@
         <el-tab-pane v-for="tab in state.tabs" :key="tab.code" :label="tab.message" :name="tab.code">
           <!-- 操作按钮 -->
           <div class="operation-buttons">
-            <el-button type="primary" @click="handleAdd(null)" v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE']">添加</el-button>
-          </div>
-
-          <!-- 搜索结果提示 -->
-          <div v-if="currentTabState.showSearchNotice" class="search-notice">
-            <el-alert type="warning" :closable="false">
-              当前显示前50个匹配结果，共找到 {{ currentTabState.matchedCount }} 个匹配项，搜索耗时 {{ currentTabState.searchTimeCost }} 毫秒
-            </el-alert>
+            <el-button type="primary" @click="handleAdd(null)" v-hasPermission="[PERMISSION_CODE.create]">添加</el-button>
           </div>
 
           <!-- 数据表格 -->
@@ -49,7 +43,7 @@
               :expand-column-key="expandColumnKey"
               fixed
               row-key="id"
-              :estimated-row-height="60"
+              :row-height="48"
               class="organization-table"
             />
           </div>
@@ -73,7 +67,7 @@
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION'
   })
-  import { ref, reactive, computed, onMounted, onActivated, watch, h, nextTick, onBeforeUnmount, type ComponentPublicInstance } from 'vue'
+  import { ref, reactive, computed, onMounted, onActivated, watch, h, nextTick, onBeforeUnmount, markRaw, type ComponentPublicInstance, type VNode } from 'vue'
   import Fuse, { type FuseResultMatch } from 'fuse.js'
   import { ElMessage, ElMessageBox, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElTooltip, ElIcon } from 'element-plus'
   import { ArrowDown, Plus, Connection, Delete } from '@element-plus/icons-vue'
@@ -84,6 +78,7 @@
   import { DICT_IAM_ORG_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { BIamOrganizationExpandTreeResponseVo } from '@/modules/biam/organization/type/BIamOrganization.type'
+  import type { HighlightRange } from '@/shared/types/Common.type'
   import type { IamDictionaryEnumInfoResponse } from '@/shared/types/DictionaryEnum.type'
   import BIamOrganizationCreateDialog from '@/modules/biam/organization/BIamOrganizationCreateDialog.vue'
   import BIamOrganizationEditDialog from '@/modules/biam/organization/BIamOrganizationEditDialog.vue'
@@ -97,30 +92,58 @@
     }
     searchReady: boolean
     isSearching: boolean
-    matchedCount: number
-    searchTimeCost: number
-    showSearchNotice: boolean
+    loadedCount: number
+    resultShown: number
+    resultTotal: number
 
     allData: BIamOrganizationExpandTreeResponseVo[]
     displayData: BIamOrganizationExpandTreeResponseVo[]
     expandedRowKeys: string[]
 
-    // 树数据
     rootNode: BIamOrganizationExpandTreeResponseVo | null
 
-    // 当前选中节点
     currentNode: BIamOrganizationExpandTreeResponseVo | null
     currentOrganizationId: string
 
-    // 对话框状态
     dialogVisible: {
       create: boolean
       edit: boolean
       detail: boolean
     }
 
+    /** 扁平化节点（编码按“包含”匹配时需遍历全量节点） */
+    flatData: BIamOrganizationExpandTreeResponseVo[]
     nameFuse: Fuse<BIamOrganizationExpandTreeResponseVo> | null
-    codeFuse: Fuse<BIamOrganizationExpandTreeResponseVo> | null
+  }
+
+  /** 权限编码集中定义，避免散落在各个渲染函数中 */
+  const PERMISSION_CODE = {
+    detail: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DETAIL',
+    create: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE',
+    update: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE',
+    updateParent: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE_PARENT',
+    delete: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DELETE'
+  }
+
+  const permission = {
+    detail: computed(() => hasPermission([PERMISSION_CODE.detail])),
+    create: computed(() => hasPermission([PERMISSION_CODE.create])),
+    update: computed(() => hasPermission([PERMISSION_CODE.update])),
+    updateParent: computed(() => hasPermission([PERMISSION_CODE.updateParent])),
+    delete: computed(() => hasPermission([PERMISSION_CODE.delete]))
+  }
+
+  /** 命中区间渲染为 文本 + <span class="highlight">，不使用 innerHTML */
+  const renderHighlight = (text: string, ranges: HighlightRange[]): Array<string | VNode> => {
+    const nodes: Array<string | VNode> = []
+    let cursor = 0
+    for (const [start, end] of ranges) {
+      if (start > cursor) nodes.push(text.slice(cursor, start))
+      nodes.push(h('span', { class: 'highlight' }, text.slice(start, end + 1)))
+      cursor = end + 1
+    }
+    if (cursor < text.length) nodes.push(text.slice(cursor))
+    return nodes
   }
 
   // 组件配置
@@ -134,7 +157,7 @@
       fixed: true,
       align: 'center',
       cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: BIamOrganizationExpandTreeResponseVo }) =>
-        rowData.highlight?.name ? h('span', { innerHTML: rowData.highlight.name }) : cellData
+        cellData && rowData.highlight?.name?.length ? h('span', null, renderHighlight(cellData, rowData.highlight.name)) : cellData
     },
     {
       key: 'code',
@@ -143,7 +166,7 @@
       width: 160,
       align: 'left',
       cellRenderer: ({ cellData, rowData }: { cellData: string; rowData: BIamOrganizationExpandTreeResponseVo }) =>
-        rowData.highlight?.code ? h('span', { innerHTML: rowData.highlight.code }) : cellData
+        cellData && rowData.highlight?.code?.length ? h('span', null, renderHighlight(cellData, rowData.highlight.code)) : cellData
     },
     { key: 'organizationNumber', title: '组织数', dataKey: 'organizationNumber', width: 100, align: 'center' },
     { key: 'shopNumber', title: '门店数', dataKey: 'shopNumber', width: 100, align: 'center' },
@@ -209,25 +232,8 @@
         }
 
         return h('div', { class: 'table-actions' }, [
-          h(
-            ElButton,
-            {
-              size: 'small',
-              disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DETAIL']),
-              onClick: () => handleDetail(rowData)
-            },
-            () => '详情'
-          ),
-          h(
-            ElButton,
-            {
-              size: 'small',
-              type: 'primary',
-              disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE']),
-              onClick: () => handleEdit(rowData)
-            },
-            () => '编辑'
-          ),
+          h(ElButton, { size: 'small', disabled: !permission.detail.value, onClick: () => handleDetail(rowData) }, () => '详情'),
+          h(ElButton, { size: 'small', type: 'primary', disabled: !permission.update.value, onClick: () => handleEdit(rowData) }, () => '编辑'),
           h(
             ElDropdown,
             {
@@ -247,31 +253,18 @@
                 h(ElButton, { size: 'small', type: 'info' }, () => ['更多', h(ElIcon, { class: 'el-icon--right' }, { default: () => h(ArrowDown) })]),
               dropdown: () =>
                 h(ElDropdownMenu, null, () => [
-                  h(
-                    ElDropdownItem,
-                    {
-                      command: 'add',
-                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:CREATE'])
-                    },
-                    () => [h(ElIcon, null, { default: () => h(Plus) }), h('span', null, '新增')]
-                  ),
-                  h(
-                    ElDropdownItem,
-                    {
-                      command: 'changeParent',
-                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:UPDATE_PARENT'])
-                    },
-                    () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '修改父节点')]
-                  ),
-                  h(
-                    ElDropdownItem,
-                    {
-                      command: 'delete',
-                      divided: true,
-                      disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:ORGANIZATION:DELETE'])
-                    },
-                    () => [h(ElIcon, null, { default: () => h(Delete) }), h('span', null, '删除')]
-                  )
+                  h(ElDropdownItem, { command: 'add', disabled: !permission.create.value }, () => [
+                    h(ElIcon, null, { default: () => h(Plus) }),
+                    h('span', null, '新增')
+                  ]),
+                  h(ElDropdownItem, { command: 'changeParent', disabled: !permission.updateParent.value }, () => [
+                    h(ElIcon, null, { default: () => h(Connection) }),
+                    h('span', null, '修改父节点')
+                  ]),
+                  h(ElDropdownItem, { command: 'delete', divided: true, disabled: !permission.delete.value }, () => [
+                    h(ElIcon, null, { default: () => h(Delete) }),
+                    h('span', null, '删除')
+                  ])
                 ])
             }
           )
@@ -336,10 +329,18 @@
     tableContainerRefMap.delete(tabCode)
   }
 
+  let tableHeightScheduled = false
+
   const updateTableHeight = () => {
-    const tableContainer = tableContainerRefMap.get(state.activeTab)
-    if (!tableContainer) return
-    tableHeight.value = Math.max(tableContainer.clientHeight, 260)
+    if (tableHeightScheduled) return
+    tableHeightScheduled = true
+
+    nextTick(() => {
+      tableHeightScheduled = false
+      const tableContainer = tableContainerRefMap.get(state.activeTab)
+      if (!tableContainer) return
+      tableHeight.value = Math.max(tableContainer.clientHeight, 260)
+    })
   }
 
   const setupResizeObserver = () => {
@@ -362,9 +363,9 @@
     searchForm: { name: '', code: '' },
     searchReady: false,
     isSearching: false,
-    matchedCount: 0,
-    searchTimeCost: 0,
-    showSearchNotice: false,
+    loadedCount: 0,
+    resultShown: 0,
+    resultTotal: 0,
     allData: [],
     displayData: [],
     expandedRowKeys: [],
@@ -376,8 +377,8 @@
       edit: false,
       detail: false
     },
-    nameFuse: null,
-    codeFuse: null
+    flatData: [],
+    nameFuse: null
   })
 
   const fetchTabOptions = async () => {
@@ -399,9 +400,9 @@
     try {
       tabState.searchReady = false
       const response = await BIamOrganizationApi.treeExpand({ type: state.activeTab })
-      tabState.rootNode = response
-      tabState.allData = response.children || []
-      tabState.displayData = response.children || []
+      tabState.rootNode = markRaw(response)
+      tabState.allData = markRaw(response.children || [])
+      tabState.displayData = tabState.allData
       initSearchTools(tabState)
       tabState.searchReady = true
       state.initializedTabs.add(state.activeTab)
@@ -413,8 +414,14 @@
   }
 
   const initSearchTools = (tabState: TabState) => {
-    const flatData = TreeDataUtil.collectAllNodes(tabState.allData) || []
+    const flatData = markRaw(TreeDataUtil.collectAllNodes(tabState.allData) || [])
+    tabState.flatData = flatData
 
+    tabState.loadedCount = flatData.length
+    tabState.resultShown = flatData.length
+    tabState.resultTotal = flatData.length
+
+    // 仅名称使用模糊匹配；编码是标识符，走精确包含匹配（见 collectSubstringRanges）
     tabState.nameFuse = new Fuse(flatData, {
       keys: ['name'],
       includeMatches: true,
@@ -426,37 +433,48 @@
       findAllMatches: true,
       tokenize: (text: string) => text.split(/\s+/)
     })
-
-    tabState.codeFuse = new Fuse(flatData, {
-      keys: ['code'],
-      includeMatches: true,
-      includeScore: true,
-      threshold: 0.3,
-      minMatchCharLength: 3,
-      ignoreLocation: true,
-      distance: 10,
-      findAllMatches: true,
-      tokenize: (text: string) => text.split(/\s+/)
-    })
   }
 
-  // 高亮匹配文本
-  const highlightMatch = (text: string, matches: readonly FuseResultMatch[] | undefined) => {
-    if (!matches?.length) return text
+  // 收集并合并命中区间（升序、互不重叠），渲染时直接拼接文本节点
+  const getHighlightRanges = (matches: readonly FuseResultMatch[] | undefined): HighlightRange[] => {
+    if (!matches?.length) return []
 
-    let result = text
-    matches.forEach(match => {
-      if (!match.indices?.length) return
-      ;[...match.indices]
-        .sort((a, b) => b[0] - a[0])
-        .forEach(([start, end]) => {
-          const matched = result.substring(start, end + 1)
-          result = `${result.substring(0, start)}<span class="highlight">${matched}</span>${result.substring(end + 1)}`
-        })
-    })
+    const ranges: HighlightRange[] = []
+    matches.forEach(match => match.indices?.forEach(([start, end]) => ranges.push([start, end])))
+    if (!ranges.length) return []
 
-    return result
+    ranges.sort((a, b) => a[0] - b[0])
+    const merged: HighlightRange[] = [ranges[0]]
+    for (let i = 1; i < ranges.length; i++) {
+      const current = ranges[i]
+      const last = merged[merged.length - 1]
+      if (current[0] <= last[1] + 1) {
+        if (current[1] > last[1]) last[1] = current[1]
+      } else {
+        merged.push(current)
+      }
+    }
+    return merged
   }
+
+  /** 编码命中区间：按“包含”逐段定位（大小写不敏感） */
+  const collectSubstringRanges = (text: string, query: string): HighlightRange[] => {
+    const ranges: HighlightRange[] = []
+    const target = query.toLowerCase()
+    if (!target) return ranges
+
+    const source = text.toLowerCase()
+    let from = 0
+    while (from <= source.length - target.length) {
+      const index = source.indexOf(target, from)
+      if (index === -1) break
+      ranges.push([index, index + target.length - 1])
+      from = index + target.length
+    }
+    return ranges
+  }
+
+  const SEARCH_RESULT_LIMIT = 256
 
   // 执行搜索
   const performSearch = () => {
@@ -469,84 +487,97 @@
     }
 
     tabState.isSearching = true
-    const startTime = performance.now()
     let matchedItems: BIamOrganizationExpandTreeResponseVo[] = []
+    let matchedTotal = 0
     const parentIds = new Set<string>()
 
-    // 名称搜索
+    // 名称搜索（模糊匹配）
     const nameResults = name && tabState.nameFuse ? tabState.nameFuse.search(name) : []
-    // 编码搜索
-    const codeResults = code && tabState.codeFuse ? tabState.codeFuse.search(code) : []
+    // 编码搜索（精确包含，避免模糊匹配把 0001 命中到 0000）
+    const codeKeyword = code.toLowerCase()
+    const codeHits = code ? tabState.flatData.filter(node => node.code?.toLowerCase().includes(codeKeyword)) : []
 
     // 组合搜索结果
     if (name && code) {
       const nameResultIds = new Set(nameResults.map(r => r.item.id))
-      const codeResultIds = new Set(codeResults.map(r => r.item.id))
+      const codeIdSet = new Set(codeHits.map(item => item.id))
 
       // 取交集
-      const intersectionIds = new Set([...nameResultIds].filter(id => codeResultIds.has(id)))
-      tabState.matchedCount = intersectionIds.size
+      const intersectionIds = new Set([...nameResultIds].filter(id => codeIdSet.has(id)))
+      matchedTotal = intersectionIds.size
 
-      // 创建合并的结果，包含两个搜索的高亮
       matchedItems = nameResults
         .filter(result => intersectionIds.has(result.item.id))
-        .map(nameResult => {
-          const codeResult = codeResults.find(cr => cr.item.id === nameResult.item.id)
-          return {
-            ...nameResult.item,
-            highlight: {
-              name: highlightMatch(nameResult.item.name, nameResult.matches),
-              code: codeResult ? highlightMatch(codeResult.item.code, codeResult.matches) : ''
-            }
+        .slice(0, SEARCH_RESULT_LIMIT)
+        .map(nameResult => ({
+          ...nameResult.item,
+          highlight: {
+            name: getHighlightRanges(nameResult.matches),
+            code: collectSubstringRanges(nameResult.item.code ?? '', code)
           }
-        })
+        }))
     } else if (name) {
-      tabState.matchedCount = nameResults.length
-      matchedItems = nameResults.slice(0, 50).map(result => ({
+      matchedTotal = nameResults.length
+      matchedItems = nameResults.slice(0, SEARCH_RESULT_LIMIT).map(result => ({
         ...result.item,
-        highlight: { name: highlightMatch(result.item.name, result.matches) }
+        highlight: { name: getHighlightRanges(result.matches) }
       }))
     } else if (code) {
-      tabState.matchedCount = codeResults.length
-      matchedItems = codeResults.slice(0, 50).map(result => ({
-        ...result.item,
-        highlight: { code: highlightMatch(result.item.code || '', result.matches) }
+      matchedTotal = codeHits.length
+      matchedItems = codeHits.slice(0, SEARCH_RESULT_LIMIT).map(item => ({
+        ...item,
+        highlight: { code: collectSubstringRanges(item.code ?? '', code) }
       }))
     }
 
-    // 收集所有匹配节点及其父节点ID
-    const matchedIds = new Set(
-      matchedItems.map(item => {
-        let parentId: string | undefined = item.parentId
-        while (parentId) {
-          parentIds.add(parentId)
-          const parent: BIamOrganizationExpandTreeResponseVo | null = TreeDataUtil.findNode(tabState.allData, parentId ?? null)
-          parentId = parent?.parentId
+    tabState.resultShown = matchedItems.length
+    tabState.resultTotal = matchedTotal
+
+    const parentIdMap = new Map<string, string>()
+    const collectParentIdMap = (nodes: BIamOrganizationExpandTreeResponseVo[]) => {
+      for (const node of nodes) {
+        if (!node.children?.length) continue
+        for (const child of node.children) {
+          parentIdMap.set(child.id, node.id)
         }
-        return item.id
-      })
-    )
+        collectParentIdMap(node.children)
+      }
+    }
+    collectParentIdMap(tabState.allData)
+
+    const matchedIds = new Set<string>()
+    matchedItems.forEach(item => {
+      matchedIds.add(item.id)
+      let parentId: string | undefined = item.parentId
+      while (parentId) {
+        if (parentIds.has(parentId)) break
+        parentIds.add(parentId)
+        parentId = parentIdMap.get(parentId)
+      }
+    })
 
     // 构建搜索结果树
+    const matchedMap = new Map(matchedItems.map(item => [item.id, item]))
     const buildResultTree = (nodes: BIamOrganizationExpandTreeResponseVo[]): BIamOrganizationExpandTreeResponseVo[] => {
-      return nodes
-        .filter(node => matchedIds.has(node.id) || parentIds.has(node.id))
-        .map(node => {
-          const newNode = { ...node }
-          if (matchedIds.has(node.id)) {
-            const matched = matchedItems.find(item => item.id === node.id)
-            if (matched) newNode.highlight = matched.highlight
-          }
-          if (node.children) newNode.children = buildResultTree(node.children)
-          return newNode
-        })
+      const result: BIamOrganizationExpandTreeResponseVo[] = []
+      for (const node of nodes) {
+        const isMatched = matchedIds.has(node.id)
+        if (!isMatched && !parentIds.has(node.id)) continue
+
+        const newNode = { ...node }
+        if (isMatched) {
+          const matched = matchedMap.get(node.id)
+          if (matched) newNode.highlight = matched.highlight
+        }
+        if (node.children) newNode.children = buildResultTree(node.children)
+        result.push(newNode)
+      }
+      return result
     }
 
-    tabState.displayData = buildResultTree(tabState.allData)
-    tabState.expandedRowKeys = Array.from(parentIds).slice(0, 50)
-    tabState.searchTimeCost = Math.round(performance.now() - startTime)
-    tabState.showSearchNotice = tabState.matchedCount > 50
-    nextTick(updateTableHeight)
+    // 命中多少个就展开多少个父节点，不再截断（否则深层命中会被折叠隐藏）
+    tabState.displayData = markRaw(buildResultTree(tabState.allData))
+    tabState.expandedRowKeys = Array.from(parentIds)
   }
 
   // 事件处理
@@ -564,12 +595,10 @@
     tabState.searchForm.name = ''
     tabState.searchForm.code = ''
     tabState.isSearching = false
-    tabState.matchedCount = 0
-    tabState.searchTimeCost = 0
-    tabState.showSearchNotice = false
     tabState.displayData = tabState.allData
     tabState.expandedRowKeys = []
-    nextTick(updateTableHeight)
+    tabState.resultShown = tabState.loadedCount
+    tabState.resultTotal = tabState.loadedCount
   }
 
   const handleTabChange = async (tabCode: string) => {
@@ -578,7 +607,6 @@
     if (!state.initializedTabs.has(tabCode)) {
       await fetchOrganizationTree()
     } else {
-      // 如果 tab 已初始化，确保 searchReady 为 true（可能之前加载失败导致为 false）
       const tabState = currentTabState.value
       if (!tabState.searchReady && tabState.allData.length > 0) {
         tabState.searchReady = true
@@ -590,7 +618,6 @@
     await nextTick(() => {
       shouldRenderTable.value = true
     })
-    // 切换 tab 时重置搜索状态，显示所有数据
     resetSearch()
     await nextTick()
     updateTableHeight()
@@ -729,6 +756,12 @@
       .button-group {
         margin-left: auto;
         white-space: nowrap;
+
+        .search-limit-hint {
+          margin-right: 12px;
+          color: var(--el-text-color-secondary);
+          font-size: 12px;
+        }
       }
     }
   }
@@ -772,10 +805,6 @@
       margin-bottom: 10px;
     }
 
-    .search-notice {
-      margin-bottom: 10px;
-    }
-
     .table-wrapper {
       flex: 1;
       min-height: 0;
@@ -812,44 +841,13 @@
     }
   }
 
-  // 优化表格行高，增加上下间距，添加边框
   .organization-table {
     border: 1px solid var(--el-border-color);
     border-radius: 4px;
 
-    :deep(.el-virtual-scroll__item) {
-      padding: 4px 0;
-    }
-
-    :deep(.el-table-v2__row) {
-      height: 48px;
-    }
-
-    :deep(.el-table-v2__cell) {
-      padding: 4px 8px;
+    :deep(.el-table-v2__header-cell),
+    :deep(.el-table-v2__row-cell) {
       border-right: 1px solid var(--el-border-color);
-      border-bottom: 1px solid var(--el-border-color);
-    }
-
-    :deep(.el-table-v2__header-row) {
-      .el-table-v2__header-cell {
-        border-right: 1px solid var(--el-border-color);
-        border-bottom: 1px solid var(--el-border-color);
-      }
-    }
-
-    :deep(.el-table-v2__row:last-child) {
-      .el-table-v2__cell {
-        border-bottom: none;
-      }
-    }
-
-    :deep(.el-table-v2__cell:last-child) {
-      border-right: none;
-    }
-
-    :deep(.el-table-v2__header-cell:last-child) {
-      border-right: none;
     }
   }
 </style>

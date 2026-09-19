@@ -8,7 +8,7 @@
     :destroy-on-close="true"
     @closed="handleDialogClosed"
     width="600px"
-    top="10vh"
+    top="8vh"
   >
     <el-descriptions :column="2" border v-loading="state.loading">
       <el-descriptions-item label="ID">{{ state.detailData.id || '无' }}</el-descriptions-item>

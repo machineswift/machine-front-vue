@@ -8,7 +8,7 @@
     :destroy-on-close="true"
     @closed="handleDialogClosed"
     width="600px"
-    top="20vh"
+    top="8vh"
   >
     <el-form ref="formRef" :model="state.formData" :rules="rules" label-width="100px" label-position="right">
       <el-form-item label="上级类目" prop="parentName">
@@ -31,9 +31,7 @@
 
     <template #footer>
       <el-button @click="state.visible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SYSTEM:SCM:BACK_CATEGORY:CREATE']">
-        确认
-      </el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="state.submitting" v-hasPermission="['MANAGE_APP:SCM:CATEGORY:BACK:CREATE']">确认</el-button>
     </template>
   </el-dialog>
 </template>
