@@ -65,7 +65,7 @@
                     </el-dropdown-item>
                     <el-dropdown-item command="updateSort" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:UPDATE_SORT'])">
                       <el-icon><Sort /></el-icon>
-                      <span>修改排序</span>
+                      <span>排序</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_OPTION:DELETE'])">
                       <el-icon><Delete /></el-icon>

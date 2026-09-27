@@ -27,6 +27,8 @@ export interface UseTreeSearchOptions<T extends TreeSearchNode<T>> {
   tree?: () => TreeSearchTree | undefined
   /** 清空关键字后恢复的展开层级，默认根节点及其下一级 */
   expandedKeys?: () => string[]
+  /** 搜索前置钩子（在构建匹配表之前 await）：如懒加载场景先按关键字把服务端命中路径并入树 */
+  prefetch?: (keyword: string) => Promise<void>
   debounceMs?: number
 }
 
@@ -151,8 +153,16 @@ export const useTreeSearch = <T extends TreeSearchNode<T>>(options: UseTreeSearc
     return map
   }
 
-  const applySearch = () => {
+  const applySearch = async () => {
     const keyword = searchText.value.trim()
+
+    // 懒加载等场景：先把服务端命中路径并入树，再做本地匹配
+    if (options.prefetch && keyword) {
+      await options.prefetch(keyword)
+      // 关键字已变化（异步期间用户又输入了），丢弃过期结果
+      if (searchText.value.trim() !== keyword) return
+    }
+
     matchMap.value = buildMatchMap(keyword)
     searchedText.value = keyword
 
@@ -201,6 +211,8 @@ export const useTreeSearch = <T extends TreeSearchNode<T>>(options: UseTreeSearc
     resetSearch,
     filterMethod,
     getRanges,
-    codeRanges
+    codeRanges,
+    /** 立即重跑一次搜索（不发新请求由 prefetch 自行保证）：树数据变化后刷新本地匹配/高亮 */
+    reapplySearch: applySearch
   }
 }

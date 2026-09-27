@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="state.dialogVisible"
-    title="修改父分类"
+    title="移动"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     :show-close="false"

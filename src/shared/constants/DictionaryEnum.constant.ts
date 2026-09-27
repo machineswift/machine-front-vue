@@ -22,6 +22,10 @@ export const DICT_DATA_DOWNLOAD_STATUS = 'DataDownloadStatusEnum'
 export const DICT_MODULE = 'ModuleEnum'
 export const DICT_MODULE_ENTITY = 'ModuleEntityEnum'
 
+// 基础数据-附件操作日志
+export const DICT_DATA_ATTACHMENT_OPERATION_TYPE = 'DataAttachmentOperationTypeEnum'
+export const DICT_DATA_ATTACHMENT_OPERATION_RESULT = 'DataAttachmentOperationResultEnum'
+
 // 审计日志
 export const DICT_OPERATE_SOURCE = 'OperateSourceEnum'
 export const DICT_ACTION_TYPE = 'ActionTypeEnum'

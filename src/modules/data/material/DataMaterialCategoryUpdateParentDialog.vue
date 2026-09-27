@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="state.dialogVisible"
-    title="修改父分类"
+    title="移动"
     :close-on-click-modal="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
@@ -132,7 +132,7 @@
       state.dialogVisible = false
       emit('success')
     } catch (error) {
-      console.error('修改父分类失败', error)
+      console.error('移动失败', error)
     } finally {
       state.submitting = false
     }

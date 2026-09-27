@@ -32,7 +32,7 @@
           </div>
 
           <!-- 数据表格 -->
-          <div :ref="el => setTableContainerRef(el, tab.code)" class="table-wrapper">
+          <div :ref="el => setTableContainerRef(el, tab.code)" v-loading="currentTabState.loading" class="table-wrapper">
             <el-table-v2
               v-if="shouldRenderTable"
               v-model:expanded-row-keys="currentTabState.expandedRowKeys"
@@ -92,6 +92,7 @@
     }
     searchReady: boolean
     isSearching: boolean
+    loading: boolean
     loadedCount: number
     resultShown: number
     resultTotal: number
@@ -221,7 +222,7 @@
                       dropdown: () =>
                         h(ElDropdownMenu, null, () => [
                           h(ElDropdownItem, { disabled: true }, () => [h(ElIcon, null, { default: () => h(Plus) }), h('span', null, '新增')]),
-                          h(ElDropdownItem, { disabled: true }, () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '修改父节点')]),
+                          h(ElDropdownItem, { disabled: true }, () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '移动')]),
                           h(ElDropdownItem, { disabled: true, divided: true }, () => [h(ElIcon, null, { default: () => h(Delete) }), h('span', null, '删除')])
                         ])
                     }
@@ -259,7 +260,7 @@
                   ]),
                   h(ElDropdownItem, { command: 'changeParent', disabled: !permission.updateParent.value }, () => [
                     h(ElIcon, null, { default: () => h(Connection) }),
-                    h('span', null, '修改父节点')
+                    h('span', null, '移动')
                   ]),
                   h(ElDropdownItem, { command: 'delete', divided: true, disabled: !permission.delete.value }, () => [
                     h(ElIcon, null, { default: () => h(Delete) }),
@@ -363,6 +364,7 @@
     searchForm: { name: '', code: '' },
     searchReady: false,
     isSearching: false,
+    loading: false,
     loadedCount: 0,
     resultShown: 0,
     resultTotal: 0,
@@ -397,8 +399,12 @@
 
     const tabState = currentTabState.value
 
+    // 首次加载该类型时才隐藏卡片（空态占位）；已有数据时保持卡片与表格可见，避免切换标签页时闪烁
+    const isFirstLoad = !state.initializedTabs.has(state.activeTab)
+
     try {
-      tabState.searchReady = false
+      if (isFirstLoad) tabState.searchReady = false
+      tabState.loading = true
       const response = await BIamOrganizationApi.treeExpand({ type: state.activeTab })
       tabState.rootNode = markRaw(response)
       tabState.allData = markRaw(response.children || [])
@@ -409,7 +415,9 @@
     } catch (error) {
       console.error('获取组织树数据失败', error)
       ElMessage.error('获取组织数据失败，请稍后重试')
-      tabState.searchReady = false
+      if (isFirstLoad) tabState.searchReady = false
+    } finally {
+      tabState.loading = false
     }
   }
 
@@ -601,6 +609,23 @@
     tabState.resultTotal = tabState.loadedCount
   }
 
+  /**
+   * 重新拉取组织树并保持原有视图：
+   * 1. 搜索条件被保留时重新按条件过滤，保证「搜索框内容」与「表格数据、结果计数」一致；
+   * 2. 未搜索时保留用户已展开的节点（同时清理已不存在的节点）。
+   */
+  const refreshPreservingView = async () => {
+    const tabState = currentTabState.value
+    const previousExpandedKeys = [...tabState.expandedRowKeys]
+    await fetchOrganizationTree()
+    if (tabState.isSearching) {
+      performSearch()
+      return
+    }
+    const existingIds = new Set(tabState.flatData.map(node => node.id))
+    tabState.expandedRowKeys = previousExpandedKeys.filter(id => existingIds.has(id))
+  }
+
   const handleTabChange = async (tabCode: string) => {
     state.activeTab = tabCode
     // 如果该类型数据尚未加载，则加载数据
@@ -618,7 +643,7 @@
     await nextTick(() => {
       shouldRenderTable.value = true
     })
-    resetSearch()
+    // 每种组织类型各自保留搜索条件与展示数据，切换类型不再清空搜索
     await nextTick()
     updateTableHeight()
   }
@@ -678,7 +703,8 @@
     Object.keys(tabState.dialogVisible).forEach(key => {
       tabState.dialogVisible[key as keyof typeof tabState.dialogVisible] = false
     })
-    fetchOrganizationTree()
+    // 刷新后仍按当前搜索条件过滤，并保留已展开的节点，避免视图跳变
+    void refreshPreservingView()
   }
 
   // 监听器
@@ -705,7 +731,10 @@
       isFirstActivation = false
       return
     }
-    await fetchOrganizationTree()
+    // 从其他标签页切回时刷新数据，同时保持搜索条件、结果计数与展开状态
+    await refreshPreservingView()
+    await nextTick()
+    updateTableHeight()
   })
 
   onBeforeUnmount(() => {

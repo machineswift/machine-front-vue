@@ -146,9 +146,9 @@
                 <el-button
                   size="small"
                   type="success"
+                  :loading="downloadingId === row.id"
                   @click="handleDownload(row)"
                   v-else-if="row.status === 'FINISH' && row.attachmentId"
-                  v-hasPermission="['MANAGE_APP:SYSTEM:DATA:DOWNLOAD:DOWNLOAD_FILE']"
                 >
                   下载
                 </el-button>
@@ -192,7 +192,9 @@
   import { useEnumOptions } from '@/shared/composables/useEnumOptions'
   import { DICT_DATA_FILE_TYPE, DICT_DATA_DOWNLOAD_STATUS, DICT_MODULE, DICT_MODULE_ENTITY } from '@/shared/constants/DictionaryEnum.constant'
   import { DataDownloadApi } from '@/modules/data/download/api/DataDownload.api'
+  import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
   import type { DataDownloadListResponseVo } from '@/modules/data/download/type/DataDownload.type'
+  import { downloadByUrl } from '@/shared/utils/Download.util'
   import DataDownloadDetailDialog from '@/modules/data/download/DataDownloadDetailDialog.vue'
 
   const enumStore = useDictionaryEnumStore()
@@ -228,6 +230,7 @@
 
   const tableHeight = ref<number>(0)
   const tableHeightReady = ref<boolean>(false)
+  const downloadingId = ref<string>('')
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
   let isFirstActivation = true
@@ -355,12 +358,24 @@
     }
   }
 
+  // 下载文件：后端返回 MinIO 预签名下载地址
   const handleDownload = async (row: DataDownloadListResponseVo) => {
+    if (!row.attachmentId || downloadingId.value) return
+
+    const fileName = row.attachmentOriginalName || 'download'
+    downloadingId.value = row.id
     try {
-      await DataDownloadApi.downloadFile({ id: row.id }, row.attachmentOriginalName || 'download')
+      const res = await DataAttachmentApi.download(row.attachmentId)
+      if (!res?.url) {
+        ElMessage.error('获取下载地址失败')
+        return
+      }
+      await downloadByUrl(res.url, fileName)
     } catch (error) {
       console.error('下载文件失败:', error)
       ElMessage.error('下载文件失败')
+    } finally {
+      downloadingId.value = ''
     }
   }
 

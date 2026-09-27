@@ -19,6 +19,19 @@
             <el-input :model-value="state.detailData.username || '无'" disabled />
           </el-form-item>
         </el-col>
+        <el-col :span="12">
+          <el-form-item label="姓名">
+            <el-input :model-value="state.detailData.realName || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="手机号">
+            <el-input :model-value="state.detailData.phone || '无'" disabled />
+          </el-form-item>
+        </el-col>
       </el-row>
 
       <el-divider content-position="left">操作信息</el-divider>
@@ -45,21 +58,21 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="实体ID">
-            <el-input :model-value="state.detailData.moduleEntityId || '无'" disabled />
+          <el-form-item label="操作分类">
+            <el-tag>{{ state.detailData.operateType ? enumStore.getEnumLabel(DICT_ACTION_TYPE, state.detailData.operateType) : '无' }}</el-tag>
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="操作分类">
-            <el-tag>{{ state.detailData.operateType ? enumStore.getEnumLabel(DICT_ACTION_TYPE, state.detailData.operateType) : '无' }}</el-tag>
+          <el-form-item label="操作名称">
+            <el-input :model-value="state.detailData.operateName || '无'" disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="操作名称">
-            <el-input :model-value="state.detailData.operateName || '无'" disabled />
+          <el-form-item label="实体ID">
+            <el-input :model-value="state.detailData.moduleEntityId || '无'" disabled />
           </el-form-item>
         </el-col>
       </el-row>
@@ -193,21 +206,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="更新人">
-            <el-input :model-value="state.detailData.updateName || '无'" disabled />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="16">
-        <el-col :span="12">
           <el-form-item label="创建时间">
             <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="更新时间">
-            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
           </el-form-item>
         </el-col>
       </el-row>

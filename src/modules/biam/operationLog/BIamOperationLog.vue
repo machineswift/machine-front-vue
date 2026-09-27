@@ -5,11 +5,37 @@
       <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
         <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
           <div class="form-items-group">
-            <el-form-item label="用户名:" prop="username" class="form-item-responsive">
-              <el-input v-model="state.searchForm.username" placeholder="请输入用户名" clearable />
+            <el-form-item label="操作人:" prop="userIdSet" class="form-item-responsive user-selector">
+              <el-select
+                v-model="selectedOperatorIds"
+                multiple
+                clearable
+                collapse-tags
+                collapse-tags-tooltip
+                placeholder="请选择操作人"
+                @remove-tag="removeQueryOperator"
+                @clear="clearSelectorAllOperators"
+              >
+                <el-option v-for="user in state.selectedOperators" :key="user.id" :label="user.name || user.username" :value="user.id" />
+                <template #prefix>
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    @click.stop="showOperatorSelectorDialog"
+                    v-hasPermission="['MANAGE_APP:SYSTEM:ACCESS_CONTROL:USER:PAGE_SIMPLE']"
+                    style="margin-right: 8px; height: 24px"
+                  >
+                    选择
+                  </el-button>
+                </template>
+              </el-select>
             </el-form-item>
-            <el-form-item label="操作名称:" prop="operateName" class="form-item-responsive">
-              <el-input v-model="state.searchForm.operateName" placeholder="请输入操作名称" clearable />
+            <el-form-item label="手机号:" prop="phone" class="form-item-responsive">
+              <el-input v-model="state.searchForm.phone" placeholder="请输入手机号" clearable style="width: 180px" />
+            </el-form-item>
+            <el-form-item label="姓名:" prop="realName" class="form-item-responsive">
+              <el-input v-model="state.searchForm.realName" placeholder="请输入姓名" clearable style="width: 180px" />
             </el-form-item>
             <el-form-item label="操作来源:" prop="operateSource" class="form-item-responsive">
               <el-select v-model="state.searchForm.operateSource" placeholder="选择操作来源" clearable>
@@ -26,20 +52,23 @@
                 <el-option v-for="option in moduleEntityOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
-            <el-form-item label="实体ID:" prop="moduleEntityId" class="form-item-responsive">
-              <el-input v-model="state.searchForm.moduleEntityId" placeholder="请输入业务实体ID" clearable />
-            </el-form-item>
             <el-form-item label="操作分类:" prop="operateType" class="form-item-responsive">
               <el-select v-model="state.searchForm.operateType" placeholder="选择操作分类" clearable>
                 <el-option v-for="option in operateTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
+            </el-form-item>
+            <el-form-item label="操作名称:" prop="operateName" class="form-item-responsive">
+              <el-input v-model="state.searchForm.operateName" placeholder="请输入操作名称" clearable />
+            </el-form-item>
+            <el-form-item label="实体ID:" prop="moduleEntityId" class="form-item-responsive">
+              <el-input v-model="state.searchForm.moduleEntityId" placeholder="请输入业务实体ID" clearable />
             </el-form-item>
             <el-form-item label="业务状态:" prop="actionStatus" class="form-item-responsive">
               <el-select v-model="state.searchForm.actionStatus" placeholder="选择业务状态" clearable>
                 <el-option v-for="option in actionStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
-            <el-form-item label="HTTP状态码:" prop="httpStatus" class="form-item-responsive">
+            <el-form-item label="HTP状态:" prop="httpStatus" class="form-item-responsive">
               <el-input-number v-model="state.searchForm.httpStatus" :min="0" :max="999" placeholder="状态码" controls-position="right" style="width: 100%" />
             </el-form-item>
             <el-form-item label="请求路径:" prop="requestPath" class="form-item-responsive">
@@ -95,13 +124,14 @@
         <el-table :data="state.tableData" border v-loading="state.loading" :height="tableHeight" stripe highlight-current-row>
           <el-table-column label="序号" align="center" type="index" width="60" fixed />
           <el-table-column prop="username" label="用户名" align="center" width="110" fixed />
-          <el-table-column prop="operateName" label="操作名称" align="center" width="140" />
+          <el-table-column prop="realName" label="姓名" align="center" width="100" />
+          <el-table-column prop="phone" label="手机号" align="center" width="120" />
           <el-table-column prop="operateSource" label="操作来源" align="center" width="120">
             <template #default="{ row }">
               <el-tag>{{ enumStore.getEnumLabel(DICT_OPERATE_SOURCE, row.operateSource) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="module" label="操作模块" align="center" width="130">
+          <el-table-column prop="module" label="操作模块" align="center" width="160">
             <template #default="{ row }">
               <el-tag>{{ enumStore.getEnumLabel(DICT_MODULE, row.module) }}</el-tag>
             </template>
@@ -111,12 +141,13 @@
               <el-tag>{{ enumStore.getEnumLabel(DICT_MODULE_ENTITY, row.moduleEntity) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="moduleEntityId" label="实体ID" align="center" width="280" />
           <el-table-column prop="operateType" label="操作分类" align="center" width="100">
             <template #default="{ row }">
               <el-tag>{{ enumStore.getEnumLabel(DICT_ACTION_TYPE, row.operateType) }}</el-tag>
             </template>
           </el-table-column>
+          <el-table-column prop="operateName" label="操作名称" align="center" width="140" />
+          <el-table-column prop="moduleEntityId" label="实体ID" align="center" width="320" />
           <el-table-column prop="actionStatus" label="业务状态" align="center" width="100">
             <template #default="{ row }">
               <el-tag :type="row.actionStatus === 'SUCCESS' ? 'success' : 'danger'">
@@ -152,7 +183,7 @@
               <span>{{ row.costTime ?? '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="createName" label="创建人" align="center" width="110" />
+          <el-table-column prop="createName" label="创建人" align="center" width="110" v-if="false" />
           <el-table-column prop="createTime" label="操作时间" align="center" width="180">
             <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
           </el-table-column>
@@ -189,6 +220,14 @@
 
     <!-- 详情对话框 -->
     <BIamOperationLogDetail v-model="state.detailVisible" :log-id="state.selectedLogId" />
+
+    <!-- 操作人选择对话框 -->
+    <BIamUserQuickSelectDialog
+      v-model="state.operatorDialogVisible"
+      @confirm="handleOperatorSelect"
+      :multiple="true"
+      :selected-users="state.selectedOperators"
+    />
   </div>
 </template>
 
@@ -196,7 +235,7 @@
   defineOptions({
     name: 'MANAGE_APP:SYSTEM:LOG_CENTER:OPERATION_LOG'
   })
-  import { onMounted, onActivated, reactive, ref, watch, nextTick, onBeforeUnmount } from 'vue'
+  import { onMounted, onActivated, reactive, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import type { FormInstance } from 'element-plus'
   import { Refresh, Search } from '@element-plus/icons-vue'
   import BIamOperationLogDetail from '@/modules/biam/operationLog/BIamOperationLogDetail.vue'
@@ -209,6 +248,8 @@
     BIamOperationLogExpandPageResponse,
     BIamOperationLogQueryPageRequestVo
   } from '@/modules/biam/operationLog/type/BIamOperationLog.type'
+  import BIamUserQuickSelectDialog from '@/modules/biam/user/BIamUserQuickSelectDialog.vue'
+  import type { BIamUserSimpleListResponseVo } from '@/modules/biam/user/type/BIamUser.type'
 
   const enumStore = useDictionaryEnumStore()
 
@@ -222,11 +263,17 @@
     loading: false,
     showSearchCard: true,
     detailVisible: false,
+    operatorDialogVisible: false,
+
+    // 操作人相关状态
+    selectedOperators: [] as BIamUserSimpleListResponseVo[],
 
     tableData: [] as BIamOperationLogExpandListResponseVo[],
     selectedLogId: '',
     searchForm: {
-      username: null as string | null,
+      userIdSet: [] as string[],
+      phone: null as string | null,
+      realName: null as string | null,
       operateName: null as string | null,
       operateSource: null as string | null,
       module: null as string | null,
@@ -314,6 +361,14 @@
     }
   )
 
+  // 计算属性 - 操作人ID集合
+  const selectedOperatorIds = computed({
+    get: () => state.selectedOperators.map(u => u.id),
+    set: newIds => {
+      state.selectedOperators = newIds.map(id => state.selectedOperators.find(user => user.id === id) || ({ id } as BIamUserSimpleListResponseVo))
+    }
+  })
+
   const fetchData = async (): Promise<void> => {
     try {
       state.loading = true
@@ -332,7 +387,8 @@
     return {
       current: state.pagination.current,
       size: state.pagination.size,
-      ...(state.searchForm.username && { username: state.searchForm.username }),
+      ...(state.searchForm.phone && { phone: state.searchForm.phone }),
+      ...(state.searchForm.realName && { realName: state.searchForm.realName }),
       ...(state.searchForm.operateName && { operateName: state.searchForm.operateName }),
       ...(state.searchForm.operateSource && { operateSource: state.searchForm.operateSource }),
       ...(state.searchForm.module && { module: state.searchForm.module }),
@@ -347,7 +403,9 @@
       ...(state.searchForm.timeRange?.length === 2 && {
         createStartTime: state.searchForm.timeRange[0],
         createEndTime: state.searchForm.timeRange[1]
-      })
+      }),
+      // 操作人查询条件
+      ...(state.selectedOperators.length > 0 && { userIdSet: state.selectedOperators.map(u => u.id) })
     }
   }
 
@@ -360,6 +418,7 @@
   const handleResetSearch = (): void => {
     searchFormRef.value?.resetFields()
     state.searchForm.timeRange = null
+    state.selectedOperators = [] // 重置操作人选择
     handleSearch()
   }
 
@@ -376,6 +435,24 @@
   const showDetail = (row: BIamOperationLogExpandListResponseVo): void => {
     state.selectedLogId = row.id
     state.detailVisible = true
+  }
+
+  // 操作人相关方法
+  const showOperatorSelectorDialog = () => {
+    state.operatorDialogVisible = true
+  }
+
+  const clearSelectorAllOperators = () => {
+    state.selectedOperators = []
+  }
+
+  const removeQueryOperator = (userId: string) => {
+    state.selectedOperators = state.selectedOperators.filter(user => user.id !== userId)
+  }
+
+  const handleOperatorSelect = (users: BIamUserSimpleListResponseVo[]) => {
+    state.selectedOperators = users
+    state.operatorDialogVisible = false
   }
 
   const formatTime = (timestamp: number): string => {
@@ -458,6 +535,23 @@
           flex: 1 1 280px;
           min-width: 100px;
           max-width: 280px;
+
+          &.user-selector {
+            min-width: 280px;
+
+            // 优化标签间距
+            :deep(.el-select__tags) {
+              .el-tag {
+                margin-right: 4px;
+                margin-left: 0;
+                padding: 0 6px;
+
+                &:first-child {
+                  margin-left: 0;
+                }
+              }
+            }
+          }
 
           // 操作时间字段特殊宽度
           &.form-item-date-picker {

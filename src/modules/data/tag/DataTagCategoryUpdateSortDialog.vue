@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="state.dialogVisible"
-    title="修改排序"
+    title="排序"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     :show-close="false"
@@ -112,7 +112,7 @@
       state.dialogVisible = false
       emit('success')
     } catch (error) {
-      console.error('修改排序失败', error)
+      console.error('排序失败', error)
     } finally {
       state.submitting = false
     }

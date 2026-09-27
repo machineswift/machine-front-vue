@@ -131,16 +131,26 @@
           style="margin: 10px 0"
           stripe
           highlight-current-row
+          row-key="id"
+          default-expand-all
           class="brand-table"
+          @expand-change="handleExpandChange"
         >
           <el-table-column prop="id" label="ID" align="center" v-if="false" />
           <el-table-column label="序号" align="center" type="index" width="60" fixed />
           <el-table-column prop="name" label="名称" align="center" width="160" fixed show-overflow-tooltip>
             <template #default="{ row }">
-              <el-tooltip v-if="row.name" :content="row.name" placement="top" :append-to-body="true">
-                <span class="text-ellipsis">{{ row.name }}</span>
-              </el-tooltip>
-              <span v-else>-</span>
+              <!-- 子品牌懒加载占位行：点击加载下一页子品牌 -->
+              <el-link v-if="row.__more" type="primary" underline="never" :disabled="isLoadingMore(row.parentId)" @click="handleLoadMoreChildren(row)">
+                <el-icon v-if="isLoadingMore(row.parentId)" class="is-loading"><Loading /></el-icon>
+                <span>{{ isLoadingMore(row.parentId) ? '加载中…' : '加载更多' }}</span>
+              </el-link>
+              <template v-else>
+                <el-tooltip v-if="row.name" :content="row.name" placement="top" :append-to-body="true">
+                  <span class="text-ellipsis">{{ row.name }}</span>
+                </el-tooltip>
+                <span v-else>-</span>
+              </template>
             </template>
           </el-table-column>
           <el-table-column prop="code" label="编码" align="center" width="160" show-overflow-tooltip>
@@ -155,6 +165,7 @@
           <el-table-column prop="status" label="状态" align="center" width="120">
             <template #default="{ row }">
               <el-switch
+                v-if="!row.__more"
                 v-model="row.status"
                 :active-value="'ENABLE'"
                 :inactive-value="'DISABLE'"
@@ -167,9 +178,18 @@
             </template>
           </el-table-column>
 
-          <el-table-column prop="logoUrl" label="LOGO" align="center" width="120">
+          <el-table-column prop="logoAttachmentId" label="LOGO" align="center" width="120">
             <template #default="{ row }">
-              <DataBrandLogoPreview :url="row.logoUrl" />
+              <template v-if="!row.__more">
+                <el-image
+                  v-if="state.logoUrlMap[row.logoAttachmentId]"
+                  :src="state.logoUrlMap[row.logoAttachmentId]"
+                  fit="contain"
+                  class="brand-logo"
+                  @click="handleViewLogoOrigin(row.logoAttachmentId)"
+                />
+                <span v-else>无</span>
+              </template>
             </template>
           </el-table-column>
           <el-table-column prop="description" label="描述" align="center" min-width="200" show-overflow-tooltip>
@@ -205,7 +225,7 @@
 
           <el-table-column label="操作" width="200" align="center" fixed="right">
             <template #default="{ row }">
-              <div class="table-actions">
+              <div class="table-actions" v-if="!row.__more">
                 <el-button size="small" @click="showDetail(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:DETAIL']">详情</el-button>
                 <el-button size="small" type="primary" @click="showEdit(row)" v-hasPermission="['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:UPDATE']">编辑</el-button>
                 <el-dropdown trigger="click" @command="onBrandDropdownCommand($event, row)" placement="bottom-end">
@@ -215,6 +235,14 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
+                      <el-dropdown-item command="addChild" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:CREATE'])">
+                        <el-icon><Plus /></el-icon>
+                        <span>新增</span>
+                      </el-dropdown-item>
+                      <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:UPDATE_PARENT'])">
+                        <el-icon><Connection /></el-icon>
+                        <span>移动</span>
+                      </el-dropdown-item>
                       <el-dropdown-item command="delete" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:BRAND:DELETE'])">
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
@@ -248,8 +276,22 @@
 
     <!-- 对话框组件 -->
     <DataBrandAddDialog v-model="state.dialog.add" @success="fetchBrandList" />
+    <DataBrandAddDialog v-model="state.dialog.addChild" :parent-node="state.currentBrandNode" @success="fetchBrandList" />
     <DataBrandEditDialog v-model="state.dialog.edit" :brand-id="state.currentBrandId" @success="fetchBrandList" />
     <DataBrandDetailDialog v-model="state.dialog.detail" :brand-id="state.currentBrandId" />
+    <DataBrandUpdateParentDialog v-model="state.dialog.updateParent" :brand-id="state.currentBrandId" @success="fetchBrandList" />
+
+    <!-- LOGO 原图预览（列表只有缩略图，点击时才去取原图） -->
+    <el-image-viewer
+      v-if="state.logoViewerVisible"
+      :url-list="state.logoViewerUrlList"
+      :zoom-rate="1.2"
+      :max-scale="7"
+      :min-scale="0.2"
+      hide-on-click-modal
+      teleported
+      @close="state.logoViewerVisible = false"
+    />
 
     <BIamUserQuickSelectDialog
       v-model="state.createUserDialogVisible"
@@ -272,25 +314,37 @@
   })
   import { ref, reactive, onMounted, onActivated, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Search, Refresh, ArrowDown, Delete } from '@element-plus/icons-vue'
+  import { Search, Refresh, ArrowDown, Connection, Loading, Plus, Delete } from '@element-plus/icons-vue'
   import { useEnumOptions } from '@/shared/composables/useEnumOptions'
   import { DICT_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import { hasPermission } from '@/shared/utils/Permission.util'
   import { DataBrandApi } from '@/modules/data/brand/api/DataBrand.api'
-  import type { DataBrandExpandPageResponse } from '@/modules/data/brand/type/DataBrand.type'
+  import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
+  import type { DataBrandExpandListResponseVo } from '@/modules/data/brand/type/DataBrand.type'
   import DataBrandAddDialog from '@/modules/data/brand/DataBrandAddDialog.vue'
   import DataBrandDetailDialog from '@/modules/data/brand/DataBrandDetailDialog.vue'
   import DataBrandEditDialog from '@/modules/data/brand/DataBrandEditDialog.vue'
-  import DataBrandLogoPreview from '@/modules/data/brand/DataBrandLogoPreview.vue'
+  import DataBrandUpdateParentDialog from '@/modules/data/brand/DataBrandUpdateParentDialog.vue'
   import BIamUserQuickSelectDialog from '@/modules/biam/user/BIamUserQuickSelectDialog.vue'
   import type { BIamUserSimpleListResponseVo } from '@/modules/biam/user/type/BIamUser.type'
 
   const { options: brandStatus, load: loadBrandStatus } = useEnumOptions(DICT_STATUS)
 
+  /** 子品牌懒加载：每页条数 */
+  const CHILDREN_PAGE_SIZE = 20
+
+  /** “加载更多”占位行的ID前缀 */
+  const MORE_ROW_ID_PREFIX = '__more__:'
+
+  /** 列表树的行：在品牌展开项基础上支持“加载更多”占位行 */
+  type BrandTreeRow = DataBrandExpandListResponseVo & { __more?: boolean }
+
   const state = reactive({
     loading: false,
     showSearchCard: true,
     currentBrandId: '',
+    /** 新增下级时的父品牌节点 */
+    currentBrandNode: null as BrandTreeRow | null,
     pagination: {
       current: 1,
       size: 10,
@@ -311,11 +365,17 @@
     },
     dialog: {
       add: false,
+      addChild: false,
       edit: false,
-      detail: false
+      detail: false,
+      updateParent: false
     },
-    tableData: [] as DataBrandExpandPageResponse['records'],
-    // 新增的用户选择相关状态
+    tableData: [] as BrandTreeRow[],
+    logoUrlMap: {} as Record<string, string>,
+    childLoad: {} as Record<string, { page: number; loaded: number; total: number }>,
+    loadingMoreIds: [] as string[],
+    logoViewerVisible: false,
+    logoViewerUrlList: [] as string[],
     createUserDialogVisible: false,
     updateUserDialogVisible: false,
     selectedCreateUsers: [] as BIamUserSimpleListResponseVo[],
@@ -329,12 +389,13 @@
   const operationButtonsRef = ref<HTMLElement | null>(null)
   const paginationRef = ref<HTMLElement | null>(null)
 
-  // 表格高度 - 初始不设置默认值，等待计算完成后再显示
   const tableHeight = ref<number>(0)
   const tableHeightReady = ref<boolean>(false)
   let resizeObserver: ResizeObserver | null = null
   let isFirstCalculation = true
   let isFirstActivation = true
+  /** 列表加载世代：fetchBrandList 重建列表时自增，用于丢弃过期的子品牌懒加载响应 */
+  let listGeneration = 0
 
   const resolveElement = (target: unknown): HTMLElement | null => {
     if (target instanceof HTMLElement) return target
@@ -356,12 +417,10 @@
     const contentSpacing = 16
     const newHeight = Math.max(320, cardBody.clientHeight - operationButtonsHeight - paginationHeight - contentSpacing)
 
-    // 只有当高度真正变化时才更新
     if (tableHeight.value !== newHeight) {
       tableHeight.value = newHeight
     }
 
-    // 首次计算完成后，显示表格
     if (isFirstCalculation && tableHeight.value > 0) {
       tableHeightReady.value = true
       isFirstCalculation = false
@@ -406,8 +465,193 @@
 
   // 品牌下拉命令
   const onBrandDropdownCommand = async (command: string, row: { id: string; name: string }) => {
+    if (command === 'addChild') {
+      showAddChild(row)
+      return
+    }
+
+    if (command === 'updateParent') {
+      showUpdateParent(row)
+      return
+    }
+
     if (command === 'delete') {
       await handleDelete(row)
+    }
+  }
+
+  /** 新增下级：带上当前行作为父品牌（弹窗内只读，不可修改） */
+  const showAddChild = (row: { id: string; name: string }) => {
+    state.currentBrandNode = row as DataBrandExpandListResponseVo
+    state.dialog.addChild = true
+  }
+
+  /** 移动品牌：打开弹窗并传入当前品牌ID */
+  const showUpdateParent = (row: { id: string }) => {
+    state.currentBrandId = row.id
+    state.dialog.updateParent = true
+  }
+
+  /** 是否为“加载更多”占位行 */
+  const isMoreRow = (row: DataBrandExpandListResponseVo | BrandTreeRow | undefined): boolean => !!(row as BrandTreeRow | undefined)?.__more
+
+  /** 构造“加载更多”占位行（点击后加载该父品牌的下一页子品牌） */
+  const buildMoreRow = (parentId: string): BrandTreeRow => ({
+    id: MORE_ROW_ID_PREFIX + parentId,
+    parentId,
+    name: '加载更多',
+    __more: true
+  })
+
+  /**
+   * 是否还有未加载的子品牌
+   * 已懒加载过：按分页进度判断
+   * 未加载过：只要 hasChildren 就算（page_expand 只返回「分页命中的品牌 + 父链」，
+   *   节点下已带回的子节点往往只是命中结果的一部分，不是该父品牌的完整子品牌列表，
+   *   所以即使已有 children 也要保留“加载更多”，否则子品牌多的品牌永远拉不出剩余的）
+   */
+  const hasUnloadedChildren = (node: BrandTreeRow): boolean => {
+    const loadState = state.childLoad[node.id]
+    if (loadState) {
+      return loadState.loaded < loadState.total
+    }
+    return !!node.hasChildren
+  }
+
+  /** 同步节点的“加载更多”占位行（追加到子节点末尾，全部加载完则移除） */
+  const syncMoreRow = (node: BrandTreeRow) => {
+    const children = (node.children ?? []).filter(child => !isMoreRow(child)) as BrandTreeRow[]
+    node.children = hasUnloadedChildren(node) ? [...children, buildMoreRow(node.id)] : children
+  }
+
+  /** 整棵树补上“加载更多”占位行（含后端补齐的父链节点） */
+  const applyMoreRows = (records: BrandTreeRow[]) => {
+    records.forEach(node => {
+      if (node.children?.length) {
+        applyMoreRows(node.children as BrandTreeRow[])
+      }
+      syncMoreRow(node)
+    })
+  }
+
+  /** 在树里按ID查找节点 */
+  const findTreeNode = (records: BrandTreeRow[], id: string): BrandTreeRow | undefined => {
+    for (const node of records) {
+      if (node.id === id) return node
+      const matched = node.children?.length ? findTreeNode(node.children as BrandTreeRow[], id) : undefined
+      if (matched) return matched
+    }
+    return undefined
+  }
+
+  /** 某个父品牌是否正在加载子品牌 */
+  const isLoadingMore = (parentId?: string): boolean => !!parentId && state.loadingMoreIds.includes(parentId)
+
+  /**
+   * 调用 children_expand 拉取某个父品牌的指定页子品牌，按ID去重后并入其 children
+   * 新的子品牌追加在末尾（命中父链带回的子节点保持在前面，不干扰搜索结果）
+   */
+  const loadChildrenPage = async (parentNode: BrandTreeRow, page: number) => {
+    const parentId = parentNode.id
+    if (!parentId || isLoadingMore(parentId)) return
+
+    const generation = listGeneration
+    state.loadingMoreIds.push(parentId)
+    try {
+      const response = await DataBrandApi.childrenExpand({ parentId, current: page, size: CHILDREN_PAGE_SIZE })
+      //请求期间列表被重新加载（搜索/翻页/增删改）：该节点已不在新树上，丢弃本次结果
+      //否则会把旧进度写进 childLoad，导致新列表里同 ID 节点的“加载更多”状态错乱
+      if (generation !== listGeneration) return
+
+      const records = (response?.records || []) as BrandTreeRow[]
+
+      //已加载的子品牌（含命中父链带回的节点）与分页数据按ID去重
+      const children = ((parentNode.children ?? []) as BrandTreeRow[]).filter(child => !isMoreRow(child))
+      const loadedIds = new Set(children.map(child => child.id))
+      const newRecords = records.filter(record => !loadedIds.has(record.id))
+      parentNode.children = [...children, ...newRecords]
+
+      state.childLoad[parentId] = {
+        page,
+        loaded: (state.childLoad[parentId]?.loaded || 0) + records.length,
+        total: response?.total || 0
+      }
+
+      syncMoreRow(parentNode)
+      await resolveBrandLogoUrlList(newRecords)
+    } catch (error) {
+      console.error('加载子品牌失败', error)
+    } finally {
+      state.loadingMoreIds = state.loadingMoreIds.filter(id => id !== parentId)
+    }
+  }
+
+  /**
+   * 点击“加载更多”：拉取该父品牌的下一页子品牌
+   * 一页展示不下时末尾会一直保留“加载更多”占位行，直到全部加载完
+   */
+  const handleLoadMoreChildren = async (row: BrandTreeRow) => {
+    const parentId = row.parentId
+    if (!parentId || isLoadingMore(parentId)) return
+
+    const parentNode = findTreeNode(state.tableData, parentId)
+    if (!parentNode) return
+
+    await loadChildrenPage(parentNode, (state.childLoad[parentId]?.page || 0) + 1)
+  }
+
+  /**
+   * 手动展开某一行时：若该品牌还有未加载的子品牌，自动拉取第一页
+   * 已加载过（有分页进度）的不重复拉；default-expand-all 不会触发该事件，只有用户手动展开才会
+   */
+  const handleExpandChange = async (row: BrandTreeRow, expanded: boolean) => {
+    if (!expanded || !row || isMoreRow(row)) return
+
+    const node = findTreeNode(state.tableData, row.id) ?? row
+    if (state.childLoad[node.id] || isLoadingMore(node.id) || !hasUnloadedChildren(node)) return
+
+    await loadChildrenPage(node, 1)
+  }
+
+  /** 收集树里所有 LOGO 附件ID（含后端补齐的父链节点） */
+  const collectLogoAttachmentIds = (records: BrandTreeRow[]): string[] => {
+    const idList: string[] = []
+    const walk = (nodes: BrandTreeRow[]): void => {
+      for (const node of nodes) {
+        if (node.logoAttachmentId) idList.push(node.logoAttachmentId)
+        if (node.children?.length) walk(node.children as BrandTreeRow[])
+      }
+    }
+    walk(records)
+    return idList
+  }
+
+  /** 取 LOGO 缩略图地址（列表只返回 attachmentId，图片地址走附件接口） */
+  const resolveBrandLogoUrlList = async (records: BrandTreeRow[]) => {
+    const idSet = [...new Set(collectLogoAttachmentIds(records))]
+    await Promise.all(
+      idSet.map(async attachmentId => {
+        try {
+          const response = await DataAttachmentApi.thumbnail(attachmentId)
+          state.logoUrlMap[attachmentId] = response?.url || ''
+        } catch (error) {
+          console.error('获取品牌LOGO失败', error)
+          state.logoUrlMap[attachmentId] = ''
+        }
+      })
+    )
+  }
+
+  /** 点击 LOGO 查看原图（列表只有缩略图，原图此时才去取） */
+  const handleViewLogoOrigin = async (attachmentId?: string) => {
+    if (!attachmentId) return
+
+    try {
+      const response = await DataAttachmentApi.preview(attachmentId)
+      state.logoViewerUrlList = [response?.url || '']
+      state.logoViewerVisible = true
+    } catch (error) {
+      console.error('获取品牌LOGO原图失败', error)
     }
   }
 
@@ -424,7 +668,6 @@
     } catch (error) {
       if (error !== 'cancel') {
         console.error('删除品牌失败', error)
-        ElMessage.error('删除失败')
       }
     }
   }
@@ -447,8 +690,18 @@
       }
 
       const res = await DataBrandApi.pageExpand(params)
+      //重新加载列表时重置子品牌懒加载进度（世代 +1，让在途的懒加载响应失效）
+      listGeneration += 1
+      state.childLoad = {}
+      state.loadingMoreIds = []
       state.tableData = res.records
       state.pagination.total = res.total
+
+      //子品牌懒加载：有子品牌未带出子节点的，追加“加载更多”占位行
+      applyMoreRows(state.tableData)
+
+      // LOGO 地址：列表只返回 attachmentId，图片地址走附件缩略图接口
+      await resolveBrandLogoUrlList(res.records)
     } catch (error) {
       console.error('获取品牌列表失败:', error)
     } finally {
@@ -574,7 +827,7 @@
   }
 
   const formatTime = (timestamp: number) => {
-    return timestamp ? new Date(timestamp).toLocaleString() : '无'
+    return timestamp ? new Date(timestamp).toLocaleString() : '-'
   }
 
   onMounted(async () => {
@@ -625,6 +878,20 @@
     flex-direction: column;
     gap: 8px;
     box-sizing: border-box;
+  }
+
+  /* 列表 LOGO（点击看原图） */
+  .brand-logo {
+    width: 50px;
+    height: 50px;
+    cursor: zoom-in;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 
   .box-card-form {

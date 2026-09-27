@@ -279,11 +279,11 @@
                 h(ElDropdownMenu, null, () => [
                   h(ElDropdownItem, { command: 'create', disabled: !permission.create.value }, () => [
                     h(ElIcon, null, { default: () => h(Plus) }),
-                    h('span', null, '新增子类目')
+                    h('span', null, '新增')
                   ]),
                   h(ElDropdownItem, { command: 'updateParent', disabled: !permission.updateParent.value }, () => [
                     h(ElIcon, null, { default: () => h(Connection) }),
-                    h('span', null, '移动类目')
+                    h('span', null, '移动')
                   ]),
                   h(ElDropdownItem, { command: 'delete', divided: true, disabled: !permission.delete.value }, () => [
                     h(ElIcon, null, { default: () => h(Delete) }),

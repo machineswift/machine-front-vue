@@ -35,6 +35,7 @@
           <el-table-v2
             v-if="shouldRenderTable"
             v-model:expanded-row-keys="currentTabState.expandedRowKeys"
+            v-loading="currentTabState.loading"
             :columns="tableColumns"
             :data="currentTabState.displayData"
             :width="tableWidth"
@@ -85,6 +86,8 @@
     }
     searchReady: boolean
     isSearching: boolean
+    /** 是否正在加载数据 */
+    loading: boolean
     /** 已加载节点总数 */
     loadedCount: number
     /** 当前实际展示的结果数（受 SEARCH_RESULT_LIMIT 限制） */
@@ -222,7 +225,7 @@
                   ]),
                   h(ElDropdownItem, { command: 'changeParent', disabled: !permission.updateParent.value }, () => [
                     h(ElIcon, null, { default: () => h(Connection) }),
-                    h('span', null, '修改父节点')
+                    h('span', null, '移动')
                   ]),
                   h(ElDropdownItem, { command: 'delete', divided: true, disabled: !permission.delete.value }, () => [
                     h(ElIcon, null, { default: () => h(Delete) }),
@@ -317,6 +320,7 @@
     searchForm: { name: '', code: '' },
     searchReady: false,
     isSearching: false,
+    loading: false,
     loadedCount: 0,
     resultShown: 0,
     resultTotal: 0,
@@ -352,6 +356,7 @@
     const tabState = currentTabState.value
 
     try {
+      tabState.loading = true
       const response = await DataAreaApi.treeExpand({ country: state.activeCountry })
       tabState.rootNode = markRaw(response)
       tabState.allData = markRaw(response.children || [])
@@ -361,6 +366,9 @@
       state.initializedTabs.add(state.activeCountry)
     } catch (error) {
       console.error('获取区域树数据失败', error)
+      ElMessage.error('获取区域数据失败，请稍后重试')
+    } finally {
+      tabState.loading = false
     }
   }
 
@@ -550,6 +558,18 @@
     tabState.resultTotal = tabState.loadedCount
   }
 
+  const refreshPreservingView = async () => {
+    const tabState = currentTabState.value
+    const previousExpandedKeys = [...tabState.expandedRowKeys]
+    await fetchAreaTree()
+    if (tabState.isSearching) {
+      performSearch()
+      return
+    }
+    const existingIds = new Set(tabState.flatData.map(node => node.id))
+    tabState.expandedRowKeys = previousExpandedKeys.filter(id => existingIds.has(id))
+  }
+
   const handleCountryChange = async (countryCode: string) => {
     state.activeCountry = countryCode
     // 如果该国家数据尚未加载，则加载数据
@@ -621,7 +641,8 @@
     Object.keys(tabState.dialogVisible).forEach(key => {
       tabState.dialogVisible[key as keyof typeof tabState.dialogVisible] = false
     })
-    fetchAreaTree()
+    // 刷新后仍按当前搜索条件过滤，并保留已展开的节点，避免视图跳变
+    void refreshPreservingView()
     calculateTableHeight()
   }
 
@@ -649,7 +670,9 @@
       isFirstActivation = false
       return
     }
-    await fetchAreaTree()
+    // 从其他标签页切回时刷新数据，同时保持搜索条件、结果计数与展开状态
+    await refreshPreservingView()
+    calculateTableHeight()
   })
 
   onBeforeUnmount(() => {

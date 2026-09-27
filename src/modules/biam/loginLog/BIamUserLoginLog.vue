@@ -5,7 +5,7 @@
       <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
         <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
           <div class="form-items-group">
-            <el-form-item label="操作人:" prop="operatorIdSet" class="form-item-responsive user-selector">
+            <el-form-item label="操作人:" prop="userIdSet" class="form-item-responsive user-selector">
               <el-select
                 v-model="selectedOperatorIds"
                 multiple
@@ -34,14 +34,11 @@
             <el-form-item label="手机号:" prop="phone" class="form-item-responsive">
               <el-input v-model="state.searchForm.phone" placeholder="请输入手机号" clearable style="width: 180px" />
             </el-form-item>
-            <el-form-item label="用户名:" prop="username" class="form-item-responsive">
-              <el-input v-model="state.searchForm.username" placeholder="请输入用户名" clearable style="width: 180px" />
+            <el-form-item label="姓名:" prop="realName" class="form-item-responsive">
+              <el-input v-model="state.searchForm.realName" placeholder="请输入姓名" clearable style="width: 180px" />
             </el-form-item>
             <el-form-item label="IP地址:" prop="ipAddress" class="form-item-responsive">
               <el-input v-model="state.searchForm.ipAddress" placeholder="请输入IP地址" clearable style="width: 180px" />
-            </el-form-item>
-            <el-form-item label="姓名:" prop="realName" class="form-item-responsive">
-              <el-input v-model="state.searchForm.realName" placeholder="请输入姓名" clearable style="width: 180px" />
             </el-form-item>
             <el-form-item label="认证动作:" prop="authAction" class="form-item-responsive">
               <el-select v-model="state.searchForm.authAction" placeholder="选择认证动作" clearable>
@@ -142,8 +139,6 @@
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="updateName" label="操作人" align="center" width="120" />
-
           <el-table-column prop="createTime" label="登录时间" align="center" width="180">
             <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
           </el-table-column>
@@ -230,14 +225,13 @@
     selectedLogId: '',
     searchForm: {
       phone: '',
-      username: '',
       ipAddress: '',
       realName: '',
       authAction: null as string | null,
       authMethod: null as string | null,
       authResult: null as string | null,
       timeRange: null as number[] | null,
-      operatorIdSet: [] as string[] // 操作人ID集合
+      userIdSet: [] as string[] // 操作人ID集合
     },
     pagination: {
       current: 1,
@@ -340,7 +334,6 @@
       current: state.pagination.current,
       size: state.pagination.size,
       ...(state.searchForm.phone && { phone: state.searchForm.phone }),
-      ...(state.searchForm.username && { username: state.searchForm.username }),
       ...(state.searchForm.ipAddress && { ipAddress: state.searchForm.ipAddress }),
       ...(state.searchForm.realName && { realName: state.searchForm.realName }),
       ...(state.searchForm.authAction && { authAction: state.searchForm.authAction }),

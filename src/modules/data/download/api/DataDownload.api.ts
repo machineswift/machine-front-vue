@@ -1,6 +1,5 @@
-import request, { getBaseUrl } from '@/shared/utils/Request.util'
+import request from '@/shared/utils/Request.util'
 import { ADMIN_API_BASE_URL } from '@/shared/constants/Common.constant'
-import { useIamUserStore } from '@/shared/stores/IamUser.store'
 import type { IdRequest, IdResponse } from '@/shared/types/Common.type'
 import type { QueryDownloadDetailResponseVo, DataDownloadPageRequestVo, DataDataDownloadPageResponse } from '@/modules/data/download/type/DataDownload.type'
 
@@ -19,39 +18,8 @@ const pageExpand = async (params: DataDownloadPageRequestVo): Promise<DataDataDo
   return request.post<DataDataDownloadPageResponse>(ADMIN_API_BASE_URL + 'admin/data/file_center/download/page_expand', params)
 }
 
-// 下载文件 — 后端直连 MinIO 返回文件流，前端用 fetch + Blob 下载，避免页面闪烁
-const downloadFile = async (params: IdRequest, fileName: string): Promise<void> => {
-  const userStore = useIamUserStore()
-  const token = await userStore.getValidToken()
-  const fullUrl = `${getBaseUrl()}${ADMIN_API_BASE_URL}admin/data/file_center/download/download_file`
-
-  const response = await fetch(fullUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(params)
-  })
-
-  if (!response.ok) {
-    throw new Error('下载失败')
-  }
-
-  const blob = await response.blob()
-  const blobUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = blobUrl
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(blobUrl)
-}
-
 export const DataDownloadApi = {
   retry,
   detail,
-  pageExpand,
-  downloadFile
+  pageExpand
 }

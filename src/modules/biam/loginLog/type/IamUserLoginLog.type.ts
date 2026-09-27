@@ -4,7 +4,6 @@ import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 export interface BIamUserLoginLogQueryPageRequestVo extends PageRequest {
   userIdSet?: string[]
   phone?: string
-  username?: string
   ipAddress?: string
   realName?: string
   authAction?: string
@@ -12,8 +11,6 @@ export interface BIamUserLoginLogQueryPageRequestVo extends PageRequest {
   authResult?: string
   createStartTime?: number
   createEndTime?: number
-  updateStartTime?: number
-  updateEndTime?: number
 }
 
 // 登录日志详情接口返回参数
@@ -33,9 +30,6 @@ export interface BIamUserLoginLogDetailResponseVo {
   createBy: string
   createName: string
   createTime: number
-  updateBy: string
-  updateName: string
-  updateTime: number
 }
 
 // 登录日志分页查询接口返回参数
@@ -54,9 +48,6 @@ export interface BIamUserLoginLogExpandListResponseVo {
   createBy: string
   createName: string
   createTime: number
-  updateBy: string
-  updateName: string
-  updateTime: number
 }
 
 export type BIamUserLoginLogExpandPageResponse = PageResponse<BIamUserLoginLogExpandListResponseVo>

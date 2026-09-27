@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="state.visible"
-    title="修改父节点"
+    title="移动"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     :show-close="false"
@@ -115,7 +115,7 @@
       state.visible = false
       emit('success')
     } catch (error) {
-      console.error('修改父节点失败', error)
+      console.error('移动失败', error)
     } finally {
       state.loading = false
     }

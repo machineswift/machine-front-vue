@@ -38,20 +38,11 @@ const pageExpand = async (params: DataMaterialQueryPageRequestVo): Promise<DataM
   return request.post<DataMaterialExpandPageResponse>(ADMIN_API_BASE_URL + 'admin/data/file_center/material/page_expand', params)
 }
 
-/**
- * 获取素材文件预签名 URL（用于预览/下载）
- */
-const getDownloadUrl = async (params: IdRequest): Promise<string> => {
-  const res = await request.post<{ url: string }>(ADMIN_API_BASE_URL + 'admin/data/file_center/material/download_url', params)
-  return res.url
-}
-
 export const DataMaterialApi = {
   upload,
   create,
   update,
   updateCategory,
   detail,
-  pageExpand,
-  getDownloadUrl
+  pageExpand
 }

@@ -2,11 +2,11 @@
 
 # 🚀 Machine 企业级智能管理平台
 
-![Vue](https://img.shields.io/badge/Vue_3-3.5.40-brightgreen?logo=vue.js)
+![Vue](https://img.shields.io/badge/Vue_3-3.5.42-brightgreen?logo=vue.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue?logo=typescript)
-![Element Plus](https://img.shields.io/badge/Element_Plus-2.14.3-success?logo=element)
-![Vite](https://img.shields.io/badge/Vite-8.1.5-orange?logo=vite)
-![Pinia](https://img.shields.io/badge/Pinia-4.0.2-yellow?logo=pinia)
+![Element Plus](https://img.shields.io/badge/Element_Plus-2.14.5-success?logo=element)
+![Vite](https://img.shields.io/badge/Vite-8.3.0-orange?logo=vite)
+![Pinia](https://img.shields.io/badge/Pinia-4.0.3-yellow?logo=pinia)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **基于 Vue 3 + TypeScript + Element Plus + Vite + Pinia 企业级智能管理平台 · 与 Machine 后端无缝对接**
@@ -40,34 +40,36 @@
 
 | 技术                              | 版本      | 说明                                   |
 |---------------------------------|---------|--------------------------------------|
-| **Vue 3**                       | 3.5.40  | 渐进式前端框架（Composition API）             |
+| **Vue 3**                       | 3.5.42  | 渐进式前端框架（Composition API）             |
 | **TypeScript**                  | 6.0.3   | 类型安全                                 |
-| **Element Plus**                | 2.14.3  | Vue 3 UI 组件库                         |
-| **Vite**                        | 8.1.5   | 构建工具与开发服务器                           |
-| **Pinia**                       | 4.0.2   | 状态管理                                 |
+| **Element Plus**                | 2.14.5  | Vue 3 UI 组件库                         |
+| **Vite**                        | 8.3.0   | 构建工具与开发服务器                           |
+| **Pinia**                       | 4.0.3   | 状态管理                                 |
 | **pinia-plugin-persistedstate** | 4.7.1   | Pinia 状态持久化                          |
-| **Vue Router**                  | 5.2.0   | 路由（常量路由 + 动态路由 + 路由守卫 + RouteLookup） |
-| **Axios**                       | 1.18.1  | HTTP 请求（含自动刷新 Token、请求取消、请求重试）       |
-| **Sass**                        | 1.102.0 | CSS 预处理器（modern-compiler API）        |
-| **CodeMirror 6**                | 6.0.2   | 代码编辑器核心（JSON / Markdown 语法高亮）        |
-| **marked**                      | 18.0.7  | Markdown 编译渲染                        |
-| **highlight.js**                | 11.11.1 | 代码语法高亮                               |
-| **mermaid**                     | 11.16.0 | 流程图/图表渲染                             |
+| **Vue Router**                  | 5.3.1   | 路由（常量路由 + 动态路由 + 路由守卫 + RouteLookup） |
+| **Axios**                       | 1.20.0  | HTTP 请求（含自动刷新 Token、请求取消、请求重试）       |
+| **Sass**                        | 1.104.1 | CSS 预处理器（modern-compiler API）        |
+| **CodeMirror 6**                | 6.x     | 代码编辑器核心（JSON / Markdown 语法高亮）        |
+| **marked**                      | 18.0.13 | Markdown 编译渲染                        |
+| **DOMPurify**                   | 3.4.15  | Markdown 渲染结果 XSS 净化                 |
+| **highlight.js**                | 11.12.0 | 代码语法高亮                               |
+| **mermaid**                     | 12.0.0  | 流程图/图表渲染                             |
 | **Fuse.js**                     | 7.5.0   | 前端模糊搜索                               |
+| **pinyin-pro**                  | 3.29.4  | 拼音匹配（全局搜索）                           |
 | **Vue Draggable Plus**          | 0.6.1   | 拖拽组件（标签页、权限范围）                       |
-| **@file-viewer/vue3-full**      | 2.2.3   | 在线文件预览（200+ 格式）                      |
+| **@file-viewer/vue3-full**      | 3.0.3   | 在线文件预览（200+ 格式，配合 vite-plugin）       |
 | **jschardet**                   | 3.1.4   | 文件编码检测                               |
 | **Lodash (lodash-es)**          | 4.17.21 | 实用工具库                                |
 | **NProgress**                   | 0.2.0   | 页面加载进度条                              |
-| **vue-tsc**                     | 3.3.8   | 类型检查                                 |
+| **vue-tsc**                     | 3.3.11  | 类型检查                                 |
 | **@element-plus/icons-vue**     | 2.3.2   | Element Plus 图标库                     |
 | **vite-plugin-svg-icons**       | 2.0.1   | SVG 图标雪碧图自动注册                        |
-| **lightningcss**                | 1.29.0  | CSS 编译器（Vite 构建加速）                   |
-| **ESLint**                      | 10.8.0  | 代码规范检查（Flat Config）                  |
+| **lightningcss**                | 1.33.0  | CSS 编译器（Vite 构建加速）                   |
+| **ESLint**                      | 10.10.0 | 代码规范检查（Flat Config）                  |
 | **Prettier**                    | 3.9.6   | 代码格式化                                |
-| **Stylelint**                   | 17.14.1 | 样式规范检查                               |
+| **Stylelint**                   | 17.15.0 | 样式规范检查                               |
 | **Husky**                       | 9.1.7   | Git 提交钩子                             |
-| **Lint-staged**                 | 17.2.0  | 暂存文件 lint 检查                         |
+| **Lint-staged**                 | 17.5.1  | 暂存文件 lint 检查                         |
 
 ---
 
@@ -76,7 +78,7 @@
 ### 环境要求
 
 - **Node.js** 22.12+（Vite 8 / ESLint 10 要求）
-- **npm** 10+ / **yarn** 1.22+ / **pnpm** 9+
+- **npm** 10+（仓库已提交 `package-lock.json`，建议以 npm 为唯一包管理器）
 
 ### 安装与运行
 
@@ -120,8 +122,8 @@ machine-front-vue/
 ├── src/
 │   ├── shared/                        # 共享模块（统一公共资源）
 │   │   ├── api/                       # 公共接口（字典枚举等）
-│   │   ├── components/                # 公共组件（SvgIcon、IpWhitelistEditor、UriListEditor）
-│   │   ├── composables/               # 组合式函数（useEnumOptions 枚举选项）
+│   │   ├── components/                # 公共组件（SvgIcon、HighlightText、IpWhitelistEditor、UriListEditor、TreePickerPanel、TreeCheckPanel）
+│   │   ├── composables/               # 组合式函数（useEnumOptions 枚举选项、useTreeSearch 树搜索）
 │   │   ├── constants/                 # 公共常量（路由、门户、通用、字典枚举）
 │   │   ├── directives/                # 自定义指令（v-hasPermission）
 │   │   ├── stores/                    # 全局状态管理
@@ -130,7 +132,7 @@ machine-front-vue/
 │   │   │   ├── SystemSetting.store.ts # 系统设置
 │   │   │   └── DictionaryEnum.store.ts# 字典枚举
 │   │   ├── types/                     # 公共类型定义
-│   │   └── utils/                     # 工具类（Request、Permission、TreeData、RouteLookup、EncodingDetector、IpAddress、Secret）
+│   │   └── utils/                     # 工具类（Request、Permission、TreeData、RouteLookup、EncodingDetector、IpAddress、Secret、Download）
 │   ├── views/                         # 页面视图（官网门户 + 管理后台）
 │   │   ├── website/                   # 官网门户
 │   │   │   ├── portal/                # 门户页面（首页、产品、关于、联系）
@@ -143,8 +145,8 @@ machine-front-vue/
 │   │       ├── auth/                  # 登录页、OAuth2 回调
 │   │       └── home/                  # 后台首页（应用中心、程序坞、全局搜索）
 │   ├── modules/                       # 业务模块（按领域拆分）
-│   │   ├── biam/                      # 权限（组织/角色/用户/菜单、认证中心-客户端、日志中心-操作/登录/访问）
-│   │   ├── data/                      # 数据（品牌、区域、门店、标签、素材、附件、下载）
+│   │   ├── biam/                      # 权限（组织/角色/用户/菜单、认证中心-客户端、日志中心-操作/登录/访问、用户偏好）
+│   │   ├── data/                      # 数据（品牌-支持父子、区域、门店、标签、素材、附件、附件操作日志、下载中心）
 │   │   ├── crm/                       # 客户管理、会员管理
 │   │   ├── scm/                       # 供应链（类目、商品 SKU/SPU/属性）
 │   │   ├── pce/                       # 流程中心（流程管理、任务中心、流程运维）
@@ -169,7 +171,7 @@ machine-front-vue/
 ├── .env                               # 环境变量（公共）
 ├── vite.config.ts                     # Vite 配置（含 SVG 插件、JSX、SCSS 变量注入）
 ├── tsconfig.json                      # TypeScript 配置
-├── eslint.config.js                   # ESLint 扁平化配置（ESLint 9 Flat Config）
+├── eslint.config.js                   # ESLint 扁平化配置（ESLint 10 Flat Config）
 ├── .stylelintrc.json                  # Stylelint 配置
 └── package.json
 ```
@@ -181,8 +183,8 @@ machine-front-vue/
 | **Shared**  | `shared/`        | 公共组件、指令、工具类、状态管理、类型定义、常量（统一入口）                          |
 | **Website** | `views/website/` | 官网门户（品牌首页、产品特性、关于联系）及研发工具集                              |
 | **Admin**   | `views/admin/`   | 管理后台布局（侧栏、标签页、导航）、登录认证                                  |
-| **BIAM**    | `modules/biam/`  | 权限管理（组织/角色/用户/菜单）、认证中心（OAuth2 客户端管理）、日志中心（操作/登录/访问日志）   |
-| **Data**    | `modules/data/`  | 品牌、区域、门店、标签、素材、附件、下载中心                                  |
+| **BIAM**    | `modules/biam/`  | 权限管理（组织/角色/用户/菜单）、认证中心（OAuth2 客户端管理）、日志中心（操作/登录/访问日志）、用户偏好配置 |
+| **Data**    | `modules/data/`  | 品牌（支持父子品牌）、区域、门店、标签（分类/选项）、素材、附件、附件操作日志、下载中心               |
 | **CRM**     | `modules/crm/`   | 客户管理、会员管理                                               |
 | **SCM**     | `modules/scm/`   | 类目管理（前台/后台/属性）、商品管理（SKU/SPU/商品属性）                       |
 | **AI**      | `modules/ai/`    | 智能中心-资源中心（厂商管理、模型管理）                                    |

@@ -128,7 +128,10 @@
 
 <script setup lang="ts">
   import { ref, watch, computed } from 'vue'
+  import { ElMessage } from 'element-plus'
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
+  import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
+  import { downloadByUrl } from '@/shared/utils/Download.util'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import {
     DICT_DATA_FILE_TYPE,
@@ -162,14 +165,15 @@
 
   const formatTime = (timestamp?: number) => (timestamp ? new Date(timestamp).toLocaleString() : '无')
 
-  const loadAttachmentUrl = async (materialId: string) => {
-    if (!materialId) {
+  // 预览地址：走附件接口（后端返回 MinIO 预签名地址，图片/视频为 inline 预览）
+  const loadAttachmentUrl = async (attachmentId: string) => {
+    if (!attachmentId) {
       attachmentUrl.value = ''
       return
     }
     try {
-      const url = await DataMaterialApi.getDownloadUrl({ id: materialId })
-      attachmentUrl.value = url
+      const res = await DataAttachmentApi.preview(attachmentId)
+      attachmentUrl.value = res?.url || ''
     } catch {
       attachmentUrl.value = ''
     }
@@ -177,13 +181,19 @@
 
   /** 非图片/视频类型：点击下载按钮触发下载 */
   const downloadAttachment = async () => {
-    if (!props.materialId) return
+    const attachmentId = detailData.value.attachmentId
+    if (!attachmentId) return
     try {
       downloadLoading.value = true
-      const url = await DataMaterialApi.getDownloadUrl({ id: props.materialId })
-      window.open(url, '_blank')
-    } catch {
-      // 错误由 API 层处理
+      const res = await DataAttachmentApi.download(attachmentId)
+      if (!res?.url) {
+        ElMessage.error('获取下载地址失败')
+        return
+      }
+      await downloadByUrl(res.url, detailData.value.title || 'download')
+    } catch (error) {
+      console.error('下载附件失败:', error)
+      ElMessage.error('下载附件失败')
     } finally {
       downloadLoading.value = false
     }
@@ -196,7 +206,7 @@
       const res = await DataMaterialApi.detail({ id: props.materialId })
       detailData.value = res || {}
       if (res?.attachmentId && (res.fileType === 'IMAGE' || res.fileType === 'VIDEO')) {
-        await loadAttachmentUrl(props.materialId)
+        await loadAttachmentUrl(res.attachmentId)
       } else {
         attachmentUrl.value = ''
       }

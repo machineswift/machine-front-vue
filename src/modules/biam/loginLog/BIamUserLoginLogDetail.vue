@@ -7,11 +7,11 @@
     :show-close="false"
     :destroy-on-close="true"
     @closed="handleDialogClosed"
-    width="50%"
-    top="8vh"
+    width="55%"
+    top="6vh"
   >
-    <el-form :model="state.detailData" label-width="100px" v-loading="state.loading">
-      <el-divider content-position="left">基本信息</el-divider>
+    <el-form :model="state.detailData" label-width="120px" v-loading="state.loading">
+      <el-divider content-position="left">操作主体</el-divider>
 
       <el-row :gutter="16">
         <el-col :span="12">
@@ -39,6 +39,8 @@
         </el-col>
       </el-row>
 
+      <el-divider content-position="left">认证信息</el-divider>
+
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="认证动作">
@@ -52,6 +54,27 @@
         </el-col>
       </el-row>
 
+      <el-divider content-position="left">请求链路</el-divider>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="IP地址">
+            <el-input :model-value="state.detailData.ipAddress || '无'" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="平台">
+            <el-input :model-value="state.detailData.platform || '无'" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item label="User Agent" v-if="state.detailData.userAgent">
+        <el-input :model-value="state.detailData.userAgent" type="textarea" :rows="2" disabled />
+      </el-form-item>
+
+      <el-divider content-position="left">操作结果</el-divider>
+
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="认证结果">
@@ -60,30 +83,13 @@
             </el-tag>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="IP地址">
-            <el-input :model-value="state.detailData.ipAddress || '无'" disabled />
-          </el-form-item>
-        </el-col>
       </el-row>
 
       <el-form-item label="失败原因" v-if="state.detailData.failReason">
         <el-input :model-value="state.detailData.failReason" type="textarea" :rows="3" disabled />
       </el-form-item>
 
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="平台">
-            <el-input :model-value="state.detailData.platform || '无'" disabled />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-form-item label="User Agent">
-        <el-input :model-value="state.detailData.userAgent || '无'" type="textarea" :rows="2" disabled />
-      </el-form-item>
-
-      <el-divider content-position="left">操作信息</el-divider>
+      <el-divider content-position="left">审计信息</el-divider>
 
       <el-row :gutter="16">
         <el-col :span="12">
@@ -92,21 +98,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="更新人">
-            <el-input :model-value="state.detailData.updateName || '无'" disabled />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="16">
-        <el-col :span="12">
           <el-form-item label="创建时间">
             <el-input :model-value="formatTime(state.detailData.createTime)" disabled />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="更新时间">
-            <el-input :model-value="formatTime(state.detailData.updateTime)" disabled />
           </el-form-item>
         </el-col>
       </el-row>

@@ -41,7 +41,7 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
           {
             path: '/admin/system/basic_data/shop',
             component: () => import('@/modules/data/shop/DataShop.vue'),
-            name: 'MANAGE_APP::BASIC_DATA:SHOP',
+            name: 'MANAGE_APP:SYSTEM:BASIC_DATA:SHOP',
             meta: {
               code: 'MANAGE_APP:SYSTEM:BASIC_DATA:SHOP',
               title: '门店管理',
@@ -193,6 +193,18 @@ export const systemRoutes: ExtendedRouteRecordRaw[] = [
               code: 'MANAGE_APP:SYSTEM:LOG_CENTER:OPERATION_LOG',
               title: '操作日志',
               icon: 'el-icon-Document',
+              hidden: false,
+              isDynamic: true
+            }
+          },
+          {
+            path: '/admin/system/log_center/attachment_log',
+            component: () => import('@/modules/data/attachment/DataAttachmentLog.vue'),
+            name: 'MANAGE_APP:SYSTEM:LOG_CENTER:ATTACHMENT_LOG',
+            meta: {
+              code: 'MANAGE_APP:SYSTEM:LOG_CENTER:ATTACHMENT_LOG',
+              title: '附件日志',
+              icon: 'el-icon-Paperclip',
               hidden: false,
               isDynamic: true
             }

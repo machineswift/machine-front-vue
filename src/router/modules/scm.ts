@@ -102,7 +102,7 @@ export const scmRoutes: ExtendedRouteRecordRaw[] = [
           {
             path: '/admin/scm/item/attribute',
             component: () => import('@/modules/scm/item/ScmItemAttribute.vue'),
-            name: 'MANAGE_APP:SCM:ITEM:attribute',
+            name: 'MANAGE_APP:SCM:ITEM:ATTRIBUTE',
             meta: {
               code: 'MANAGE_APP:SCM:ITEM:ATTRIBUTE',
               title: '商品属性',

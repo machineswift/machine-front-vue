@@ -48,7 +48,7 @@
                             <el-dropdown-menu>
                               <el-dropdown-item command="add" disabled>
                                 <el-icon><Plus /></el-icon>
-                                <span>添加子分类</span>
+                                <span>添加</span>
                               </el-dropdown-item>
                               <el-dropdown-item command="edit" disabled>
                                 <el-icon><Edit /></el-icon>
@@ -60,7 +60,7 @@
                               </el-dropdown-item>
                               <el-dropdown-item command="updateParent" disabled>
                                 <el-icon><Connection /></el-icon>
-                                <span>修改父分类</span>
+                                <span>移动</span>
                               </el-dropdown-item>
                               <el-dropdown-item command="delete" divided disabled>
                                 <el-icon><Delete /></el-icon>
@@ -86,7 +86,7 @@
                         <el-dropdown-menu>
                           <el-dropdown-item command="add" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:CREATE'])">
                             <el-icon><Plus /></el-icon>
-                            <span>添加子分类</span>
+                            <span>添加</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="edit" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE'])">
                             <el-icon><Edit /></el-icon>
@@ -98,7 +98,7 @@
                           </el-dropdown-item>
                           <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:UPDATE_PARENT'])">
                             <el-icon><Connection /></el-icon>
-                            <span>修改父分类</span>
+                            <span>移动</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:MATERIAL_CATEGORY:DELETE'])">
                             <el-icon><Delete /></el-icon>
@@ -139,9 +139,6 @@
                   </el-form-item>
                   <el-form-item label="素材标题:" prop="title" class="form-item-responsive">
                     <el-input v-model="state.searchForm.title" placeholder="请输入素材标题" clearable @keyup.enter="handleSearch" />
-                  </el-form-item>
-                  <el-form-item label="素材名称:" prop="name" class="form-item-responsive">
-                    <el-input v-model="state.searchForm.name" placeholder="请输入素材名称" clearable @keyup.enter="handleSearch" />
                   </el-form-item>
                   <el-form-item label="处理状态:" prop="processStatus" class="form-item-responsive">
                     <el-select v-model="state.searchForm.processStatus" placeholder="选择处理状态" clearable>
@@ -545,7 +542,6 @@
       fileTypeSet: [] as string[],
       categoryIdSet: [] as string[],
       title: '',
-      name: '',
       processStatus: null as string | null,
       businessStatus: null as string | null,
       auditStatus: null as string | null,
@@ -707,7 +703,6 @@
       ...(searchForm.fileTypeSet.length > 0 && { fileTypeSet: searchForm.fileTypeSet }),
       ...(searchForm.categoryIdSet.length > 0 && { categoryIdSet: searchForm.categoryIdSet }),
       ...(searchForm.title && { title: searchForm.title }),
-      ...(searchForm.name && { name: searchForm.name }),
       ...(searchForm.processStatus && { processStatus: searchForm.processStatus }),
       ...(searchForm.businessStatus && { businessStatus: searchForm.businessStatus }),
       ...(searchForm.auditStatus && { auditStatus: searchForm.auditStatus }),
@@ -724,7 +719,7 @@
     state.thumbnailUrlMap = {}
     records.forEach(row => {
       if (row.fileType === 'IMAGE' && row.attachmentId) {
-        DataAttachmentApi.getThumbnailUrl(row.attachmentId)
+        DataAttachmentApi.thumbnail(row.attachmentId)
           .then(r => {
             if (r?.url) state.thumbnailUrlMap[row.attachmentId!] = r.url
           })
@@ -774,7 +769,6 @@
     Object.assign(state.searchForm, {
       fileTypeSet: [] as string[],
       title: '',
-      name: '',
       processStatus: null,
       businessStatus: null,
       auditStatus: null,

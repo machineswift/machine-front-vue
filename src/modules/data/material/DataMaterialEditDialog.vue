@@ -70,6 +70,7 @@
   import { DataMaterialApi } from '@/modules/data/material/api/DataMaterial.api'
   import { DataMaterialCategoryApi } from '@/modules/data/material/api/DataMaterialCategory.api'
   import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
+  import { downloadByUrl, saveUrlAsFile } from '@/shared/utils/Download.util'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { DICT_DATA_FILE_TYPE } from '@/shared/constants/DictionaryEnum.constant'
   import type { DataMaterialDetailResponseVo, DataMaterialUpdateRequestVo } from '@/modules/data/material/type/DataMaterial.type'
@@ -121,6 +122,9 @@
   /** 标记附件是否被更换过 */
   const isAttachmentChanged = ref(false)
 
+  /** 已更换但尚未保存的本地附件（临时文件未生成附件，需直接用本地文件下载） */
+  const replacedFile = ref<File | null>(null)
+
   const rules = {
     title: [{ required: true, message: '请输入素材标题', trigger: 'blur' }]
   }
@@ -142,15 +146,16 @@
     categoryPanelRef.value?.setCheckedKeys(ids || [])
   }
 
-  const loadAttachmentPreview = async (materialId: string) => {
-    if (!materialId) {
+  /** 预览地址：走附件接口（后端返回 MinIO 预签名地址，图片/视频为 inline 预览） */
+  const loadAttachmentPreview = async (attachmentId: string) => {
+    if (!attachmentId) {
       attachmentPreviewUrl.value = ''
       return
     }
     isPreviewLoading.value = true
     try {
-      const url = await DataMaterialApi.getDownloadUrl({ id: materialId })
-      attachmentPreviewUrl.value = url
+      const res = await DataAttachmentApi.preview(attachmentId)
+      attachmentPreviewUrl.value = res?.url || ''
     } catch {
       attachmentPreviewUrl.value = ''
     } finally {
@@ -160,13 +165,26 @@
 
   /** 非图片/视频类型：点击下载按钮触发下载 */
   const downloadAttachment = async () => {
-    if (!props.materialId) return
+    // 附件已更换但未保存：直接下载本地文件
+    if (replacedFile.value) {
+      const localUrl = URL.createObjectURL(replacedFile.value)
+      saveUrlAsFile(localUrl, replacedFile.value.name)
+      URL.revokeObjectURL(localUrl)
+      return
+    }
+    const attachmentId = detailData.value.attachmentId
+    if (!attachmentId) return
     try {
       downloadLoading.value = true
-      const url = await DataMaterialApi.getDownloadUrl({ id: props.materialId })
-      window.open(url, '_blank')
-    } catch {
-      // 错误由 API 层处理
+      const res = await DataAttachmentApi.download(attachmentId)
+      if (!res?.url) {
+        ElMessage.error('获取下载地址失败')
+        return
+      }
+      await downloadByUrl(res.url, detailData.value.title || 'download')
+    } catch (error) {
+      console.error('下载附件失败:', error)
+      ElMessage.error('下载附件失败')
     } finally {
       downloadLoading.value = false
     }
@@ -187,7 +205,7 @@
       }
       isAttachmentChanged.value = false
       if (attachmentId && (res!.fileType === 'IMAGE' || res!.fileType === 'VIDEO')) {
-        await loadAttachmentPreview(props.materialId)
+        await loadAttachmentPreview(attachmentId)
       } else {
         attachmentPreviewUrl.value = ''
       }
@@ -215,6 +233,7 @@
       const newId = res?.id
       if (newId) {
         currentAttachmentId.value = newId
+        replacedFile.value = f
         isAttachmentChanged.value = true
         // 文件已在前端内存，直接用 ObjectURL 本地预览，无需调后端接口
         if (detailData.value.fileType === 'IMAGE' || detailData.value.fileType === 'VIDEO') {
@@ -273,6 +292,7 @@
     attachmentPreviewUrl.value = ''
     categoryPanelRef.value?.reset()
     currentAttachmentId.value = ''
+    replacedFile.value = null
     isAttachmentChanged.value = false
     if (replaceFileInputRef.value) replaceFileInputRef.value.value = ''
   }

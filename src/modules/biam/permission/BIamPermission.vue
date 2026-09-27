@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
   defineOptions({
-    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:permission'
+    name: 'MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION'
   })
   import { ref, reactive, onMounted, onActivated, onBeforeUnmount, nextTick, h, watch, markRaw, defineComponent, resolveComponent, type VNode } from 'vue'
   import Fuse, { type FuseResultMatch } from 'fuse.js'
@@ -432,7 +432,8 @@
   const handleDialogSuccess = () => {
     state.dialogs.create.visible = false
     state.dialogs.edit.visible = false
-    fetchPermissionTree()
+    // 刷新后仍按当前搜索条件过滤，并保留用户已展开的节点，避免视图跳变
+    void refreshPreservingView([...state.expandedRowKeys])
   }
 
   const formatTime = (timestamp: number) => {
@@ -572,7 +573,7 @@
                       command: 'updateParent',
                       disabled: !hasPermission(['MANAGE_APP:SYSTEM:ACCESS_CONTROL:PERMISSION:UPDATE_PARENT'])
                     },
-                    () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '修改父节点')]
+                    () => [h(ElIcon, null, { default: () => h(Connection) }), h('span', null, '移动')]
                   ),
                   h(
                     ElDropdownItem,
@@ -639,6 +640,23 @@
     }
   }
 
+  /**
+   * 重新拉取权限树并保持原有视图：
+   * 1. 搜索条件被保留时，按原条件重新过滤，保证「搜索框内容」与「表格数据」一致；
+   * 2. 未搜索时，保留用户已展开的节点（节点已不存在则回退到默认展开）。
+   */
+  const refreshPreservingView = async (previousExpandedKeys: string[]) => {
+    await fetchPermissionTree()
+    if (state.isSearching) {
+      performSearch()
+      return
+    }
+    if (!previousExpandedKeys.length) return
+    const existingIds = new Set(state.flatData.map(node => node.id))
+    const keptKeys = previousExpandedKeys.filter(id => existingIds.has(id))
+    if (keptKeys.length) state.expandedRowKeys = keptKeys
+  }
+
   watch(
     () => state.searchForm,
     ({ name, code, icon }) => {
@@ -662,7 +680,8 @@
       isFirstActivation = false
       return
     }
-    await fetchPermissionTree()
+    // 从其他标签页切回时刷新数据，同时保持搜索条件与展开状态
+    await refreshPreservingView([...state.expandedRowKeys])
     await updateTableSize()
   })
 

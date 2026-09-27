@@ -21,7 +21,8 @@
               :data="currentCategoryTreeOptions"
               :props="state.categoryProps"
               :filter-method="categoryFilterMethod"
-              @node-click="(data: TreeNodeData) => handleCategoryNodeClick(data as DataTagCategoryTreeSimpleOutputDto)"
+              @check="handleCategoryCheck"
+              show-checkbox
               :height="treeHeight"
             >
               <template #default="{ node, data }">
@@ -40,7 +41,7 @@
                         <el-dropdown-menu>
                           <el-dropdown-item command="add" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:CREATE'])">
                             <el-icon><Plus /></el-icon>
-                            <span>添加子分类</span>
+                            <span>添加</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="edit" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE'])">
                             <el-icon><Edit /></el-icon>
@@ -52,11 +53,11 @@
                           </el-dropdown-item>
                           <el-dropdown-item command="updateSort" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE_SORT'])">
                             <el-icon><Sort /></el-icon>
-                            <span>修改排序</span>
+                            <span>排序</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="updateParent" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:UPDATE_PARENT'])">
                             <el-icon><Connection /></el-icon>
-                            <span>修改父分类</span>
+                            <span>移动</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="delete" divided :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG_CATEGORY:DELETE'])">
                             <el-icon><Delete /></el-icon>
@@ -275,7 +276,7 @@
                             </el-dropdown-item>
                             <el-dropdown-item command="updateSort" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE_SORT'])">
                               <el-icon><Sort /></el-icon>
-                              <span>修改排序</span>
+                              <span>排序</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="updateCategory" :disabled="!hasPermission(['MANAGE_APP:SYSTEM:BASIC_DATA:TAG:UPDATE_CATEGORY'])">
                               <el-icon><Connection /></el-icon>
@@ -380,6 +381,7 @@
   import { useEnumOptions } from '@/shared/composables/useEnumOptions'
   import { DICT_PROFILE_SUBJECT_TYPE, DICT_STATUS } from '@/shared/constants/DictionaryEnum.constant'
   import { hasPermission } from '@/shared/utils/Permission.util'
+  import { TreeDataUtil } from '@/shared/utils/TreeData.util'
   import type { DataTagExpandListResponseVo, DataTagQueryPageRequestVo } from '@/modules/data/tag/type/DataTag.type'
   import type { DataTagCategoryTreeSimpleOutputDto } from '@/modules/data/tag/type/DataTagCategory.type'
   import DataTagAddDialog from '@/modules/data/tag/DataTagAddDialog.vue'
@@ -406,13 +408,6 @@
     return timestamp ? new Date(timestamp).toLocaleString() : '无'
   }
 
-  /** 收集分类及其所有子节点的ID */
-  const collectCategoryAndChildrenIds = (node: DataTagCategoryTreeSimpleOutputDto): string[] => {
-    const ids: string[] = [node.id]
-    node.children?.forEach(child => ids.push(...collectCategoryAndChildrenIds(child)))
-    return ids
-  }
-
   /** 重新加载分类树 */
   const reloadCategoryTree = async () => {
     const type = state.searchForm.type
@@ -428,11 +423,12 @@
     }
   }
 
-  /** 重置分类树状态 */
+  /** 重置分类树状态（清空关键字与勾选） */
   const resetCategoryTreeState = () => {
     state.searchForm.categoryIdSet = []
     state.categoryQuery = ''
     categoryTreeRef.value?.setExpandedKeys([])
+    categoryTreeRef.value?.setCheckedKeys([])
   }
 
   const state = reactive({
@@ -599,11 +595,14 @@
   })
 
   // ==================== 分类树相关 ====================
-  /** 处理分类树节点点击 */
-  const handleCategoryNodeClick = (data: DataTagCategoryTreeSimpleOutputDto) => {
-    state.searchForm.categoryIdSet = collectCategoryAndChildrenIds(data)
-    state.pagination.current = 1
-    fetchData()
+  /** 左侧分类树勾选：将选中的根节点 id 同步到查询条件（父节点选中时自动包含其子孙），点击搜索时再请求 */
+  const handleCategoryCheck = () => {
+    if (categoryTreeRef.value) {
+      state.searchForm.categoryIdSet = TreeDataUtil.getRootNodesFromSelected(
+        currentCategoryTreeOptions.value,
+        categoryTreeRef.value.getCheckedKeys() as string[]
+      ).map(node => node.id)
+    }
   }
 
   /** 分类树过滤方法 */
@@ -892,8 +891,10 @@
           console.error('加载分类树失败', error)
         }
       }
-      resetCategoryTreeState()
       currentCategoryTreeOptions.value = state.categoryTreeOptions.get(type) || []
+      // 分类树数据切换后清空勾选（需等渲染完成）
+      await nextTick()
+      resetCategoryTreeState()
     },
     { immediate: false }
   )

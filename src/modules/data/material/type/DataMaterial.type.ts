@@ -53,7 +53,6 @@ export interface DataMaterialQueryPageRequestVo extends PageRequest {
   /** 文件类型集合，多选；为空则不按文件类型过滤 */
   fileTypeSet?: DataFileTypeEnum[]
   title?: string
-  name?: string
   processStatus?: DataMaterialProcessStatusEnum
   businessStatus?: DataMaterialBusinessStatusEnum
   auditStatus?: DataMaterialAuditStatusEnum

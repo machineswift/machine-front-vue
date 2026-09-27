@@ -1,9 +1,9 @@
 <template>
-  <div ref="pageContainerRef" class="access-log-page">
+  <div ref="pageContainerRef" class="attachment-log-page">
     <!-- 搜索卡片 -->
     <transition name="slide-fade">
       <el-card ref="searchCardRef" class="box-card-form" v-show="state.showSearchCard">
-        <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="80px">
+        <el-form :model="state.searchForm" ref="searchFormRef" class="search-form" :inline="true" label-width="90px">
           <div class="form-items-group">
             <el-form-item label="操作人:" prop="userIdSet" class="form-item-responsive user-selector">
               <el-select
@@ -32,10 +32,10 @@
               </el-select>
             </el-form-item>
             <el-form-item label="手机号:" prop="phone" class="form-item-responsive">
-              <el-input v-model="state.searchForm.phone" placeholder="请输入手机号" clearable style="width: 180px" />
+              <el-input v-model="state.searchForm.phone" placeholder="请输入手机号" clearable />
             </el-form-item>
             <el-form-item label="姓名:" prop="realName" class="form-item-responsive">
-              <el-input v-model="state.searchForm.realName" placeholder="请输入姓名" clearable style="width: 180px" />
+              <el-input v-model="state.searchForm.realName" placeholder="请输入姓名" clearable />
             </el-form-item>
             <el-form-item label="操作来源:" prop="operateSource" class="form-item-responsive">
               <el-select v-model="state.searchForm.operateSource" placeholder="选择操作来源" clearable>
@@ -47,29 +47,26 @@
                 <el-option v-for="option in moduleOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
-            <el-form-item label="模块实体:" prop="moduleEntity" class="form-item-responsive">
-              <el-select v-model="state.searchForm.moduleEntity" placeholder="选择模块实体" clearable>
+            <el-form-item label="业务实体:" prop="moduleEntity" class="form-item-responsive">
+              <el-select v-model="state.searchForm.moduleEntity" placeholder="选择业务实体" clearable>
                 <el-option v-for="option in moduleEntityOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
-            <el-form-item label="操作分类:" prop="operateType" class="form-item-responsive">
-              <el-select v-model="state.searchForm.operateType" placeholder="选择操作分类" clearable>
-                <el-option v-for="option in operateTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
+            <el-form-item label="业务实体ID:" prop="moduleEntityId" class="form-item-responsive">
+              <el-input v-model="state.searchForm.moduleEntityId" placeholder="请输入业务实体ID" clearable />
+            </el-form-item>
+            <el-form-item label="附件分组:" prop="attachmentGroup" class="form-item-responsive">
+              <el-input v-model="state.searchForm.attachmentGroup" placeholder="请输入附件分组" clearable />
+            </el-form-item>
+            <el-form-item label="操作类型:" prop="operationTypeSet" class="form-item-responsive">
+              <el-select v-model="state.searchForm.operationTypeSet" placeholder="选择操作类型" multiple collapse-tags collapse-tags-tooltip clearable>
+                <el-option v-for="option in operationTypeOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
             </el-form-item>
-            <el-form-item label="操作名称:" prop="operateName" class="form-item-responsive">
-              <el-input v-model="state.searchForm.operateName" placeholder="请输入操作名称" clearable />
-            </el-form-item>
-            <el-form-item label="业务状态:" prop="actionStatus" class="form-item-responsive">
-              <el-select v-model="state.searchForm.actionStatus" placeholder="选择业务状态" clearable>
-                <el-option v-for="option in actionStatusOptions" :key="option.code" :label="option.message" :value="option.code" />
+            <el-form-item label="操作结果:" prop="operationResult" class="form-item-responsive">
+              <el-select v-model="state.searchForm.operationResult" placeholder="选择操作结果" clearable>
+                <el-option v-for="option in operationResultOptions" :key="option.code" :label="option.message" :value="option.code" />
               </el-select>
-            </el-form-item>
-            <el-form-item label="HTP状态:" prop="httpStatus" class="form-item-responsive">
-              <el-input-number v-model="state.searchForm.httpStatus" :min="0" :max="999" placeholder="状态码" controls-position="right" style="width: 100%" />
-            </el-form-item>
-            <el-form-item label="请求路径:" prop="requestPath" class="form-item-responsive">
-              <el-input v-model="state.searchForm.requestPath" placeholder="请输入请求路径" clearable />
             </el-form-item>
             <el-form-item label="链路追踪:" prop="traceId" class="form-item-responsive">
               <el-input v-model="state.searchForm.traceId" placeholder="请输入链路追踪ID" clearable />
@@ -77,7 +74,10 @@
             <el-form-item label="客户端IP:" prop="clientIp" class="form-item-responsive">
               <el-input v-model="state.searchForm.clientIp" placeholder="请输入客户端IP" clearable />
             </el-form-item>
-            <el-form-item label="访问时间:" prop="timeRange" class="form-item-responsive form-item-date-picker">
+            <el-form-item label="平台:" prop="platform" class="form-item-responsive">
+              <el-input v-model="state.searchForm.platform" placeholder="请输入平台" clearable />
+            </el-form-item>
+            <el-form-item label="操作时间:" prop="timeRange" class="form-item-responsive form-item-date-picker">
               <el-date-picker
                 v-model="state.searchForm.timeRange"
                 type="datetimerange"
@@ -92,13 +92,13 @@
           <!-- 操作按钮组 -->
           <div class="button-group">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG:PAGE_EXPAND']">
+              <el-button type="primary" @click="handleSearch" v-hasPermission="['MANAGE_APP:SYSTEM:DATA:ATTACHMENT_LOG:PAGE_EXPAND']">
                 <el-icon>
                   <Search />
                 </el-icon>
                 搜索
               </el-button>
-              <el-button @click="handleResetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG:PAGE_EXPAND']">
+              <el-button @click="handleResetSearch" v-hasPermission="['MANAGE_APP:SYSTEM:DATA:ATTACHMENT_LOG:PAGE_EXPAND']">
                 <el-icon>
                   <Refresh />
                 </el-icon>
@@ -113,12 +113,6 @@
     <!-- 数据卡片 -->
     <el-card ref="dataCardRef" class="box-card-data">
       <div ref="operationButtonsRef" class="operation-buttons">
-        <el-button type="danger" plain @click="showCleanDialog" v-hasPermission="['MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG:DELETE']">
-          <el-icon>
-            <Delete />
-          </el-icon>
-          清理日志
-        </el-button>
         <el-switch v-model="state.showSearchCard" inline-prompt active-text="展开" inactive-text="收起" size="large" />
       </div>
 
@@ -129,63 +123,77 @@
           <el-table-column prop="username" label="用户名" align="center" width="110" fixed />
           <el-table-column prop="realName" label="姓名" align="center" width="100" />
           <el-table-column prop="phone" label="手机号" align="center" width="120" />
+          <el-table-column prop="attachmentId" label="附件ID" align="center" width="280" v-if="false">
+            <template #default="{ row }">
+              <el-tooltip v-if="row.attachmentId" :content="row.attachmentId" placement="top" :append-to-body="true" :show-after="200">
+                <span class="text-ellipsis">{{ row.attachmentId }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="versionId" label="版本ID" align="center" width="280" v-if="false">
+            <template #default="{ row }">
+              <el-tooltip v-if="row.versionId" :content="row.versionId" placement="top" :append-to-body="true" :show-after="200">
+                <span class="text-ellipsis">{{ row.versionId }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="operateSource" label="操作来源" align="center" width="120">
             <template #default="{ row }">
               <el-tag>{{ enumStore.getEnumLabel(DICT_OPERATE_SOURCE, row.operateSource) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="module" label="操作模块" align="center" width="130">
+          <el-table-column prop="module" label="操作模块" align="center" width="120">
             <template #default="{ row }">
               <el-tag>{{ enumStore.getEnumLabel(DICT_MODULE, row.module) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="moduleEntity" label="模块实体" align="center" width="140">
+          <el-table-column prop="moduleEntity" label="业务实体" align="center" width="140">
             <template #default="{ row }">
               <el-tag>{{ enumStore.getEnumLabel(DICT_MODULE_ENTITY, row.moduleEntity) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="operateType" label="操作分类" align="center" width="90">
+          <el-table-column prop="moduleEntityId" label="业务实体ID" align="center" width="320" v-if="false">
             <template #default="{ row }">
-              <el-tag>{{ enumStore.getEnumLabel(DICT_ACTION_TYPE, row.operateType) }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="operateName" label="操作名称" align="center" width="140" />
-          <el-table-column prop="actionStatus" label="业务状态" align="center" width="90">
-            <template #default="{ row }">
-              <el-tag :type="row.actionStatus === 'SUCCESS' ? 'success' : 'danger'">
-                {{ enumStore.getEnumLabel(DICT_ACTION_STATUS, row.actionStatus) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="httpMethod" label="HTTP方法" align="center" width="90" />
-          <el-table-column prop="httpStatus" label="HTTP状态码" align="center" width="110">
-            <template #default="{ row }">
-              <span :class="row.httpStatus >= 400 ? 'http-status-error' : ''">{{ row.httpStatus ?? '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="requestPath" label="请求路径" align="center" width="240" min-width="160">
-            <template #default="{ row }">
-              <el-tooltip v-if="row.requestPath" :content="row.requestPath" placement="top" :append-to-body="true" :show-after="200">
-                <span class="text-ellipsis">{{ row.requestPath }}</span>
+              <el-tooltip v-if="row.moduleEntityId" :content="row.moduleEntityId" placement="top" :append-to-body="true" :show-after="200">
+                <span class="text-ellipsis">{{ row.moduleEntityId }}</span>
               </el-tooltip>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="clientIp" label="客户端IP" align="center" width="130" />
-          <el-table-column prop="costTime" label="耗时(ms)" align="center" width="90">
+          <el-table-column prop="moduleEntityName" label="业务实体名称" align="center" width="320">
             <template #default="{ row }">
-              <span>{{ row.costTime ?? '-' }}</span>
+              <el-tooltip v-if="row.moduleEntityName" :content="row.moduleEntityName" placement="top" :append-to-body="true" :show-after="200">
+                <span class="text-ellipsis">{{ row.moduleEntityName }}</span>
+              </el-tooltip>
+              <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="createName" label="创建人" align="center" width="110" v-if="false" />
-          <el-table-column prop="createTime" label="访问时间" align="center" width="180">
+          <el-table-column prop="attachmentGroup" label="附件分组" align="center" width="150" />
+          <el-table-column prop="operationType" label="操作类型" align="center" width="110">
+            <template #default="{ row }">
+              <el-tag>{{ enumStore.getEnumLabel(DICT_DATA_ATTACHMENT_OPERATION_TYPE, row.operationType) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="operationResult" label="操作结果" align="center" width="100">
+            <template #default="{ row }">
+              <el-tag :type="operationResultTagType(row.operationResult)">
+                {{ enumStore.getEnumLabel(DICT_DATA_ATTACHMENT_OPERATION_RESULT, row.operationResult) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="clientIp" label="客户端IP" align="center" width="130" />
+          <el-table-column prop="platform" label="平台" align="center" width="140" />
+          <el-table-column prop="createName" label="操作人" align="center" width="110" v-if="false" />
+          <el-table-column prop="createTime" label="操作时间" align="center" width="180">
             <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
           </el-table-column>
 
           <el-table-column label="操作" align="center" width="100" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" @click="showDetail(row)" v-hasPermission="['MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG:DETAIL']">详情</el-button>
+                <el-button size="small" @click="showDetail(row)" v-hasPermission="['MANAGE_APP:SYSTEM:DATA:ATTACHMENT_LOG:DETAIL']">详情</el-button>
               </div>
             </template>
           </el-table-column>
@@ -202,7 +210,7 @@
           :total="state.pagination.total"
           @current-change="handlePageChange"
           @size-change="handleSizeChange"
-          v-hasPermission="['MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG:PAGE_EXPAND']"
+          v-hasPermission="['MANAGE_APP:SYSTEM:DATA:ATTACHMENT_LOG:PAGE_EXPAND']"
         />
       </div>
 
@@ -213,10 +221,7 @@
     </el-card>
 
     <!-- 详情对话框 -->
-    <BIamAccessLogDetail v-model="state.detailVisible" :log-id="state.selectedLogId" />
-
-    <!-- 清理日志对话框 -->
-    <BIamAccessLogCleanDialog v-model="state.cleanDialogVisible" @success="handleCleanSuccess" />
+    <DataAttachmentLogDetail v-model="state.detailVisible" :log-id="state.selectedLogId" />
 
     <!-- 操作人选择对话框 -->
     <BIamUserQuickSelectDialog
@@ -230,22 +235,27 @@
 
 <script setup lang="ts">
   defineOptions({
-    name: 'MANAGE_APP:SYSTEM:LOG_CENTER:ACCESS_LOG'
+    name: 'MANAGE_APP:SYSTEM:LOG_CENTER:ATTACHMENT_LOG'
   })
   import { onMounted, onActivated, reactive, ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
   import type { FormInstance } from 'element-plus'
-  import { Refresh, Search, Delete } from '@element-plus/icons-vue'
-  import BIamAccessLogDetail from '@/modules/biam/accessLog/BIamAccessLogDetail.vue'
-  import BIamAccessLogCleanDialog from '@/modules/biam/accessLog/BIamAccessLogCleanDialog.vue'
-  import { BIamUserAccessLogApi } from '@/modules/biam/accessLog/api/BIamUserAccessLog.api'
+  import { Refresh, Search } from '@element-plus/icons-vue'
+  import DataAttachmentLogDetail from '@/modules/data/attachment/DataAttachmentLogDetail.vue'
+  import { DataAttachmentLogApi } from '@/modules/data/attachment/api/DataAttachmentLog.api'
   import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
   import { useEnumOptions } from '@/shared/composables/useEnumOptions'
-  import { DICT_MODULE, DICT_MODULE_ENTITY, DICT_OPERATE_SOURCE, DICT_ACTION_TYPE, DICT_ACTION_STATUS } from '@/shared/constants/DictionaryEnum.constant'
+  import {
+    DICT_MODULE,
+    DICT_MODULE_ENTITY,
+    DICT_OPERATE_SOURCE,
+    DICT_DATA_ATTACHMENT_OPERATION_TYPE,
+    DICT_DATA_ATTACHMENT_OPERATION_RESULT
+  } from '@/shared/constants/DictionaryEnum.constant'
   import type {
-    BIamUserAccessLogExpandListResponseVo,
-    BIamUserAccessLogExpandPageResponse,
-    BIamUserAccessLogQueryPageRequestVo
-  } from '@/modules/biam/accessLog/type/IamUserAccessLog.type'
+    DataAttachmentLogExpandListResponseVo,
+    DataAttachmentLogExpandPageResponse,
+    DataAttachmentLogQueryPageRequestVo
+  } from '@/modules/data/attachment/type/DataAttachment.type'
   import BIamUserQuickSelectDialog from '@/modules/biam/user/BIamUserQuickSelectDialog.vue'
   import type { BIamUserSimpleListResponseVo } from '@/modules/biam/user/type/BIamUser.type'
 
@@ -254,34 +264,34 @@
   const { options: operateSourceOptions, load: loadOperateSourceOptions } = useEnumOptions(DICT_OPERATE_SOURCE)
   const { options: moduleOptions, load: loadModuleOptions } = useEnumOptions(DICT_MODULE)
   const { options: moduleEntityOptions, load: loadModuleEntityOptions } = useEnumOptions(DICT_MODULE_ENTITY)
-  const { options: operateTypeOptions, load: loadOperateTypeOptions } = useEnumOptions(DICT_ACTION_TYPE)
-  const { options: actionStatusOptions, load: loadActionStatusOptions } = useEnumOptions(DICT_ACTION_STATUS)
+  const { options: operationTypeOptions, load: loadOperationTypeOptions } = useEnumOptions(DICT_DATA_ATTACHMENT_OPERATION_TYPE)
+  const { options: operationResultOptions, load: loadOperationResultOptions } = useEnumOptions(DICT_DATA_ATTACHMENT_OPERATION_RESULT)
 
   const state = reactive({
     loading: false,
     showSearchCard: true,
     detailVisible: false,
-    cleanDialogVisible: false,
     operatorDialogVisible: false,
 
     // 操作人相关状态
     selectedOperators: [] as BIamUserSimpleListResponseVo[],
 
-    tableData: [] as BIamUserAccessLogExpandListResponseVo[],
+    tableData: [] as DataAttachmentLogExpandListResponseVo[],
     selectedLogId: '',
     searchForm: {
+      userIdSet: [] as string[],
       phone: null as string | null,
       realName: null as string | null,
-      operateName: null as string | null,
       operateSource: null as string | null,
       module: null as string | null,
       moduleEntity: null as string | null,
-      operateType: null as string | null,
-      actionStatus: null as string | null,
-      httpStatus: null as number | null,
-      requestPath: null as string | null,
+      moduleEntityId: null as string | null,
+      attachmentGroup: null as string | null,
+      operationTypeSet: null as string[] | null,
+      operationResult: null as string | null,
       clientIp: null as string | null,
       traceId: null as string | null,
+      platform: null as string | null,
       timeRange: null as number[] | null
     },
     pagination: {
@@ -370,38 +380,38 @@
     try {
       state.loading = true
       const params = buildQueryParams()
-      const res: BIamUserAccessLogExpandPageResponse = await BIamUserAccessLogApi.pageExpand(params)
+      const res: DataAttachmentLogExpandPageResponse = await DataAttachmentLogApi.pageExpand(params)
       state.tableData = res.records
       state.pagination.total = res.total
     } catch (error) {
-      console.error('获取访问日志失败:', error)
+      console.error('获取附件操作日志失败:', error)
     } finally {
       state.loading = false
     }
   }
 
-  const buildQueryParams = (): BIamUserAccessLogQueryPageRequestVo => {
+  const buildQueryParams = (): DataAttachmentLogQueryPageRequestVo => {
     return {
       current: state.pagination.current,
       size: state.pagination.size,
-      ...(state.searchForm.phone && { phone: state.searchForm.phone }),
-      ...(state.searchForm.realName && { realName: state.searchForm.realName }),
-      ...(state.searchForm.operateName && { operateName: state.searchForm.operateName }),
       ...(state.searchForm.operateSource && { operateSource: state.searchForm.operateSource }),
       ...(state.searchForm.module && { module: state.searchForm.module }),
       ...(state.searchForm.moduleEntity && { moduleEntity: state.searchForm.moduleEntity }),
-      ...(state.searchForm.operateType && { operateType: state.searchForm.operateType }),
-      ...(state.searchForm.actionStatus && { actionStatus: state.searchForm.actionStatus }),
-      ...(state.searchForm.httpStatus != null && { httpStatus: state.searchForm.httpStatus }),
-      ...(state.searchForm.requestPath && { requestPath: state.searchForm.requestPath }),
+      ...(state.searchForm.moduleEntityId && { moduleEntityId: state.searchForm.moduleEntityId }),
+      ...(state.searchForm.attachmentGroup && { attachmentGroup: state.searchForm.attachmentGroup }),
+      ...(state.searchForm.operationTypeSet?.length ? { operationTypeSet: state.searchForm.operationTypeSet } : {}),
+      ...(state.searchForm.operationResult && { operationResult: state.searchForm.operationResult }),
       ...(state.searchForm.clientIp && { clientIp: state.searchForm.clientIp }),
       ...(state.searchForm.traceId && { traceId: state.searchForm.traceId }),
+      ...(state.searchForm.platform && { platform: state.searchForm.platform }),
       ...(state.searchForm.timeRange?.length === 2 && {
         createStartTime: state.searchForm.timeRange[0],
         createEndTime: state.searchForm.timeRange[1]
       }),
-      // 操作人查询条件
-      ...(state.selectedOperators.length > 0 && { userIdSet: state.selectedOperators.map(u => u.id) })
+      // 操作主体查询条件
+      ...(state.selectedOperators.length > 0 && { userIdSet: state.selectedOperators.map(u => u.id) }),
+      ...(state.searchForm.phone && { phone: state.searchForm.phone }),
+      ...(state.searchForm.realName && { realName: state.searchForm.realName })
     }
   }
 
@@ -413,6 +423,7 @@
 
   const handleResetSearch = (): void => {
     searchFormRef.value?.resetFields()
+    state.searchForm.operationTypeSet = null
     state.searchForm.timeRange = null
     state.selectedOperators = [] // 重置操作人选择
     handleSearch()
@@ -428,17 +439,16 @@
     fetchData()
   }
 
-  const showDetail = (row: BIamUserAccessLogExpandListResponseVo): void => {
+  const showDetail = (row: DataAttachmentLogExpandListResponseVo): void => {
     state.selectedLogId = row.id
     state.detailVisible = true
   }
 
-  const showCleanDialog = (): void => {
-    state.cleanDialogVisible = true
-  }
-
-  const handleCleanSuccess = (): void => {
-    fetchData()
+  const operationResultTagType = (result?: string): 'success' | 'danger' | 'warning' | 'info' => {
+    if (result === 'SUCCESS') return 'success'
+    if (result === 'FAILURE') return 'danger'
+    if (result === 'PARTIAL') return 'warning'
+    return 'info'
   }
 
   // 操作人相关方法
@@ -467,8 +477,8 @@
     await loadOperateSourceOptions()
     await loadModuleOptions()
     await loadModuleEntityOptions()
-    await loadOperateTypeOptions()
-    await loadActionStatusOptions()
+    await loadOperationTypeOptions()
+    await loadOperationResultOptions()
     await fetchData()
     await nextTick()
     setupResizeObserver()
@@ -507,7 +517,7 @@
     padding-bottom: 0;
   }
 
-  .access-log-page {
+  .attachment-log-page {
     height: 100%;
     min-height: 0;
     padding: 4px;
@@ -557,7 +567,7 @@
             }
           }
 
-          // 访问时间字段特殊宽度
+          // 操作时间字段特殊宽度
           &.form-item-date-picker {
             flex: 1 1 440px;
             max-width: 440px;
@@ -660,10 +670,5 @@
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
-  }
-
-  .http-status-error {
-    color: var(--el-color-danger);
-    font-weight: 600;
   }
 </style>

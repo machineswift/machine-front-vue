@@ -2,8 +2,9 @@ import type { PageRequest, PageResponse } from '@/shared/types/Common.type'
 
 // 访问日志分页查询接口请求参数
 export interface BIamUserAccessLogQueryPageRequestVo extends PageRequest {
-  userId?: string
-  username?: string
+  userIdSet?: string[]
+  phone?: string
+  realName?: string
   operateSource?: string
   module?: string
   moduleEntity?: string
@@ -28,6 +29,8 @@ export interface BIamUserAccessLogDetailResponseVo {
   id: string
   userId: string
   username: string
+  realName: string
+  phone: string
   operateSource: string
   module: string
   moduleEntity: string
@@ -52,9 +55,6 @@ export interface BIamUserAccessLogDetailResponseVo {
   createBy: string
   createName: string
   createTime: number
-  updateBy: string
-  updateName: string
-  updateTime: number
 }
 
 // 访问日志分页查询接口返回参数
@@ -62,6 +62,8 @@ export interface BIamUserAccessLogExpandListResponseVo {
   id: string
   userId: string
   username: string
+  realName: string
+  phone: string
   operateSource: string
   module: string
   moduleEntity: string
@@ -81,9 +83,6 @@ export interface BIamUserAccessLogExpandListResponseVo {
   createBy: string
   createName: string
   createTime: number
-  updateBy: string
-  updateName: string
-  updateTime: number
 }
 
 export type BIamUserAccessLogExpandPageResponse = PageResponse<BIamUserAccessLogExpandListResponseVo>

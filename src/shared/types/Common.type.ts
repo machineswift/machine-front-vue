@@ -45,4 +45,6 @@ export interface TreeLikeNode<T> {
 export interface TreePickerNode extends TreeLikeNode<TreePickerNode> {
   name: string
   code?: string
+  /** 后端标记：是否有下级（懒加载时用于先挂一个“加载更多”占位行，让节点可展开） */
+  hasChildren?: boolean
 }
