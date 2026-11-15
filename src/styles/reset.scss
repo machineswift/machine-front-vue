@@ -1,0 +1,153 @@
+* {
+  box-sizing: border-box;
+  background-repeat: no-repeat;
+  -webkit-tap-highlight-color: rgb(0 0 0 / 0%);
+}
+
+body {
+  margin: 0;
+  line-height: 1;
+}
+
+article,
+aside,
+footer,
+header,
+nav,
+section,
+main,
+figcaption,
+figure,
+menu,
+details {
+  display: block;
+}
+
+audio,
+canvas,
+video {
+  display: inline-block;
+}
+
+img {
+  display: block;
+  border: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  padding: 0;
+  margin: 0;
+  font-weight: normal;
+}
+
+p {
+  padding: 0;
+  margin: 0;
+}
+
+address,
+cite,
+dfn,
+em,
+var {
+  font-style: normal;
+}
+
+ul,
+ol {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+a {
+  font-size: inherit;
+  color: inherit;
+  text-decoration: none;
+  background-color: transparent;
+
+  &:active,
+  &:hover {
+    outline: 0;
+  }
+}
+
+:focus {
+  outline: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  margin: 0;
+  font-size: inherit;
+}
+
+button,
+//html [type="button"],
+[type="reset"],
+[type="submit"] {
+  padding: 0;
+  color: inherit;
+  appearance: auto;
+  cursor: pointer;
+  background-color: transparent;
+  border: 0;
+}
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+
+input {
+  padding: 0;
+  line-height: normal;
+
+  &::placeholder {
+    font-weight: 300;
+  }
+}
+
+[type="number"] {
+  appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    height: auto;
+    margin: 0;
+    appearance: none;
+  }
+}
+
+[type="search"] {
+  appearance: textfield;
+
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-decoration {
+    appearance: none;
+  }
+}
+
+textarea {
+  overflow: auto;
+  appearance: none;
+  resize: none;
+}
+
+select {
+  appearance: none;
+  background-color: #fff;
+}
+
+table {
+  border-spacing: 0;
+  border-collapse: collapse;
+}

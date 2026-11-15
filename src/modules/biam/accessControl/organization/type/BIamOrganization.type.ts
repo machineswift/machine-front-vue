@@ -1,0 +1,82 @@
+import type { HighlightRange, TreeNode } from '@/shared/types/Common.type'
+import type { ShopSummaryDto } from '@/shared/types/CommonBusiness.type'
+
+export interface BIamOrganizationDto {
+  id: string
+  parentId: string
+  code: string
+  name: string
+  type: string
+}
+
+export interface BIamOrganizationCreateRequestVo {
+  parentId: string
+  name: string
+  sort?: number
+  description?: string
+}
+
+export interface BIamOrganizationUpdateRequestVo {
+  id: string
+  name: string
+  sort?: number
+  description?: string
+}
+
+export interface BIamOrganizationUpdateParentRequestVo {
+  id: string
+  parentId: string
+}
+
+export interface BIamOrganizationDetailResponseVo {
+  id: string
+  parentId: string
+  code: string
+  name: string
+  organizationNumber: number
+  shopNumber: number
+  userNumber: number
+  sort: number
+  description?: string
+  createName: string
+  createBy: string
+  createTime: number
+  updateName: string
+  updateBy: string
+  updateTime: number
+}
+
+export interface BIamOrganizationTreeSimpleResponseVo extends TreeNode<BIamOrganizationTreeSimpleResponseVo> {
+  code: string
+  type: string
+}
+
+export interface BIamOrganizationExpandTreeResponseVo extends TreeNode<BIamOrganizationExpandTreeResponseVo> {
+  code: string
+  organizationNumber: number
+  shopNumber: number
+  userNumber: number
+  createName: string
+  createBy: string
+  createTime: number
+  updateName: string
+  updateBy: string
+  updateTime: number
+  /** 搜索命中区间（渲染时再生成高亮节点，存储区间可避免 HTML 拼接与 XSS） */
+  highlight?: { name?: HighlightRange[]; code?: HighlightRange[] }
+}
+
+export interface BIamOrganizationWithShopTreeResponseVo extends TreeNode<BIamOrganizationWithShopTreeResponseVo> {
+  code: string
+  organizationNumber: number
+  shopNumber: number
+  bindShopList: ShopSummaryDto[]
+  createName: string
+  createBy: string
+  createTime: number
+  updateName: string
+  updateBy: string
+  updateTime: number
+}
+
+export type BIamOrganizationSimpleTreeResponseVo = BIamOrganizationTreeSimpleResponseVo

@@ -1,0 +1,245 @@
+import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+import type { RouteLocationNormalized, LocationQuery, RouteParams } from 'vue-router'
+
+export interface TabItem {
+  path: string
+  fullPath: string
+  name?: string
+  /**
+   * KeepAlive 的 include 匹配的是组件 name 选项，而不是路由 name。
+   * 这里在导航完成后从路由记录上读取已解析组件真实的 name，避免把权限码写进 include。
+   */
+  cacheName?: string
+  title: string
+  icon?: string
+  fixed?: boolean
+  keepAlive?: boolean
+  query?: LocationQuery
+  params?: RouteParams
+  // 存储标签页的状态数据（如筛选条件等）
+  state?: Record<string, unknown>
+}
+
+export const useTabStore = defineStore(
+  'machine:tab',
+  () => {
+    // State
+    const tabs = ref<TabItem[]>([])
+    const activeTabPath = ref<string>('')
+
+    // Getters
+    const activeTab = computed(() => {
+      return tabs.value.find(tab => tab.fullPath === activeTabPath.value)
+    })
+
+    const fixedTabs = computed(() => {
+      return tabs.value.filter(tab => tab.fixed)
+    })
+
+    const unfixedTabs = computed(() => {
+      return tabs.value.filter(tab => !tab.fixed)
+    })
+
+    // Actions
+    /**
+     * 读取当前路由最终匹配组件的 name（KeepAlive 的 include 使用的就是它）。
+     * vue-router 导航完成后会把懒加载组件解析后的对象挂到 matched 记录上。
+     */
+    const resolveCacheName = (route: RouteLocationNormalized): string | undefined => {
+      const matched = route.matched[route.matched.length - 1]
+      const component = matched?.components?.default as { name?: unknown; __name?: unknown } | undefined
+      if (component && typeof component === 'object') {
+        const name = component.name || component.__name
+        if (typeof name === 'string' && name) return name
+      }
+      return typeof route.name === 'string' ? route.name : undefined
+    }
+
+    /**
+     * 添加标签页
+     */
+    const addTab = (route: RouteLocationNormalized) => {
+      // 如果路由隐藏，不添加标签页
+      if (route.meta?.hidden) {
+        return
+      }
+
+      const fullPath = route.fullPath
+      const cacheName = resolveCacheName(route)
+      const existingTab = tabs.value.find(tab => tab.fullPath === fullPath)
+
+      if (!existingTab) {
+        const tab: TabItem = {
+          path: route.path,
+          fullPath,
+          name: typeof route.name === 'string' ? route.name : undefined,
+          cacheName,
+          title: (route.meta?.title as string) || (typeof route.name === 'string' ? route.name : '') || '未命名',
+          icon: route.meta?.icon as string,
+          // 首页标签默认固定，不可关闭
+          fixed: route.path === '/admin/home',
+          keepAlive: route.meta?.keepAlive !== false,
+          query: route.query,
+          params: route.params,
+          state: {} // 初始化状态存储
+        }
+        tabs.value.push(tab)
+      } else if (cacheName && existingTab.cacheName !== cacheName) {
+        // 兼容旧版本持久化的标签：补写 cacheName
+        existingTab.cacheName = cacheName
+      }
+
+      setActiveTab(fullPath)
+    }
+
+    /**
+     * 同步已存在标签页的缓存名（同一路径仅 query 变化时不会 addTab）
+     */
+    const syncTabCacheName = (route: RouteLocationNormalized) => {
+      const tab = tabs.value.find(item => item.fullPath === route.fullPath)
+      const cacheName = resolveCacheName(route)
+      if (tab && cacheName) {
+        tab.cacheName = cacheName
+      }
+    }
+
+    /**
+     * 设置活动标签页
+     */
+    const setActiveTab = (fullPath: string) => {
+      activeTabPath.value = fullPath
+    }
+
+    /**
+     * 关闭标签页
+     */
+    const closeTab = (fullPath: string) => {
+      const index = tabs.value.findIndex(tab => tab.fullPath === fullPath)
+      if (index === -1) return
+
+      const tab = tabs.value[index]
+
+      // 如果是固定标签页，不允许关闭
+      if (tab.fixed) {
+        return
+      }
+
+      tabs.value.splice(index, 1)
+
+      // 如果关闭的是当前活动标签页，需要切换到其他标签页
+      if (fullPath === activeTabPath.value) {
+        if (tabs.value.length > 0) {
+          // 优先切换到右侧的标签页，如果没有则切换到左侧
+          const nextTab = tabs.value[index] || tabs.value[index - 1]
+          if (nextTab) {
+            setActiveTab(nextTab.fullPath)
+          }
+        }
+      }
+    }
+
+    /**
+     * 固定/取消固定标签页
+     */
+    const toggleFixed = (fullPath: string) => {
+      const tab = tabs.value.find(tab => tab.fullPath === fullPath)
+      if (tab) {
+        tab.fixed = !tab.fixed
+        // 重新排序：固定标签在前，非固定在后
+        sortTabs()
+      }
+    }
+
+    /**
+     * 刷新标签页
+     */
+    const refreshTab = (fullPath: string) => {
+      const tab = tabs.value.find(tab => tab.fullPath === fullPath)
+      if (tab) {
+        // 触发刷新事件，由 LayoutMain 监听处理
+        tab.keepAlive = false
+        setTimeout(() => {
+          tab.keepAlive = true
+        }, 100)
+      }
+    }
+
+    /**
+     * 更新标签页顺序（拖拽排序）
+     */
+    const updateTabOrder = (newTabs: TabItem[]) => {
+      // 保持固定标签在前
+      const fixed = newTabs.filter(tab => tab.fixed)
+      const unfixed = newTabs.filter(tab => !tab.fixed)
+      tabs.value = [...fixed, ...unfixed]
+    }
+
+    /**
+     * 排序标签页（固定标签在前）
+     */
+    const sortTabs = () => {
+      const fixed = tabs.value.filter(tab => tab.fixed)
+      const unfixed = tabs.value.filter(tab => !tab.fixed)
+      tabs.value = [...fixed, ...unfixed]
+    }
+
+    /**
+     * 清除所有标签页
+     */
+    const clearTabs = () => {
+      tabs.value = []
+      activeTabPath.value = ''
+    }
+
+    /**
+     * 更新标签页状态
+     */
+    const updateTabState = (fullPath: string, state: Record<string, unknown>) => {
+      const tab = tabs.value.find(tab => tab.fullPath === fullPath)
+      if (tab) {
+        tab.state = { ...tab.state, ...state }
+      }
+    }
+
+    /**
+     * 获取标签页状态
+     */
+    const getTabState = (fullPath: string): Record<string, unknown> | undefined => {
+      const tab = tabs.value.find(tab => tab.fullPath === fullPath)
+      return tab?.state
+    }
+
+    return {
+      // State
+      tabs,
+      activeTabPath,
+
+      // Getters
+      activeTab,
+      fixedTabs,
+      unfixedTabs,
+
+      // Actions
+      addTab,
+      syncTabCacheName,
+      setActiveTab,
+      closeTab,
+      toggleFixed,
+      refreshTab,
+      updateTabOrder,
+      sortTabs,
+      clearTabs,
+      updateTabState,
+      getTabState
+    }
+  },
+  {
+    persist: {
+      storage: localStorage,
+      pick: ['tabs', 'activeTabPath']
+    }
+  }
+)
+
+export default useTabStore

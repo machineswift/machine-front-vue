@@ -1,0 +1,371 @@
+<template>
+  <el-dialog v-model="visible" title="编辑素材" width="clamp(480px, 46vw, 640px)" align-center :close-on-click-modal="false" @closed="handleClosed">
+    <el-form
+      ref="formRef"
+      :model="form"
+      label-width="100px"
+      :rules="rules"
+      v-loading="loading"
+      class="dialog-form"
+      :style="{ height: `${dialogBodyHeight}px` }"
+    >
+      <el-form-item label="素材标题" prop="title">
+        <el-input v-model="form.title" placeholder="请输入素材标题" />
+      </el-form-item>
+      <el-form-item label="文件类型">
+        <el-tag size="small">{{ detailData.fileType ? enumStore.getEnumLabel(DICT_DATA_FILE_TYPE, detailData.fileType) : '无' }}</el-tag>
+      </el-form-item>
+      <el-form-item label="当前附件">
+        <div v-if="detailData.attachmentId || currentAttachmentId" class="attachment-preview">
+          <!-- 图片预览 -->
+          <template v-if="detailData.fileType === 'IMAGE' && attachmentPreviewUrl">
+            <el-image
+              :src="attachmentPreviewUrl"
+              fit="contain"
+              class="preview-image material-preview-image"
+              :preview-src-list="[attachmentPreviewUrl]"
+              preview-teleported
+              hide-on-click-modal
+              :zoom-rate="1.2"
+              :max-scale="7"
+              :min-scale="0.2"
+            />
+          </template>
+          <!-- 视频预览 -->
+          <template v-else-if="detailData.fileType === 'VIDEO' && attachmentPreviewUrl">
+            <video :src="attachmentPreviewUrl" controls class="preview-video" />
+          </template>
+          <!-- 图片/视频加载中 -->
+          <span v-else-if="isPreviewLoading && (detailData.fileType === 'IMAGE' || detailData.fileType === 'VIDEO')" class="attachment-loading">加载中…</span>
+          <!-- 图片/视频预览不可用 -->
+          <span v-else-if="detailData.fileType === 'IMAGE' || detailData.fileType === 'VIDEO'" class="attachment-loading">预览暂不可用，保存后可正常查看</span>
+          <!-- 其他类型：点击下载 -->
+          <el-button v-else size="small" type="primary" @click="downloadAttachment" :loading="downloadLoading">下载附件</el-button>
+          <div class="attachment-actions">
+            <el-button size="small" type="primary" plain @click="triggerReplaceFile" :loading="uploading">更换附件</el-button>
+            <input ref="replaceFileInputRef" type="file" class="hidden-file-input" :accept="accept" @change="onReplaceFileChange" />
+          </div>
+        </div>
+        <div v-else class="attachment-upload-tip">
+          <span class="tip-text">暂无附件，请上传</span>
+          <el-button size="small" type="primary" plain @click="triggerReplaceFile" :loading="uploading">上传附件</el-button>
+          <input ref="replaceFileInputRef" type="file" class="hidden-file-input" :accept="accept" @change="onReplaceFileChange" />
+        </div>
+        <el-progress v-if="uploading" :percentage="uploadPercent" :stroke-width="6" class="upload-progress" />
+        <div class="form-tip">仅支持替换为与当前素材相同类型的文件</div>
+      </el-form-item>
+      <el-form-item label="变更说明" prop="changeDesc">
+        <el-input
+          v-model="form.changeDesc"
+          type="textarea"
+          :rows="3"
+          maxlength="500"
+          show-word-limit
+          :placeholder="isAttachmentChanged ? '请填写更换附件的原因' : '请填写本次变更的原因'"
+        />
+        <div class="form-tip">更换附件时将随新版本记录到版本历史</div>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary" @click="handleSubmit" :loading="submitting">保存</el-button>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+  import { ref, watch, computed } from 'vue'
+  import { useWindowSize } from '@vueuse/core'
+  import { ElMessage } from 'element-plus'
+  import { DataMaterialApi, getAcceptByFileType, validateMaterialFile } from '@/modules/data/material/api/DataMaterial.api'
+  import { DataAttachmentApi } from '@/modules/data/attachment/api/DataAttachment.api'
+  import { downloadByUrl, saveUrlAsFile } from '@/shared/utils/Download.util'
+  import { useDictionaryEnumStore } from '@/shared/stores/DictionaryEnum.store'
+  import { DICT_DATA_FILE_TYPE } from '@/shared/constants/DictionaryEnum.constant'
+  import type { DataMaterialDetailResponseVo, DataMaterialUpdateRequestVo } from '@/modules/data/material/type/DataMaterial.type'
+
+  const props = defineProps({
+    modelValue: { type: Boolean, required: true },
+    materialId: { type: String, default: '' }
+  })
+
+  const emit = defineEmits(['update:modelValue', 'success'])
+
+  const enumStore = useDictionaryEnumStore()
+
+  const formRef = ref()
+  const replaceFileInputRef = ref<HTMLInputElement>()
+  const visible = ref(false)
+  const loading = ref(false)
+  const submitting = ref(false)
+  const uploading = ref(false)
+  const uploadPercent = ref(0)
+  const downloadLoading = ref(false)
+  const detailData = ref<DataMaterialDetailResponseVo>({})
+  const attachmentPreviewUrl = ref('')
+  const isPreviewLoading = ref(false)
+
+  const { height: windowHeight } = useWindowSize()
+
+  // 弹窗内容区固定高度（与新增/详情弹窗保持一致），内容过多时内部滚动
+  const dialogBodyHeight = computed(() => Math.min(Math.max(windowHeight.value - 250, 380), 460))
+
+  const form = ref<DataMaterialUpdateRequestVo>({
+    id: '',
+    title: '',
+    changeDesc: ''
+  })
+
+  /** 仅允许选择与当前素材同类型的文件 */
+  const accept = computed(() => getAcceptByFileType(detailData.value.fileType))
+
+  /** 标记附件是否被更换过 */
+  const isAttachmentChanged = ref(false)
+
+  /** 已更换但尚未保存的本地附件（临时文件未生成附件，需直接用本地文件下载） */
+  const replacedFile = ref<File | null>(null)
+
+  /** 更换附件会生成新版本，此时必须填写变更说明，保证版本历史有变更原因 */
+  const validateChangeDesc = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+    if (isAttachmentChanged.value && !value?.trim()) {
+      callback(new Error('更换附件时请填写变更说明'))
+      return
+    }
+    callback()
+  }
+
+  const rules = {
+    title: [{ required: true, message: '请输入素材标题', trigger: 'blur' }],
+    changeDesc: [{ validator: validateChangeDesc, trigger: 'blur' }]
+  }
+
+  /** 预览地址：走附件接口（后端返回 MinIO 预签名地址，图片/视频为 inline 预览） */
+  const loadAttachmentPreview = async (attachmentId: string) => {
+    if (!attachmentId) {
+      attachmentPreviewUrl.value = ''
+      return
+    }
+    isPreviewLoading.value = true
+    try {
+      const res = await DataAttachmentApi.preview(attachmentId)
+      attachmentPreviewUrl.value = res?.url || ''
+    } catch {
+      attachmentPreviewUrl.value = ''
+    } finally {
+      isPreviewLoading.value = false
+    }
+  }
+
+  /** 非图片/视频类型：点击下载按钮触发下载 */
+  const downloadAttachment = async () => {
+    // 附件已更换但未保存：直接下载本地文件
+    if (replacedFile.value) {
+      const localUrl = URL.createObjectURL(replacedFile.value)
+      saveUrlAsFile(localUrl, replacedFile.value.name)
+      URL.revokeObjectURL(localUrl)
+      return
+    }
+    const attachmentId = detailData.value.attachmentId
+    if (!attachmentId) return
+    try {
+      downloadLoading.value = true
+      const res = await DataAttachmentApi.download(attachmentId)
+      if (!res?.url) {
+        ElMessage.error('获取下载地址失败')
+        return
+      }
+      await downloadByUrl(res.url, detailData.value.title || 'download')
+    } catch (error) {
+      console.error('下载附件失败:', error)
+      ElMessage.error('下载附件失败')
+    } finally {
+      downloadLoading.value = false
+    }
+  }
+
+  const fetchDetail = async () => {
+    if (!props.materialId) return
+    try {
+      loading.value = true
+      const res = await DataMaterialApi.detail({ id: props.materialId })
+      detailData.value = res || {}
+      const attachmentId = res!.attachmentId || ''
+      form.value = {
+        id: res!.id!,
+        title: res!.title || '',
+        changeDesc: ''
+      }
+      isAttachmentChanged.value = false
+      if (attachmentId && (res!.fileType === 'IMAGE' || res!.fileType === 'VIDEO')) {
+        await loadAttachmentPreview(attachmentId)
+      } else {
+        attachmentPreviewUrl.value = ''
+      }
+    } catch (error) {
+      console.error('获取素材详情失败', error)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const triggerReplaceFile = () => {
+    replaceFileInputRef.value?.click()
+  }
+
+  const currentAttachmentId = ref('')
+
+  const onReplaceFileChange = async (e: Event) => {
+    const target = e.target as HTMLInputElement
+    const f = target.files?.[0]
+    if (!f || !form.value.id) return
+
+    const validation = validateMaterialFile(f, detailData.value.fileType)
+    if (!validation.valid) {
+      ElMessage.error(validation.message || '文件校验失败')
+      target.value = ''
+      return
+    }
+
+    try {
+      uploading.value = true
+      uploadPercent.value = 0
+      const res = await DataAttachmentApi.upload({
+        file: f,
+        onProgress: percent => (uploadPercent.value = percent)
+      })
+      const newId = res?.id
+      if (newId) {
+        currentAttachmentId.value = newId
+        replacedFile.value = f
+        isAttachmentChanged.value = true
+        // 文件已在前端内存，直接用 ObjectURL 本地预览，无需调后端接口
+        if (detailData.value.fileType === 'IMAGE' || detailData.value.fileType === 'VIDEO') {
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl)
+          previewObjectUrl = URL.createObjectURL(f)
+          attachmentPreviewUrl.value = previewObjectUrl
+        } else {
+          attachmentPreviewUrl.value = ''
+        }
+        ElMessage.success('附件已更换，请点击保存')
+      } else {
+        ElMessage.error('上传失败')
+      }
+    } catch (err) {
+      console.error('更换附件失败', err)
+    } finally {
+      uploading.value = false
+      uploadPercent.value = 0
+      target.value = ''
+    }
+  }
+
+  const handleSubmit = async () => {
+    try {
+      await formRef.value?.validate()
+      submitting.value = true
+      const payload: DataMaterialUpdateRequestVo = {
+        id: form.value.id,
+        title: form.value.title,
+        changeDesc: form.value.changeDesc?.trim() || undefined
+      }
+      // 仅当附件被更换时传入 fileTemp
+      if (isAttachmentChanged.value && currentAttachmentId.value) {
+        payload.fileTemp = { fileId: currentAttachmentId.value }
+      }
+      await DataMaterialApi.update(payload)
+      ElMessage.success('保存成功')
+      emit('success')
+      visible.value = false
+    } catch (error) {
+      console.error('保存素材失败', error)
+    } finally {
+      submitting.value = false
+    }
+  }
+
+  let previewObjectUrl = ''
+
+  const handleClosed = () => {
+    formRef.value?.resetFields()
+    // 释放本地 ObjectURL
+    if (previewObjectUrl) {
+      URL.revokeObjectURL(previewObjectUrl)
+      previewObjectUrl = ''
+    }
+    attachmentPreviewUrl.value = ''
+    currentAttachmentId.value = ''
+    replacedFile.value = null
+    isAttachmentChanged.value = false
+    uploading.value = false
+    uploadPercent.value = 0
+    if (replaceFileInputRef.value) replaceFileInputRef.value.value = ''
+  }
+
+  watch(
+    () => props.modelValue,
+    async val => {
+      visible.value = val
+      if (val && props.materialId) {
+        await fetchDetail()
+      }
+    },
+    { immediate: false }
+  )
+
+  watch(visible, val => {
+    emit('update:modelValue', val)
+  })
+</script>
+
+<style scoped>
+  .dialog-form {
+    overflow-y: auto;
+  }
+  .attachment-preview,
+  .attachment-upload-tip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .preview-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color);
+  }
+  .preview-video {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color);
+  }
+  .preview-link {
+    color: var(--el-color-primary);
+    margin-right: 8px;
+  }
+  .attachment-actions,
+  .attachment-upload-tip .tip-text {
+    margin-right: 8px;
+  }
+  .hidden-file-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+  .attachment-loading {
+    color: var(--el-text-color-secondary);
+  }
+  .upload-progress {
+    width: 100%;
+    margin-top: 8px;
+  }
+  .form-tip {
+    width: 100%;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+</style>

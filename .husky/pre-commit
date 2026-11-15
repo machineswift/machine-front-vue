@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -e
+
+echo "▶ 提交前检查：lint-staged → typecheck → lint:check"
+echo "  （lint-staged 会对暂存文件执行 eslint --fix / stylelint --fix，等价于只格式化暂存区）"
+npm run check:commit

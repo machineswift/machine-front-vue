@@ -1,0 +1,111 @@
+@use "./reset.scss" as *;
+
+// ========== 图片预览层 ==========
+.el-image-viewer__wrapper {
+  z-index: 3000 !important;
+}
+
+.el-image-viewer__mask {
+  background-color: rgb(0 0 0 / 85%) !important;
+}
+
+// 素材模块图片：点击放大预览时的手型与悬停提示
+.material-preview-image {
+  cursor: zoom-in;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// 滚动条外观
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: gray;
+  border-radius: 10px;
+}
+
+.el-dialog:not(.is-fullscreen) {
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 48px);
+  overflow: hidden;
+}
+
+.el-dialog:not(.is-fullscreen) .el-dialog__header,
+.el-dialog:not(.is-fullscreen) .el-dialog__footer {
+  flex: 0 0 auto;
+}
+
+.el-dialog:not(.is-fullscreen) .el-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+// ========== 详情弹窗展示规范（全项目统一） ==========
+.detail-dialog-body {
+  min-height: 160px;
+}
+
+// 分组之间统一 20px 间距（descriptions 分组与表格/树分组一致）
+.detail-dialog-body > * + * {
+  margin-top: 20px;
+}
+
+.detail-descriptions + .detail-descriptions {
+  margin-top: 20px;
+}
+
+// 宽内容（表格/树/图片组）单独成组时使用，避免 el-descriptions 出现空白标签列
+.detail-section-title {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+}
+
+// 标签列定宽对齐，值列优先展示完整内容
+.detail-descriptions .el-descriptions__label {
+  width: 110px;
+  color: var(--el-text-color-regular);
+  white-space: nowrap;
+}
+
+.detail-descriptions .el-descriptions__content {
+  color: var(--el-text-color-primary);
+  overflow-wrap: break-word;
+}
+
+.detail-text-break {
+  display: inline-block;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.detail-empty {
+  color: var(--el-text-color-placeholder);
+}
+
+.detail-code {
+  width: 100%;
+  max-height: 200px;
+  padding: 8px 12px;
+  margin: 0;
+  overflow: auto;
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+  white-space: pre-wrap;
+  background-color: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+}
